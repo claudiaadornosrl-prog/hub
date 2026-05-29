@@ -190,6 +190,31 @@
     text-decoration: none;
     border-bottom: 0.5px solid var(--border);
   }
+  .install-btn {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 8px 16px 8px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .install-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .install-btn.visible { display: inline-flex; }
+  .install-btn i { font-size: 16px; }
   @media (max-width: 540px) {
     .container { padding: 36px 22px 30px; border-radius: 14px; }
     .wordmark svg { width: 36px; height: 36px; }
@@ -202,6 +227,11 @@
 </style>
 </head>
 <body>
+
+<button class="install-btn" id="install-btn" type="button" title="Instalar como app">
+  <i class="ti ti-download" aria-hidden="true"></i>
+  Instalar
+</button>
 
 <div class="page">
   <main class="container">
@@ -254,6 +284,55 @@
 
   </main>
 </div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(err =>
+        console.warn('[SW] no se pudo registrar:', err)
+      );
+    });
+  }
+
+  let deferredInstallPrompt = null;
+  const installBtn = document.getElementById('install-btn');
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (!isStandalone()) installBtn.classList.add('visible');
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') installBtn.classList.remove('visible');
+      deferredInstallPrompt = null;
+    } else {
+      const ua = navigator.userAgent;
+      const isIOS = /iPhone|iPad|iPod/.test(ua);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+      if (isIOS && isSafari) {
+        alert('Para instalar en iPhone/iPad:\n\n1. Tocá el botón Compartir (cuadrado con flecha hacia arriba)\n2. Elegí "Agregar a pantalla de inicio"\n3. Confirmá tocando "Agregar"');
+      } else {
+        alert('Tu navegador todavía no ofrece la instalación. Si estás en Chrome o Edge, fijate en la barra de direcciones — debería aparecer un ícono de instalar.');
+      }
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installBtn.classList.remove('visible');
+    deferredInstallPrompt = null;
+  });
+
+  if (isStandalone()) installBtn.classList.remove('visible');
+</script>
 
 </body>
 </html>
