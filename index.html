@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#fafaf9">
+<title>Claude Adorno · Hub</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./favicon.svg">
+<link rel="manifest" href="./manifest.webmanifest">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Forum&family=Spectral:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --text: #1a1a1a;
+    --muted: #5f5e5a;
+    --border: #d3d1c7;
+    --accent: #d97757;
+    --crm: #0f6e56;
+    --crm-soft: #9fe1cb;
+    --rrhh: #534ab7;
+    --rrhh-soft: #cecbf6;
+    --banco: #b8841c;
+    --banco-soft: #fac775;
+    --reportes: #185fa5;
+    --reportes-soft: #b5d4f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --surface: #1c1d24;
+      --text: #f5f5f4;
+      --muted: #a4a39d;
+      --border: #2c2d35;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+  .container {
+    width: 100%;
+    max-width: 720px;
+    background: var(--surface);
+    border-radius: 18px;
+    border: 0.5px solid var(--border);
+    padding: 52px 40px 44px;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
+  }
+  .wordmark svg {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+  }
+  .wm-claude {
+    font-family: 'Spectral', serif;
+    font-size: 50px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+  .wm-adorno {
+    font-family: 'Forum', serif;
+    font-size: 50px;
+    color: var(--text);
+    line-height: 1;
+    padding-left: 4px;
+  }
+  .subtitle {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 14px;
+    letter-spacing: 0.6px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 32px 24px;
+    text-decoration: none;
+    color: white;
+    display: block;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+  }
+  .card:active {
+    transform: translateY(0);
+  }
+  .card .icon {
+    font-size: 36px;
+    line-height: 1;
+    display: inline-block;
+  }
+  .card .title {
+    font-size: 22px;
+    font-weight: 500;
+    margin-top: 18px;
+  }
+  .card .desc {
+    font-size: 13px;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .card .arrow {
+    position: absolute;
+    top: 24px;
+    right: 22px;
+    font-size: 20px;
+    opacity: 0.55;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .card:hover .arrow {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+  .card-crm     { --card-bg: var(--crm);     }
+  .card-crm     .desc { color: var(--crm-soft); }
+  .card-rrhh    { --card-bg: var(--rrhh);    }
+  .card-rrhh    .desc { color: var(--rrhh-soft); }
+  .card-banco   { --card-bg: var(--banco);   }
+  .card-banco   .desc { color: var(--banco-soft); }
+  .card-reportes{ --card-bg: var(--reportes); }
+  .card-reportes .desc { color: var(--reportes-soft); }
+  .card.proximamente {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .card.proximamente::after {
+    content: 'Próximamente';
+    position: absolute;
+    bottom: 14px;
+    right: 18px;
+    font-size: 10.5px;
+    background: rgba(255,255,255,0.18);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .footer {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+  }
+  .footer a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--border);
+  }
+  @media (max-width: 540px) {
+    .container { padding: 36px 22px 30px; border-radius: 14px; }
+    .wordmark svg { width: 36px; height: 36px; }
+    .wm-claude, .wm-adorno { font-size: 36px; }
+    .subtitle { font-size: 11.5px; }
+    .grid { grid-template-columns: 1fr; }
+    .card { padding: 26px 22px; }
+    .card .title { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <main class="container">
+
+    <div class="header">
+      <div class="wordmark" aria-label="Claude Adorno">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <g fill="#d97757">
+            <rect x="48" y="6" width="4" height="88" rx="2"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(15 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(30 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(45 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(60 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(75 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(90 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(105 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(120 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(135 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(150 50 50)"/>
+            <rect x="48" y="6" width="4" height="88" rx="2" transform="rotate(165 50 50)"/>
+          </g>
+        </svg>
+        <span class="wm-claude">Claude</span>
+        <span class="wm-adorno">Adorno</span>
+      </div>
+      <div class="subtitle">Hub de aplicaciones · Claudia Adorno SRL</div>
+    </div>
+
+    <div class="grid">
+
+      <a class="card card-crm" href="https://claudiaadornosrl-prog.github.io/crm-adorno/">
+        <i class="ti ti-shopping-bag icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">CRM</div>
+        <div class="desc">Pedidos · Clientes · WhatsApp</div>
+      </a>
+
+      <a class="card card-rrhh" href="https://claudiaadornosrl-prog.github.io/rrhh-adorno/">
+        <i class="ti ti-users icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">RRHH</div>
+        <div class="desc">Empleadas · Sueldos · Asistencias</div>
+      </a>
+
+    </div>
+
+    <div class="footer">
+      © Claudia Adorno SRL · <a href="mailto:juanpsimonelli@gmail.com">juanpsimonelli@gmail.com</a>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
