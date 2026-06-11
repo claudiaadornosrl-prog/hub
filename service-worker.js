@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'claude-adorno-hub-v2';
+const CACHE_VERSION = 'claude-adorno-hub-v3-tesoreria';
 const ASSETS = [
   './',
   './index.html',
