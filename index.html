@@ -32,6 +32,8 @@
     --banco-soft: #fac775;
     --reportes: #185fa5;
     --reportes-soft: #b5d4f4;
+    --stock: #1565c0;
+    --stock-soft: #bbdefb;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -164,6 +166,8 @@
   .card-banco   .desc { color: var(--banco-soft); }
   .card-reportes{ --card-bg: var(--reportes); }
   .card-reportes .desc { color: var(--reportes-soft); }
+  .card-stock   { --card-bg: var(--stock);   }
+  .card-stock   .desc { color: var(--stock-soft); }
   .card.proximamente {
     opacity: 0.6;
     cursor: not-allowed;
@@ -292,6 +296,13 @@
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
         <div class="title">Tesorería</div>
         <div class="desc">Cajas · Bancos · MP · PPI</div>
+      </a>
+
+      <a class="card card-stock" href="https://claudiaadornosrl-prog.github.io/stock-adorno/">
+        <i class="ti ti-package icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">Stock</div>
+        <div class="desc">Precios · Existencias · 3 locales</div>
       </a>
 
       <a class="card card-reportes" href="https://claudiaadornosrl-prog.github.io/documentos-adorno/">
