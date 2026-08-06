@@ -232,6 +232,40 @@
   }
   .install-btn.visible { display: inline-flex; }
   .install-btn i { font-size: 16px; }
+  /* ── Personalizar módulos visibles (por dispositivo) ── */
+  .config-btn {
+    position: fixed; top: 18px; left: 18px;
+    background: var(--surface); border: 0.5px solid var(--border);
+    color: var(--muted); border-radius: 999px; width: 38px; height: 38px;
+    font-size: 17px; cursor: pointer; font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .config-btn:hover { color: var(--text); }
+  .card.oculto { display: none; }
+  .config-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.45);
+    z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .config-overlay.open { display: flex; }
+  .config-panel {
+    background: var(--surface, #fff); border-radius: 16px; padding: 22px;
+    max-width: 340px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .config-panel h3 { margin: 0 0 4px; font-size: 17px; }
+  .config-panel .hint { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .config-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 6px;
+    border-bottom: 0.5px solid var(--border); cursor: pointer; user-select: none;
+  }
+  .config-row:last-of-type { border-bottom: none; }
+  .config-row input { width: 18px; height: 18px; accent-color: #d97757; cursor: pointer; }
+  .config-row .nombre { font-size: 15px; flex: 1; }
+  .config-cerrar {
+    margin-top: 16px; width: 100%; padding: 11px; border: none; border-radius: 10px;
+    background: #d97757; color: white; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
   @media (max-width: 540px) {
     .container { padding: 36px 22px 30px; border-radius: 14px; }
     .wordmark svg { width: 36px; height: 36px; }
@@ -244,6 +278,19 @@
 </style>
 </head>
 <body>
+
+<button class="config-btn" id="config-btn" type="button" title="Elegir módulos visibles" onclick="abrirConfig()">
+  <i class="ti ti-settings" aria-hidden="true"></i>
+</button>
+
+<div class="config-overlay" id="config-overlay">
+  <div class="config-panel">
+    <h3>Módulos visibles</h3>
+    <div class="hint">Elegí qué accesos ver en este dispositivo. Se guarda solo acá.</div>
+    <div id="config-rows"></div>
+    <button class="config-cerrar" onclick="cerrarConfig()">Listo</button>
+  </div>
+</div>
 
 <button class="install-btn" id="install-btn" type="button" title="Instalar como app">
   <i class="ti ti-download" aria-hidden="true"></i>
@@ -279,42 +326,42 @@
 
     <div class="grid">
 
-      <a class="card card-crm" href="https://claudiaadornosrl-prog.github.io/crm-adorno/">
+      <a class="card card-crm" data-mod="crm" href="https://claudiaadornosrl-prog.github.io/crm-adorno/">
         <i class="ti ti-shopping-bag icon" aria-hidden="true"></i>
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
         <div class="title">CRM</div>
         <div class="desc">Pedidos · Clientes · WhatsApp</div>
       </a>
 
-      <a class="card card-rrhh" href="https://claudiaadornosrl-prog.github.io/rrhh-adorno/">
+      <a class="card card-rrhh" data-mod="rrhh" href="https://claudiaadornosrl-prog.github.io/rrhh-adorno/">
         <i class="ti ti-users icon" aria-hidden="true"></i>
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
         <div class="title">RRHH</div>
         <div class="desc">Empleadas · Sueldos · Asistencias</div>
       </a>
 
-      <a class="card card-ventas" href="https://claudiaadornosrl-prog.github.io/ventas-adorno/">
+      <a class="card card-ventas" data-mod="ventas" href="https://claudiaadornosrl-prog.github.io/ventas-adorno/">
         <i class="ti ti-cash-register icon" aria-hidden="true"></i>
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
         <div class="title">Ventas</div>
         <div class="desc">Carga diaria · Cierre del día</div>
       </a>
 
-      <a class="card card-banco" href="https://claudiaadornosrl-prog.github.io/tesoreria-adorno/">
+      <a class="card card-banco" data-mod="tesoreria" href="https://claudiaadornosrl-prog.github.io/tesoreria-adorno/">
         <i class="ti ti-building-bank icon" aria-hidden="true"></i>
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
         <div class="title">Tesorería</div>
         <div class="desc">Cajas · Bancos · MP · PPI</div>
       </a>
 
-      <a class="card card-stock" href="https://claudiaadornosrl-prog.github.io/stock-adorno/">
+      <a class="card card-stock" data-mod="stock" href="https://claudiaadornosrl-prog.github.io/stock-adorno/">
         <i class="ti ti-package icon" aria-hidden="true"></i>
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
         <div class="title">Stock</div>
         <div class="desc">Precios · Existencias · 3 locales</div>
       </a>
 
-      <a class="card card-reportes" href="https://claudiaadornosrl-prog.github.io/documentos-adorno/">
+      <a class="card card-reportes" data-mod="documentos" href="https://claudiaadornosrl-prog.github.io/documentos-adorno/">
         <i class="ti ti-folder-search icon" aria-hidden="true"></i>
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
         <div class="title">Documentos</div>
@@ -331,6 +378,46 @@
 </div>
 
 <script>
+  // ── Módulos visibles por dispositivo (localStorage) ─────────────
+  const HUB_MODULOS = [
+    { id: 'crm',        nombre: 'CRM' },
+    { id: 'rrhh',       nombre: 'RRHH' },
+    { id: 'ventas',     nombre: 'Ventas' },
+    { id: 'tesoreria',  nombre: 'Tesorería' },
+    { id: 'stock',      nombre: 'Stock' },
+    { id: 'documentos', nombre: 'Documentos' },
+  ];
+  function hubOcultos() {
+    try { return JSON.parse(localStorage.getItem('hub_modulos_ocultos') || '[]'); }
+    catch { return []; }
+  }
+  function aplicarVisibilidad() {
+    const ocultos = hubOcultos();
+    document.querySelectorAll('.card[data-mod]').forEach(c =>
+      c.classList.toggle('oculto', ocultos.includes(c.dataset.mod)));
+  }
+  function abrirConfig() {
+    const ocultos = hubOcultos();
+    document.getElementById('config-rows').innerHTML = HUB_MODULOS.map(m => `
+      <label class="config-row">
+        <input type="checkbox" data-mod="${m.id}" ${ocultos.includes(m.id) ? '' : 'checked'}
+               onchange="toggleModulo('${m.id}', this.checked)">
+        <span class="nombre">${m.nombre}</span>
+      </label>`).join('');
+    document.getElementById('config-overlay').classList.add('open');
+  }
+  function toggleModulo(id, visible) {
+    let ocultos = hubOcultos().filter(x => x !== id);
+    if (!visible) ocultos.push(id);
+    localStorage.setItem('hub_modulos_ocultos', JSON.stringify(ocultos));
+    aplicarVisibilidad();
+  }
+  function cerrarConfig() { document.getElementById('config-overlay').classList.remove('open'); }
+  document.getElementById('config-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('config-overlay')) cerrarConfig();
+  });
+  aplicarVisibilidad();
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./service-worker.js').catch(err =>
