@@ -87,7 +87,7 @@
   }
   .wordmark {
     display: inline-flex;
-    align-items: center;
+    align-items: baseline;
     gap: 16px;
     flex-wrap: nowrap;
   }
@@ -95,6 +95,7 @@
     width: 46px;
     height: 46px;
     flex-shrink: 0;
+    align-self: center;
   }
   .wm-claude {
     font-family: 'Spectral', serif;
@@ -105,9 +106,10 @@
     letter-spacing: -0.5px;
   }
   .wm-adorno {
-    /* URW Gothic = clon libre de ITC Avant Garde, la tipografía real de la empresa */
+    /* URW Gothic = clon libre de ITC Avant Garde, la tipografía real de la empresa.
+       44px (no 50): dibuja más grande que Spectral al mismo tamaño nominal. */
     font-family: 'URW Gothic', 'Forum', serif;
-    font-size: 50px;
+    font-size: 44px;
     color: var(--text);
     line-height: 1;
     padding-left: 4px;
@@ -286,7 +288,8 @@
   @media (max-width: 540px) {
     .container { padding: 30px 16px 24px; border-radius: 14px; }
     .wordmark svg { width: 36px; height: 36px; }
-    .wm-claude, .wm-adorno { font-size: 36px; }
+    .wm-claude { font-size: 36px; }
+    .wm-adorno { font-size: 32px; }
     .subtitle { font-size: 11.5px; }
     /* Celular: 2 por fila, compactas — solo ícono + título */
     .grid { grid-template-columns: 1fr 1fr; gap: 10px; }

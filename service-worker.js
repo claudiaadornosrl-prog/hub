@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'claude-adorno-hub-v13-grid-compacta';
+const CACHE_VERSION = 'claude-adorno-hub-v14-logo-alineado';
 const ASSETS = [
   './',
   './index.html',
