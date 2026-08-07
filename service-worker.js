@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'claude-adorno-hub-v12-notificaciones';
+const CACHE_VERSION = 'claude-adorno-hub-v13-grid-compacta';
 const ASSETS = [
   './',
   './index.html',
