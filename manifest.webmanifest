@@ -2,7 +2,7 @@
   "name": "Claude Adorno",
   "short_name": "Claude Adorno",
   "description": "Hub de aplicaciones — Claudia Adorno SRL",
-  "start_url": "./",
+  "start_url": "/hub/",
   "display": "standalone",
   "background_color": "#fafaf9",
   "theme_color": "#fafaf9",
@@ -19,5 +19,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "scope": "/"
 }

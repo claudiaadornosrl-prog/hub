@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'claude-adorno-hub-v9-adorno-urw';
+const CACHE_VERSION = 'claude-adorno-hub-v11-scope-raiz';
 const ASSETS = [
   './',
   './index.html',
