@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'claude-adorno-hub-v11-scope-raiz';
+const CACHE_VERSION = 'claude-adorno-hub-v12-notificaciones';
 const ASSETS = [
   './',
   './index.html',
@@ -41,5 +41,46 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+//  PUSH (centro de notificaciones del Hub)
+//  El payload viene de la Edge Function enviar-push. Al tocar la
+//  notificación abrimos la URL del módulo que la generó.
+// ═══════════════════════════════════════════════════════════════
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; }
+  catch (e) { payload = { title: 'Claude Adorno', body: event.data ? event.data.text() : 'Tenés una novedad' }; }
+
+  const title = payload.title || 'Claude Adorno';
+  const options = {
+    body:  payload.body  || '',
+    icon:  payload.icon  || './icon-192.png',
+    badge: payload.badge || './icon-192.png',
+    tag:   payload.tag   || 'hub-default',
+    data:  { url: payload.url || './' },
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus();
+          if ('navigate' in client) client.navigate(targetUrl).catch(() => {});
+          return;
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+    })
   );
 });

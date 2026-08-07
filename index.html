@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Forum&family=Spectral:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -244,6 +245,20 @@
     display: flex; align-items: center; justify-content: center;
   }
   .config-btn:hover { color: var(--text); }
+  .notif-btn { left: 64px; }
+  .notif-btn.activo { color: #d97757; }
+  .notif-row .estado { font-size: 11px; color: var(--muted); }
+  .notif-switch { width: 40px; height: 24px; border-radius: 999px; border: none; cursor: pointer;
+    background: #d1d5db; position: relative; transition: background 0.15s; flex-shrink: 0; }
+  .notif-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+    border-radius: 50%; background: white; transition: left 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+  .notif-switch.on { background: #d97757; }
+  .notif-switch.on::after { left: 19px; }
+  .notif-login input { width: 100%; padding: 11px; margin-bottom: 10px; border: 1px solid var(--border);
+    border-radius: 10px; font-size: 14px; font-family: inherit; box-sizing: border-box; }
+  .notif-error { font-size: 12px; color: #dc2626; margin: 4px 0 8px; min-height: 15px; }
+  .notif-user { font-size: 12px; color: var(--muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .notif-user a { color: #d97757; cursor: pointer; font-weight: 600; }
   .card.oculto { display: none; }
   .config-overlay {
     position: fixed; inset: 0; background: rgba(15,23,42,0.45);
@@ -284,6 +299,18 @@
 <button class="config-btn" id="config-btn" type="button" title="Elegir módulos visibles" onclick="abrirConfig()">
   <i class="ti ti-settings" aria-hidden="true"></i>
 </button>
+
+<button class="config-btn notif-btn" id="notif-btn" type="button" title="Notificaciones" onclick="abrirNotifs()">
+  <i class="ti ti-bell" aria-hidden="true"></i>
+</button>
+
+<div class="config-overlay" id="notif-overlay">
+  <div class="config-panel">
+    <h3>🔔 Notificaciones</h3>
+    <div id="notif-body"><div class="hint">Cargando…</div></div>
+    <button class="config-cerrar" onclick="cerrarNotifs()">Listo</button>
+  </div>
+</div>
 
 <div class="config-overlay" id="config-overlay">
   <div class="config-panel">
@@ -432,6 +459,180 @@
       );
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  CENTRO DE NOTIFICACIONES
+  //  Login propio del Hub (una vez) + un interruptor por módulo.
+  //  Guarda en rrhh_push_subscriptions con UNA suscripción (el SW del
+  //  Hub) y una fila por app — clave (endpoint, app).
+  // ═══════════════════════════════════════════════════════════════
+  const SUPA_URL = 'https://kwwiykssrpabncpqtmwi.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3d2l5a3NzcnBhYm5jcHF0bXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjI1NTQsImV4cCI6MjA5NDkzODU1NH0.O1VhKdjPahnJJ9qXcQuSKQbnKGhsEZqYmjDEfRuRpkc';
+  const VAPID_PUBLIC_KEY = 'BJr3r3C_T-euS9kqRZX561MoMjHtMl2wpMfS8oUA17xv1TdlA6E3S_5VKyQO2kqlqngPHrQSGr-PpJutXdgKsKc';
+  const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, storageKey: 'hub-adorno-auth' }
+  });
+  const NOTIF_APPS = [
+    { app: 'rrhh',      nombre: 'RRHH',      icono: '👥' },
+    { app: 'ventas',    nombre: 'Ventas',    icono: '📊' },
+    { app: 'stock',     nombre: 'Stock',     icono: '📦' },
+    { app: 'tesoreria', nombre: 'Tesorería', icono: '💰' },
+  ];
+
+  function urlB64ToUint8(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  function cerrarNotifs() { document.getElementById('notif-overlay').classList.remove('open'); }
+  document.getElementById('notif-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('notif-overlay')) cerrarNotifs();
+  });
+
+  async function abrirNotifs() {
+    document.getElementById('notif-overlay').classList.add('open');
+    const body = document.getElementById('notif-body');
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { renderNotifLogin(); return; }
+    await renderNotifPanel(session);
+  }
+
+  function renderNotifLogin(msj) {
+    document.getElementById('notif-body').innerHTML = `
+      <div class="hint">Ingresá una sola vez con tu cuenta del sistema para manejar las notificaciones de todos los módulos desde acá.</div>
+      <div class="notif-login">
+        <input id="nf-email" type="email" placeholder="Email" autocomplete="username">
+        <input id="nf-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
+        <div class="notif-error">${msj || ''}</div>
+        <button class="config-cerrar" style="margin-top:0;" onclick="notifLogin()">Ingresar</button>
+      </div>`;
+  }
+
+  async function notifLogin() {
+    const email = document.getElementById('nf-email').value.trim();
+    const pass  = document.getElementById('nf-pass').value;
+    if (!email || !pass) { renderNotifLogin('Completá email y contraseña.'); return; }
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      const el = document.querySelector('#notif-body .notif-error');
+      if (el) el.textContent = 'No pude ingresar: ' + (error.message.includes('Invalid') ? 'email o contraseña incorrectos.' : error.message);
+      return;
+    }
+    await renderNotifPanel(data.session);
+  }
+
+  async function notifLogout() {
+    await sb.auth.signOut();
+    renderNotifLogin();
+  }
+
+  async function _identidadPush() {
+    try {
+      const { data } = await sb.rpc('rrhh_current_user');
+      const u = Array.isArray(data) ? data[0] : data;
+      return { empleado_id: u?.empleado_id || null, local_gerencia: u?.local_gerencia || null };
+    } catch (_) { return { empleado_id: null, local_gerencia: null }; }
+  }
+
+  async function _hubSub(crear) {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub && crear) {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('Permiso de notificaciones denegado.');
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8(VAPID_PUBLIC_KEY),
+      });
+    }
+    return sub;
+  }
+
+  async function renderNotifPanel(session) {
+    const body = document.getElementById('notif-body');
+    const soporta = ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+    const esIOSBrowser = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone
+      && !window.matchMedia('(display-mode: standalone)').matches;
+    let aviso = '';
+    if (!soporta) aviso = '⚠️ Este navegador no soporta notificaciones push.';
+    else if (esIOSBrowser) aviso = '⚠️ En iPhone las notificaciones solo llegan con el Hub instalado en la pantalla de inicio.';
+
+    let activas = new Set();
+    try {
+      const sub = await _hubSub(false);
+      if (sub) {
+        const { data } = await sb.from('rrhh_push_subscriptions')
+          .select('app').eq('endpoint', sub.endpoint).eq('activa', true);
+        (data || []).forEach(r => activas.add(r.app));
+      }
+    } catch (_) {}
+
+    body.innerHTML = `
+      <div class="notif-user"><span>👤 ${session.user.email}</span><a onclick="notifLogout()">Salir</a></div>
+      ${aviso ? `<div class="hint" style="color:#b45309;">${aviso}</div>` : ''}
+      <div class="hint">Elegí de qué módulos querés recibir avisos en este dispositivo.</div>
+      ${NOTIF_APPS.map(m => `
+        <div class="config-row notif-row" style="cursor:default;">
+          <span style="font-size:17px;">${m.icono}</span>
+          <span class="nombre">${m.nombre}</span>
+          <button class="notif-switch ${activas.has(m.app) ? 'on' : ''}" data-app="${m.app}"
+                  onclick="notifToggle('${m.app}', this)" ${soporta ? '' : 'disabled'}></button>
+        </div>`).join('')}
+      <div class="hint" style="margin-top:10px;">💡 Si además tenés la campanita activada adentro de un módulo, ese aviso puede llegarte dos veces — desactivala en el módulo.</div>`;
+    document.getElementById('notif-btn').classList.toggle('activo', activas.size > 0);
+  }
+
+  async function notifToggle(app, btn) {
+    const prender = !btn.classList.contains('on');
+    btn.disabled = true;
+    try {
+      if (prender) {
+        const sub = await _hubSub(true);
+        const raw = sub.toJSON();
+        const ident = await _identidadPush();
+        const payload = {
+          endpoint: raw.endpoint, p256dh: raw.keys.p256dh, auth: raw.keys.auth,
+          app, activa: true, plataforma: 'hub',
+          user_agent: (navigator.userAgent || '').slice(0, 200),
+          last_seen_at: new Date().toISOString(),
+        };
+        if (ident.empleado_id) payload.empleado_id = ident.empleado_id;
+        else if (ident.local_gerencia) payload.local_generico = ident.local_gerencia;
+        else throw new Error('Tu usuario no tiene legajo asociado.');
+        const { error } = await sb.from('rrhh_push_subscriptions')
+          .upsert(payload, { onConflict: 'endpoint,app' });
+        if (error) throw error;
+        btn.classList.add('on');
+      } else {
+        const sub = await _hubSub(false);
+        if (sub) await sb.from('rrhh_push_subscriptions')
+          .delete().eq('endpoint', sub.endpoint).eq('app', app);
+        btn.classList.remove('on');
+      }
+      const prendidas = document.querySelectorAll('.notif-switch.on').length;
+      document.getElementById('notif-btn').classList.toggle('activo', prendidas > 0);
+    } catch (e) {
+      alert('No se pudo cambiar: ' + (e.message || e));
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Tinte de la campanita al cargar si ya hay suscripciones
+  (async () => {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return;
+      const sub = await _hubSub(false);
+      if (!sub) return;
+      const { data } = await sb.from('rrhh_push_subscriptions')
+        .select('app').eq('endpoint', sub.endpoint).eq('activa', true);
+      if ((data || []).length) document.getElementById('notif-btn').classList.add('activo');
+    } catch (_) {}
+  })();
 
   let deferredInstallPrompt = null;
   const installBtn = document.getElementById('install-btn');
