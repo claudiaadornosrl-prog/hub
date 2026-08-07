@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'claude-adorno-hub-v15-icono-ca';
+const CACHE_VERSION = 'claude-adorno-hub-v16-wordmark-junto';
 const ASSETS = [
   './',
   './index.html',
