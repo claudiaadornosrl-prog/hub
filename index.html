@@ -498,10 +498,14 @@
 
   async function abrirNotifs() {
     document.getElementById('notif-overlay').classList.add('open');
-    const body = document.getElementById('notif-body');
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { renderNotifLogin(); return; }
-    await renderNotifPanel(session);
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { renderNotifLogin(); return; }
+      await renderNotifPanel(session);
+    } catch (e) {
+      document.getElementById('notif-body').innerHTML =
+        `<div class="hint" style="color:#b91c1c;">No pude cargar: ${String(e.message || e)}. Cerrá y probá de nuevo.</div>`;
+    }
   }
 
   function renderNotifLogin(msj) {
@@ -529,7 +533,17 @@
   }
 
   async function notifLogout() {
+    // (10-ago) limpiar las suscripciones de ESTE dispositivo antes de salir,
+    // sino las notificaciones siguen llegando después de cerrar sesión
+    try {
+      const sub = await _hubSub(false);
+      if (sub) {
+        await sb.from('rrhh_push_subscriptions').delete().eq('endpoint', sub.endpoint);
+        await sub.unsubscribe().catch(() => {});
+      }
+    } catch (_) {}
     await sb.auth.signOut();
+    document.getElementById('notif-btn').classList.remove('activo');
     renderNotifLogin();
   }
 
@@ -561,8 +575,8 @@
     const esIOSBrowser = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone
       && !window.matchMedia('(display-mode: standalone)').matches;
     let aviso = '';
-    if (!soporta) aviso = '⚠️ Este navegador no soporta notificaciones push.';
-    else if (esIOSBrowser) aviso = '⚠️ En iPhone las notificaciones solo llegan con el Hub instalado en la pantalla de inicio.';
+    if (esIOSBrowser) aviso = '⚠️ En iPhone las notificaciones solo llegan con el Hub INSTALADO: Compartir → Agregar a pantalla de inicio.';
+    else if (!soporta) aviso = '⚠️ Este navegador no soporta notificaciones push.';
 
     let activas = new Set();
     try {
@@ -603,8 +617,16 @@
           user_agent: (navigator.userAgent || '').slice(0, 200),
           last_seen_at: new Date().toISOString(),
         };
+        // (11-ago) cuentas de administración sin legajo: identidad genérica
+        const _GENERICOS = {
+          'administracion@claudiaadorno.com': 'oficina',
+          'claudiaadorno@claudiaadorno.com': 'oficina',
+        };
+        const { data: { session: _sAuth } } = await sb.auth.getSession();
+        const _emailGen = _GENERICOS[(_sAuth?.user?.email || '').toLowerCase()];
         if (ident.empleado_id) payload.empleado_id = ident.empleado_id;
         else if (ident.local_gerencia) payload.local_generico = ident.local_gerencia;
+        else if (_emailGen) payload.local_generico = _emailGen;
         else throw new Error('Tu usuario no tiene legajo asociado.');
         const { error } = await sb.from('rrhh_push_subscriptions')
           .upsert(payload, { onConflict: 'endpoint,app' });
