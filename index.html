@@ -701,5 +701,35 @@
   if (isStandalone()) installBtn.classList.remove('visible');
 </script>
 
+<script>
+// ⇪ Aviso de Bloq Mayús en campos de contraseña (agregado 14-ago-2026)
+(function () {
+  function toggleAviso(input, on) {
+    var el = input.nextElementSibling;
+    var esAviso = el && el.classList && el.classList.contains('caps-aviso');
+    if (on && !esAviso) {
+      el = document.createElement('div');
+      el.className = 'caps-aviso';
+      el.textContent = '\u21ea May\u00fasculas activadas';
+      el.style.cssText = 'color:#b45309;font-size:12px;font-weight:600;margin-top:4px;';
+      input.insertAdjacentElement('afterend', el);
+    } else if (!on && esAviso) {
+      el.remove();
+    }
+  }
+  function handler(e) {
+    var t = e.target;
+    if (t && t.type === 'password' && typeof e.getModifierState === 'function') {
+      toggleAviso(t, e.getModifierState('CapsLock'));
+    }
+  }
+  document.addEventListener('keydown', handler, true);
+  document.addEventListener('keyup', handler, true);
+  document.addEventListener('focusout', function (e) {
+    var t = e.target;
+    if (t && t.type === 'password') toggleAviso(t, false);
+  }, true);
+})();
+</script>
 </body>
 </html>
