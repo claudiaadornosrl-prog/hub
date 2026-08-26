@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v19-auto-resub-push';
+const CACHE_VERSION = 'hub-v20-auto-resub-push';
 const ASSETS = [
   './',
   './index.html',

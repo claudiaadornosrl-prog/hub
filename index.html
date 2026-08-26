@@ -44,6 +44,8 @@
     --reportes-soft: #b5d4f4;
     --stock: #1565c0;
     --stock-soft: #bbdefb;
+    --compras: #c2410c;
+    --compras-soft: #fed7aa;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -181,6 +183,8 @@
   .card-reportes .desc { color: var(--reportes-soft); }
   .card-stock   { --card-bg: var(--stock);   }
   .card-stock   .desc { color: var(--stock-soft); }
+  .card-compras { --card-bg: var(--compras); }
+  .card-compras .desc { color: var(--compras-soft); }
   .card.proximamente {
     opacity: 0.6;
     cursor: not-allowed;
@@ -407,6 +411,13 @@
         <div class="desc">Auditoría firmados · OneDrive</div>
       </a>
 
+      <a class="card card-compras" data-mod="compras" href="https://claudiaadornosrl-prog.github.io/compras-adorno/">
+        <i class="ti ti-shopping-cart icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">Compras</div>
+        <div class="desc">Facturas · gastos · listados</div>
+      </a>
+
     </div>
 
     <div class="footer">
@@ -425,6 +436,7 @@
     { id: 'tesoreria',  nombre: 'Tesorería' },
     { id: 'stock',      nombre: 'Stock' },
     { id: 'documentos', nombre: 'Documentos' },
+    { id: 'compras',    nombre: 'Compras' },
   ];
   function hubOcultos() {
     try { return JSON.parse(localStorage.getItem('hub_modulos_ocultos') || '[]'); }
