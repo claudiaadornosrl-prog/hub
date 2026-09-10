@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v21-iconos-v2';
+const CACHE_VERSION = 'hub-v22-sso';
 const ASSETS = [
   './',
   './index.html',
