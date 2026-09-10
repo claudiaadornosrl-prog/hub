@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v22-sso';
+const CACHE_VERSION = 'hub-v23-iconos-limpios';
 const ASSETS = [
   './',
   './index.html',
@@ -58,8 +58,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title || 'Claude Adorno';
   const options = {
     body:  payload.body  || '',
-    icon:  payload.icon  || './icon-192.png',
-    badge: payload.badge || './icon-192.png',
+    icon:  payload.icon  || './icon-192-v2.png',
+    badge: payload.badge || './icon-192-v2.png',
     tag:   payload.tag   || 'hub-default',
     data:  { url: payload.url || './' },
     requireInteraction: false,
