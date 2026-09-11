@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v25-tablero-lateral';
+const CACHE_VERSION = 'hub-v26-tesoreria';
 const ASSETS = [
   './',
   './index.html',

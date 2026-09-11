@@ -364,7 +364,7 @@ window.ADORNO_SSO = (function () {
   body.con-tablero .card .desc, body.con-tablero .card .arrow { display: none; }
   body.con-tablero .container { max-width: 1240px; }
   .tablero { display: none; }
-  body.con-tablero .tablero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  body.con-tablero .tablero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
   .tb-card { border: 0.5px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); min-width: 0; }
   .tb-card h3 { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted);
     display: flex; align-items: center; gap: 8px; }
@@ -938,12 +938,19 @@ const _tbMk = n => n == null ? '—' : (Math.abs(n) >= 1e6 ? '$' + (n / 1e6).toL
 const _tbLocal = l => ({ alcorta: 'Alcorta', unicenter: 'Unicenter', oficina: 'Oficina' }[l] || l);
 const _tbFecha = f => f ? f.split('-').reverse().slice(0, 2).join('/') : '';
 const _tbNombre = n => String(n || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-let _tbTimer = null;
+let _tbTimer = null, _tbDolar = null;   // cotización oficial (venta) para valuar los USD; si no se consigue, el total va solo en pesos
+async function _tbCotizacion() {
+  try {
+    const r = await fetch('https://dolarapi.com/v1/dolares/oficial', { cache: 'no-store' });
+    if (r.ok) { const j = await r.json(); if (j && j.venta > 0) _tbDolar = Number(j.venta); }
+  } catch (_) {}
+}
 
 async function cargarTablero() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { document.body.classList.remove('con-tablero'); return; }
+    if (_tbDolar == null) await _tbCotizacion();
     const { data, error } = await sb.rpc('hub_tablero');
     if (error || !data) { document.body.classList.remove('con-tablero'); return; }
     renderTablero(data);
@@ -980,25 +987,30 @@ function renderTablero(d) {
 
   // ── Tesorería ──
   const cuentas = t.cuentas || [];
-  const suma = (f, mon) => cuentas.filter(x => f(x) && x.moneda === mon).reduce((a, x) => a + Number(x.saldo || 0), 0);
-  const cajas = cuentas.filter(x => x.tipo === 'caja');
-  const cc = cuentas.find(x => x.tipo === 'banco_cc');
-  const caUsd = cuentas.find(x => x.tipo === 'banco_ca');
-  const invArs = suma(x => ['banco_fondo','banco_titulos','banco_pf','broker'].includes(x.tipo), 'ARS');
-  const invUsd = suma(x => ['banco_fondo','banco_titulos','banco_pf','broker'].includes(x.tipo), 'USD');
-  const mp = cuentas.filter(x => x.tipo === 'mp');
+  const cc = cuentas.find(x => x.tipo === 'banco_cc' && x.moneda === 'ARS');
+  const mpL = cuentas.find(x => x.tipo === 'mp' && /locales/i.test(x.nombre)) || cuentas.find(x => x.tipo === 'mp');
+  const totArs = cuentas.filter(x => x.moneda === 'ARS').reduce((a, x) => a + Number(x.saldo || 0), 0);
+  const totUsd = cuentas.filter(x => x.moneda === 'USD').reduce((a, x) => a + Number(x.saldo || 0), 0);
+  const totalGlobal = _tbDolar ? totArs + totUsd * _tbDolar : null;
+  // las 3 cuentas con más saldo (saltando Galicia CC $ y MP Locales, que ya están arriba, y las cajas que van aparte)
+  const otras = cuentas.filter(x => x !== cc && x !== mpL && x.tipo !== 'caja' && Number(x.saldo || 0) !== 0)
+    .map(x => ({ ...x, enPesos: x.moneda === 'USD' ? Number(x.saldo || 0) * (_tbDolar || 0) : Number(x.saldo || 0) }))
+    .sort((a, b) => b.enPesos - a.enPesos).slice(0, 3);
+  const cajas = cuentas.filter(x => x.tipo === 'caja' && x.local !== 'oficina' || (x.tipo === 'caja' && x.local === 'oficina' && Number(x.saldo || 0) !== 0));
   const pv = t.por_vencer || [], pvTotal = pv.reduce((a, p) => a + Number(p.importe || 0), 0);
   const venc = t.vencidos || { n: 0, total: 0 };
+  const fmtCuenta = x => x.moneda === 'USD' ? 'USD ' + Number(x.saldo || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 }) : _tbM(x.saldo);
   const tesoHtml = `
     <div class="tb-kpis">
       <div class="tb-kpi"><div class="lbl">Galicia CC $</div><div class="num ${cc && cc.saldo < 0 ? 'bad' : ''}">${_tbMk(cc?.saldo)}</div></div>
-      <div class="tb-kpi"><div class="lbl">Inversiones $ · USD</div><div class="num">${_tbMk(invArs)}<div style="font-size:12px;color:var(--muted);font-weight:500;">USD ${Number(invUsd + Number(caUsd?.saldo || 0)).toLocaleString('es-AR', { maximumFractionDigits: 0 })}</div></div></div>
-      <div class="tb-kpi"><div class="lbl">Vence hasta el ${_tbFecha(t.prox_habil)}</div><div class="num ${pv.length ? 'warn' : ''}">${_tbMk(pvTotal)}<div style="font-size:12px;color:var(--muted);font-weight:500;">${pv.length} pago${pv.length === 1 ? '' : 's'}${venc.n ? ` · <span style="color:#dc2626;">${venc.n} vencido${venc.n === 1 ? '' : 's'} (${_tbMk(venc.total)})</span>` : ''}</div></div></div>
+      <div class="tb-kpi"><div class="lbl">MP Locales</div><div class="num">${_tbMk(mpL?.saldo)}${mpL?.pendiente ? `<div style="font-size:12px;color:var(--muted);font-weight:500;">+ ${_tbMk(mpL.pendiente)} a liberar</div>` : ''}</div></div>
+      <div class="tb-kpi"><div class="lbl">Total todas las cuentas</div><div class="num">${totalGlobal != null ? _tbMk(totalGlobal) : _tbMk(totArs)}<div style="font-size:12px;color:var(--muted);font-weight:500;">${totalGlobal != null ? `$${(totArs/1e6).toLocaleString('es-AR',{maximumFractionDigits:1})} M + USD ${Math.round(totUsd).toLocaleString('es-AR')} a $${Math.round(_tbDolar).toLocaleString('es-AR')}` : `+ USD ${Math.round(totUsd).toLocaleString('es-AR')} (sin cotización)`}</div></div></div>
     </div>
-    ${mp.map(x => `<div class="tb-row"><span class="k">${_tbEsc(x.nombre)}</span><span class="v">${_tbM(x.saldo)}${x.pendiente ? `<span class="sub">+ ${_tbMk(x.pendiente)} a liberar</span>` : ''}</span></div>`).join('')}
-    ${cajas.map(x => `<div class="tb-row"><span class="k">${_tbEsc(x.nombre)}</span><span class="v ${x.saldo < 0 ? 'bad' : ''}">${_tbM(x.saldo)}</span></div>`).join('')}
-    ${pv.slice(0, 5).map(p => `<div class="tb-row"><span class="k" title="${_tbEsc(p.concepto)}">📅 ${_tbFecha(p.vto)} · ${_tbEsc(p.destinatario || p.concepto)}</span><span class="v">${_tbM(p.importe)}</span></div>`).join('')}
-    ${pv.length > 5 ? `<div class="tb-hint">… y ${pv.length - 5} más en Tesorería → Pendientes</div>` : ''}`;
+    ${otras.map(x => `<div class="tb-row"><span class="k">${_tbEsc(x.nombre)}</span><span class="v ${x.saldo < 0 ? 'bad' : ''}">${fmtCuenta(x)}</span></div>`).join('')}
+    ${cajas.map(x => `<div class="tb-row"><span class="k">💵 ${_tbEsc(x.nombre)}</span><span class="v ${x.saldo < 0 ? 'bad' : ''}">${_tbM(x.saldo)}</span></div>`).join('')}
+    <div class="tb-hint" style="margin-top:10px;">Pagos de hoy y mañana · ${pv.length} por ${_tbMk(pvTotal)}${venc.n ? ` · <span style="color:#dc2626;">${venc.n} vencido${venc.n === 1 ? '' : 's'} (${_tbMk(venc.total)})</span>` : ''}</div>
+    ${pv.map(p => `<div class="tb-row"><span class="k" title="${_tbEsc(p.concepto)}">📅 ${_tbFecha(p.vto)} · ${_tbEsc(p.destinatario || p.concepto)}</span><span class="v">${_tbM(p.importe)}</span></div>`).join('')}
+    ${!pv.length ? '<div class="tb-hint">Nada vence hoy ni mañana.</div>' : ''}`;
 
   // ── Compras ──
   const comprasHtml = `
