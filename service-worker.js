@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v23-iconos-limpios';
+const CACHE_VERSION = 'hub-v24-tablero';
 const ASSETS = [
   './',
   './index.html',

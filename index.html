@@ -346,6 +346,49 @@ window.ADORNO_SSO = (function () {
     background: #d97757; color: white; font-size: 14px; font-weight: 600;
     cursor: pointer; font-family: inherit;
   }
+  /* ── Tablero de control (solo admin) ── */
+  body.con-tablero .container { max-width: 1120px; padding: 36px 32px 32px; }
+  body.con-tablero .header { margin-bottom: 22px; }
+  body.con-tablero .wordmark svg { width: 34px; height: 34px; }
+  body.con-tablero .wm-claude { font-size: 34px; }
+  body.con-tablero .wm-adorno { font-size: 30px; }
+  body.con-tablero .subtitle { margin-top: 8px; }
+  /* los accesos pasan a una tira compacta abajo */
+  body.con-tablero .grid { grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 22px; }
+  body.con-tablero .card { padding: 14px 10px 12px; text-align: center; border-radius: 12px; }
+  body.con-tablero .card .icon { font-size: 26px; margin-bottom: 6px; }
+  body.con-tablero .card svg.icon-svg { width: 28px; height: 28px; }
+  body.con-tablero .card .title { font-size: 13px; margin: 0; }
+  body.con-tablero .card .desc, body.con-tablero .card .arrow { display: none; }
+  .tablero { display: none; }
+  body.con-tablero .tablero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .tb-card { border: 0.5px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); min-width: 0; }
+  .tb-card h3 { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted);
+    display: flex; align-items: center; gap: 8px; }
+  .tb-card h3 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .tb-card h3 a { margin-left: auto; font-size: 11px; color: var(--accent); text-decoration: none; text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .tb-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 0.5px dashed var(--border); font-size: 14px; }
+  .tb-row:last-child { border-bottom: none; }
+  .tb-row .k { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tb-row .v { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .tb-row .sub { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .tb-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .tb-kpi { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+  .tb-kpi .lbl { font-size: 11px; color: var(--muted); }
+  .tb-kpi .num { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
+  .tb-kpi .num.warn { color: #b45309; } .tb-kpi .num.bad { color: #dc2626; } .tb-kpi .num.ok { color: #16a34a; }
+  .tb-pill { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); margin: 2px 4px 2px 0; }
+  .tb-pill.warn { background: #fef3c7; color: #92400e; } .tb-pill.bad { background: #fee2e2; color: #991b1b; } .tb-pill.ok { background: #dcfce7; color: #166534; }
+  .tb-hint { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+  .tb-foot { grid-column: 1 / -1; font-size: 11px; color: var(--muted); text-align: right; }
+  .tb-foot a { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .tb-delta { font-size: 11px; font-weight: 500; margin-left: 6px; }
+  .tb-delta.up { color: #16a34a; } .tb-delta.down { color: #dc2626; }
+  @media (max-width: 860px) {
+    body.con-tablero .tablero { grid-template-columns: 1fr; }
+    body.con-tablero .grid { grid-template-columns: repeat(4, 1fr); }
+    body.con-tablero .container { padding: 24px 14px 20px; }
+  }
   @media (max-width: 540px) {
     .container { padding: 30px 16px 24px; border-radius: 14px; }
     .wordmark svg { width: 36px; height: 36px; }
@@ -423,6 +466,8 @@ window.ADORNO_SSO = (function () {
       </div>
       <div class="subtitle">Hub de aplicaciones · Claudia Adorno SRL</div>
     </div>
+
+    <section class="tablero" id="tablero" aria-label="Tablero de control"></section>
 
     <div class="grid">
 
@@ -652,6 +697,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     }
     ADORNO_SSO.confiar(confiar);
     await renderNotifPanel(data.session);
+    cargarTablero();   // si es admin, aparece el tablero sin recargar
   }
 
   async function notifLogout() {
@@ -666,6 +712,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     } catch (_) {}
     await sb.auth.signOut();
     document.getElementById('notif-btn').classList.remove('activo');
+    document.body.classList.remove('con-tablero');
     renderNotifLogin();
   }
 
@@ -866,6 +913,118 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
 // (24-ago) Blindaje iOS: si iOS solto la suscripcion del hub pero el permiso
 // sigue concedido, se re-crea sola y se re-cuelgan TODAS las apps que esta
 // usuaria tenia activadas desde la campanita (filas plataforma='hub').
+// ═══════════════════════════════════════════════════════════════
+//  TABLERO DE CONTROL (solo admin, 11-sep-2026 · pedido JP)
+//  Una sola RPC (hub_tablero) trae las fichas de Ventas / Tesorería /
+//  Compras / RRHH. Para cualquier otro usuario devuelve null y el Hub
+//  queda como siempre: solo los íconos.
+// ═══════════════════════════════════════════════════════════════
+const TB_URL = {
+  ventas: 'https://claudiaadornosrl-prog.github.io/ventas-adorno/',
+  tesoreria: 'https://claudiaadornosrl-prog.github.io/tesoreria-adorno/',
+  compras: 'https://claudiaadornosrl-prog.github.io/compras-adorno/',
+  rrhh: 'https://claudiaadornosrl-prog.github.io/rrhh-adorno/',
+};
+const _tbEsc = t => String(t ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const _tbM = (n, dec) => (n == null ? '—' : '$' + Number(n).toLocaleString('es-AR', { maximumFractionDigits: dec ?? 0, minimumFractionDigits: dec ?? 0 }));
+const _tbMk = n => n == null ? '—' : (Math.abs(n) >= 1e6 ? '$' + (n / 1e6).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' M' : _tbM(n));
+const _tbLocal = l => ({ alcorta: 'Alcorta', unicenter: 'Unicenter', oficina: 'Oficina' }[l] || l);
+const _tbFecha = f => f ? f.split('-').reverse().slice(0, 2).join('/') : '';
+const _tbNombre = n => String(n || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+let _tbTimer = null;
+
+async function cargarTablero() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { document.body.classList.remove('con-tablero'); return; }
+    const { data, error } = await sb.rpc('hub_tablero');
+    if (error || !data) { document.body.classList.remove('con-tablero'); return; }
+    renderTablero(data);
+    document.body.classList.add('con-tablero');
+    if (!_tbTimer) _tbTimer = setInterval(cargarTablero, 5 * 60 * 1000);   // refresca cada 5 min
+  } catch (e) { console.warn('[tablero]', e); }
+}
+
+function _tbDelta(actual, anterior) {
+  if (!anterior || actual == null) return '';
+  const d = (actual - anterior) / anterior * 100;
+  if (!isFinite(d)) return '';
+  return `<span class="tb-delta ${d >= 0 ? 'up' : 'down'}" title="vs. mismo tramo del mes anterior">${d >= 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(0)}%</span>`;
+}
+
+function renderTablero(d) {
+  const el = document.getElementById('tablero'); if (!el) return;
+  const v = d.ventas || {}, t = d.tesoreria || {}, c = d.compras || {}, r = d.rrhh || {};
+
+  // ── Ventas ──
+  const locales = (v.locales || []).filter(l => l.local !== 'oficina' || l.ayer || l.mes);
+  const ventasHtml = `
+    <div class="tb-kpis">
+      <div class="tb-kpi"><div class="lbl">Ayer · ${_tbFecha(d.ayer)}</div><div class="num">${_tbMk(v.total_ayer)}</div></div>
+      <div class="tb-kpi"><div class="lbl">Acumulado del mes</div><div class="num">${_tbMk(v.total_mes)}${_tbDelta(v.total_mes, v.total_mes_ant)}</div></div>
+      <div class="tb-kpi"><div class="lbl">Mes anterior, mismo tramo</div><div class="num" style="color:var(--muted);font-weight:500;">${_tbMk(v.total_mes_ant)}</div></div>
+    </div>
+    ${locales.map(l => `<div class="tb-row">
+      <span class="k">${_tbLocal(l.local)}
+        ${l.ayer != null && !l.ayer_cerrado ? '<span class="tb-pill warn" title="El día de ayer todavía no se cerró">sin cerrar</span>' : ''}
+        ${l.ayer_mp === 'error' ? '<span class="tb-pill bad">dif. MP</span>' : ''}</span>
+      <span class="v">${_tbM(l.ayer)}<span class="sub">ayer</span> · ${_tbMk(l.mes)}<span class="sub">mes (${l.mes_dias} d)</span>${_tbDelta(l.mes, l.mes_anterior_mismo_dia)}</span>
+    </div>`).join('')}`;
+
+  // ── Tesorería ──
+  const cuentas = t.cuentas || [];
+  const suma = (f, mon) => cuentas.filter(x => f(x) && x.moneda === mon).reduce((a, x) => a + Number(x.saldo || 0), 0);
+  const cajas = cuentas.filter(x => x.tipo === 'caja');
+  const cc = cuentas.find(x => x.tipo === 'banco_cc');
+  const caUsd = cuentas.find(x => x.tipo === 'banco_ca');
+  const invArs = suma(x => ['banco_fondo','banco_titulos','banco_pf','broker'].includes(x.tipo), 'ARS');
+  const invUsd = suma(x => ['banco_fondo','banco_titulos','banco_pf','broker'].includes(x.tipo), 'USD');
+  const mp = cuentas.filter(x => x.tipo === 'mp');
+  const pv = t.por_vencer || [], pvTotal = pv.reduce((a, p) => a + Number(p.importe || 0), 0);
+  const venc = t.vencidos || { n: 0, total: 0 };
+  const tesoHtml = `
+    <div class="tb-kpis">
+      <div class="tb-kpi"><div class="lbl">Galicia CC $</div><div class="num ${cc && cc.saldo < 0 ? 'bad' : ''}">${_tbMk(cc?.saldo)}</div></div>
+      <div class="tb-kpi"><div class="lbl">Inversiones $ · USD</div><div class="num">${_tbMk(invArs)}<div style="font-size:12px;color:var(--muted);font-weight:500;">USD ${Number(invUsd + Number(caUsd?.saldo || 0)).toLocaleString('es-AR', { maximumFractionDigits: 0 })}</div></div></div>
+      <div class="tb-kpi"><div class="lbl">Vence hasta el ${_tbFecha(t.prox_habil)}</div><div class="num ${pv.length ? 'warn' : ''}">${_tbMk(pvTotal)}<div style="font-size:12px;color:var(--muted);font-weight:500;">${pv.length} pago${pv.length === 1 ? '' : 's'}${venc.n ? ` · <span style="color:#dc2626;">${venc.n} vencido${venc.n === 1 ? '' : 's'} (${_tbMk(venc.total)})</span>` : ''}</div></div></div>
+    </div>
+    ${mp.map(x => `<div class="tb-row"><span class="k">${_tbEsc(x.nombre)}</span><span class="v">${_tbM(x.saldo)}${x.pendiente ? `<span class="sub">+ ${_tbMk(x.pendiente)} a liberar</span>` : ''}</span></div>`).join('')}
+    ${cajas.map(x => `<div class="tb-row"><span class="k">${_tbEsc(x.nombre)}</span><span class="v ${x.saldo < 0 ? 'bad' : ''}">${_tbM(x.saldo)}</span></div>`).join('')}
+    ${pv.slice(0, 5).map(p => `<div class="tb-row"><span class="k" title="${_tbEsc(p.concepto)}">📅 ${_tbFecha(p.vto)} · ${_tbEsc(p.destinatario || p.concepto)}</span><span class="v">${_tbM(p.importe)}</span></div>`).join('')}
+    ${pv.length > 5 ? `<div class="tb-hint">… y ${pv.length - 5} más en Tesorería → Pendientes</div>` : ''}`;
+
+  // ── Compras ──
+  const comprasHtml = `
+    <div class="tb-kpis">
+      <div class="tb-kpi"><div class="lbl">Bandeja (a controlar)</div><div class="num ${c.bandeja_n ? 'warn' : 'ok'}">${c.bandeja_n ?? 0}<div style="font-size:12px;color:var(--muted);font-weight:500;">${c.bandeja_n ? _tbMk(c.bandeja_total) : 'al día'}${c.bandeja_prueba_n ? ` · 🧪 ${c.bandeja_prueba_n} de prueba` : ''}</div></div></div>
+      <div class="tb-kpi"><div class="lbl">Remitos sin factura</div><div class="num ${c.remitos_sin_fc_viejos ? 'bad' : c.remitos_sin_fc ? 'warn' : 'ok'}">${c.remitos_sin_fc ?? 0}<div style="font-size:12px;color:var(--muted);font-weight:500;">${c.remitos_sin_fc_viejos ? c.remitos_sin_fc_viejos + ' con más de 30 días' : 'últimos 90 días'}</div></div></div>
+      <div class="tb-kpi"><div class="lbl">Facturas del mes</div><div class="num">${c.mes_facturas ?? 0}<div style="font-size:12px;color:var(--muted);font-weight:500;">${_tbMk(c.mes_total)}</div></div></div>
+    </div>
+    ${c.arca_no_vigentes ? `<div class="tb-row"><span class="k">⚠ Proveedores con CUIT no vigente en ARCA</span><span class="v bad">${c.arca_no_vigentes}</span></div>` : ''}`;
+
+  // ── RRHH ──
+  const tardes = r.tardes_ayer || [], vac = r.vacaciones_hoy || [], sinF = r.sin_fichar_ayer || [];
+  const pend = (r.avisos_no_leidos || 0) + (r.prestamos_propuestos || 0) + (r.extras_pedidos || 0);
+  const rrhhHtml = `
+    <div class="tb-kpis">
+      <div class="tb-kpi"><div class="lbl">Llegadas tarde ayer</div><div class="num ${tardes.length ? 'warn' : 'ok'}">${tardes.length}</div></div>
+      <div class="tb-kpi"><div class="lbl">De vacaciones hoy</div><div class="num">${vac.length}</div></div>
+      <div class="tb-kpi"><div class="lbl">Para resolver</div><div class="num ${pend ? 'warn' : 'ok'}">${pend}<div style="font-size:11px;color:var(--muted);font-weight:500;">${[r.prestamos_propuestos ? r.prestamos_propuestos + ' préstamo(s)' : '', r.extras_pedidos ? r.extras_pedidos + ' pago(s) de extras' : '', r.avisos_no_leidos ? r.avisos_no_leidos + ' aviso(s)' : '', r.sugerencias_pendientes ? r.sugerencias_pendientes + ' sugerencia(s) de fichada' : ''].filter(Boolean).join(' · ') || 'nada pendiente'}</div></div></div>
+    </div>
+    ${tardes.slice(0, 6).map(x => `<div class="tb-row"><span class="k">⏰ ${_tbNombre(x.nombre)} <span class="sub">${_tbLocal(x.local)} · turno ${x.turno.slice(0,5)}, entró ${x.entro.slice(0,5)}</span></span><span class="v warn" style="color:#b45309;">+${x.minutos} min</span></div>`).join('')}
+    ${sinF.length ? `<div class="tb-row"><span class="k">❔ Sin fichada ayer</span><span class="v" style="font-weight:400;font-size:12px;">${sinF.map(_tbNombre).join(', ')}</span></div>` : ''}
+    ${vac.length ? `<div class="tb-hint">🏖 ${vac.map(x => `${_tbNombre(x.nombre)} (${_tbLocal(x.local)}, hasta ${_tbFecha(x.hasta)})`).join(' · ')}</div>` : ''}`;
+
+  const card = (color, titulo, mod, html) => `<div class="tb-card"><h3><span class="dot" style="background:var(--${color});"></span>${titulo}<a href="${TB_URL[mod]}">abrir →</a></h3>${html}</div>`;
+  el.innerHTML =
+    card('ventas', 'Ventas', 'ventas', ventasHtml) +
+    card('banco', 'Tesorería', 'tesoreria', tesoHtml) +
+    card('compras', 'Compras', 'compras', comprasHtml) +
+    card('rrhh', 'RRHH', 'rrhh', rrhhHtml) +
+    `<div class="tb-foot">Actualizado ${new Date(d.generado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} · <a onclick="cargarTablero()">↻ actualizar</a></div>`;
+}
+cargarTablero();
+
 (async function _autoResubPush() {
   try {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
