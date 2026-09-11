@@ -353,13 +353,16 @@ window.ADORNO_SSO = (function () {
   body.con-tablero .wm-claude { font-size: 34px; }
   body.con-tablero .wm-adorno { font-size: 30px; }
   body.con-tablero .subtitle { margin-top: 8px; }
-  /* los accesos pasan a una tira compacta abajo */
-  body.con-tablero .grid { grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 22px; }
-  body.con-tablero .card { padding: 14px 10px 12px; text-align: center; border-radius: 12px; }
-  body.con-tablero .card .icon { font-size: 26px; margin-bottom: 6px; }
-  body.con-tablero .card svg.icon-svg { width: 28px; height: 28px; }
-  body.con-tablero .card .title { font-size: 13px; margin: 0; }
+  /* los accesos pasan a una columna de íconos a la derecha */
+  body.con-tablero .tb-layout { display: flex; gap: 16px; align-items: flex-start; }
+  body.con-tablero .tablero { flex: 1; min-width: 0; }
+  body.con-tablero .grid { display: flex; flex-direction: column; gap: 8px; width: 104px; flex-shrink: 0; margin: 0; }
+  body.con-tablero .card { padding: 12px 6px 10px; text-align: center; border-radius: 12px; }
+  body.con-tablero .card .icon { font-size: 24px; margin-bottom: 4px; }
+  body.con-tablero .card svg.icon-svg { width: 26px; height: 26px; }
+  body.con-tablero .card .title { font-size: 12px; margin: 0; }
   body.con-tablero .card .desc, body.con-tablero .card .arrow { display: none; }
+  body.con-tablero .container { max-width: 1240px; }
   .tablero { display: none; }
   body.con-tablero .tablero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
   .tb-card { border: 0.5px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); min-width: 0; }
@@ -386,7 +389,9 @@ window.ADORNO_SSO = (function () {
   .tb-delta.up { color: #16a34a; } .tb-delta.down { color: #dc2626; }
   @media (max-width: 860px) {
     body.con-tablero .tablero { grid-template-columns: 1fr; }
-    body.con-tablero .grid { grid-template-columns: repeat(4, 1fr); }
+    body.con-tablero .tb-layout { flex-direction: column-reverse; }
+    body.con-tablero .grid { flex-direction: row; flex-wrap: wrap; width: 100%; }
+    body.con-tablero .grid .card { flex: 1 1 20%; }
     body.con-tablero .container { padding: 24px 14px 20px; }
   }
   @media (max-width: 540px) {
@@ -467,6 +472,7 @@ window.ADORNO_SSO = (function () {
       <div class="subtitle">Hub de aplicaciones · Claudia Adorno SRL</div>
     </div>
 
+    <div class="tb-layout">
     <section class="tablero" id="tablero" aria-label="Tablero de control"></section>
 
     <div class="grid">
@@ -526,6 +532,7 @@ window.ADORNO_SSO = (function () {
       </a>
 
     </div>
+    </div><!-- /tb-layout -->
 
     <div class="footer">
       © Claudia Adorno SRL · <a href="mailto:juanpsimonelli@gmail.com">juanpsimonelli@gmail.com</a>
