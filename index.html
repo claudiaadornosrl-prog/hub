@@ -387,12 +387,20 @@ window.ADORNO_SSO = (function () {
   .tb-foot a { color: var(--accent); cursor: pointer; text-decoration: none; }
   .tb-delta { font-size: 11px; font-weight: 500; margin-left: 6px; }
   .tb-delta.up { color: #16a34a; } .tb-delta.down { color: #dc2626; }
+  /* Celular: el tablero no se muestra (el JS tampoco lo carga). Red de seguridad
+     por si la ventana se achica con el tablero ya dibujado: vuelve al Hub clásico. */
   @media (max-width: 860px) {
-    body.con-tablero .tablero { grid-template-columns: 1fr; }
-    body.con-tablero .tb-layout { flex-direction: column-reverse; }
-    body.con-tablero .grid { flex-direction: row; flex-wrap: wrap; width: 100%; }
-    body.con-tablero .grid .card { flex: 1 1 20%; }
-    body.con-tablero .container { padding: 24px 14px 20px; }
+    .tablero { display: none !important; }
+    body.con-tablero .tb-layout { display: block; }
+    body.con-tablero .container { max-width: 720px; padding: 30px 16px 24px; }
+    body.con-tablero .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: auto; }
+    body.con-tablero .card { padding: 18px 14px 16px; text-align: left; }
+    body.con-tablero .card .icon { font-size: 30px; margin-bottom: 8px; }
+    body.con-tablero .card svg.icon-svg { width: 32px; height: 32px; }
+    body.con-tablero .card .title { font-size: 15px; }
+    body.con-tablero .wordmark svg { width: 36px; height: 36px; }
+    body.con-tablero .wm-claude { font-size: 36px; }
+    body.con-tablero .wm-adorno { font-size: 32px; }
   }
   @media (max-width: 540px) {
     .container { padding: 30px 16px 24px; border-radius: 14px; }
@@ -946,8 +954,19 @@ async function _tbCotizacion() {
   } catch (_) {}
 }
 
+// (13-sep, JP) En celular el Hub queda como siempre: SOLO los accesos a los módulos.
+// El tablero es para la compu — en una pantalla chica no se lee y tapa los botones.
+const _tbChica = window.matchMedia('(max-width: 860px)');
+try { _tbChica.addEventListener('change', () => cargarTablero()); } catch (_) { _tbChica.addListener(() => cargarTablero()); }
+
 async function cargarTablero() {
   try {
+    if (_tbChica.matches) {            // celular / ventana angosta → sin tablero
+      document.body.classList.remove('con-tablero');
+      const el = document.getElementById('tablero'); if (el) el.innerHTML = '';
+      if (_tbTimer) { clearInterval(_tbTimer); _tbTimer = null; }
+      return;
+    }
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { document.body.classList.remove('con-tablero'); return; }
     if (_tbDolar == null) await _tbCotizacion();
