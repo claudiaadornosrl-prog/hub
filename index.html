@@ -98,6 +98,10 @@ window.ADORNO_SSO = (function () {
     --stock-soft: #bbdefb;
     --compras: #c2410c;
     --compras-soft: #fed7aa;
+    --gastos: #0f766e;
+    --gastos-soft: #99f6e4;
+    --impuestos: #7c2d12;
+    --impuestos-soft: #fdba74;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -237,6 +241,10 @@ window.ADORNO_SSO = (function () {
   .card-stock   .desc { color: var(--stock-soft); }
   .card-compras { --card-bg: var(--compras); }
   .card-compras .desc { color: var(--compras-soft); }
+  .card-gastos { --card-bg: var(--gastos); }
+  .card-gastos .desc { color: var(--gastos-soft); }
+  .card-impuestos { --card-bg: var(--impuestos); }
+  .card-impuestos .desc { color: var(--impuestos-soft); }
   .card.proximamente {
     opacity: 0.6;
     cursor: not-allowed;
@@ -539,6 +547,20 @@ window.ADORNO_SSO = (function () {
         <div class="desc">Facturas · gastos · listados</div>
       </a>
 
+      <a class="card card-gastos" data-mod="gastos" href="https://claudiaadornosrl-prog.github.io/gastos-adorno/">
+        <i class="ti ti-notebook icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">Gastos</div>
+        <div class="desc">Planilla por unidad · mes a mes</div>
+      </a>
+
+      <a class="card card-impuestos" data-mod="impuestos" href="https://claudiaadornosrl-prog.github.io/impuestos-adorno/">
+        <i class="ti ti-building-bank icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">Impuestos</div>
+        <div class="desc">IIBB · cargas · vencimientos</div>
+      </a>
+
     </div>
     </div><!-- /tb-layout -->
 
@@ -559,6 +581,8 @@ window.ADORNO_SSO = (function () {
     { id: 'stock',      nombre: 'Stock' },
     { id: 'documentos', nombre: 'Documentos' },
     { id: 'compras',    nombre: 'Compras' },
+    { id: 'gastos',     nombre: 'Gastos' },
+    { id: 'impuestos',  nombre: 'Impuestos' },
   ];
   function hubOcultos() {
     try { return JSON.parse(localStorage.getItem('hub_modulos_ocultos') || '[]'); }

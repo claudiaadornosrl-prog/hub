@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v27-solo-pc';
+const CACHE_VERSION = 'hub-v28-gastos-impuestos';
 const ASSETS = [
   './',
   './index.html',
