@@ -102,6 +102,8 @@ window.ADORNO_SSO = (function () {
     --gastos-soft: #99f6e4;
     --impuestos: #7c2d12;
     --impuestos-soft: #fdba74;
+    --productos: #0369a1;
+    --productos-soft: #bae6fd;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -245,6 +247,8 @@ window.ADORNO_SSO = (function () {
   .card-gastos .desc { color: var(--gastos-soft); }
   .card-impuestos { --card-bg: var(--impuestos); }
   .card-impuestos .desc { color: var(--impuestos-soft); }
+  .card-productos { --card-bg: var(--productos); }
+  .card-productos .desc { color: var(--productos-soft); }
   .card.proximamente {
     opacity: 0.6;
     cursor: not-allowed;
@@ -561,6 +565,13 @@ window.ADORNO_SSO = (function () {
         <div class="desc">IIBB · cargas · vencimientos</div>
       </a>
 
+      <a class="card card-productos" data-mod="productos" href="https://claudiaadornosrl-prog.github.io/productos-adorno/">
+        <i class="ti ti-tags icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">Productos</div>
+        <div class="desc">Ficha por artículo · juegos · proveedores</div>
+      </a>
+
     </div>
     </div><!-- /tb-layout -->
 
@@ -583,6 +594,7 @@ window.ADORNO_SSO = (function () {
     { id: 'compras',    nombre: 'Compras' },
     { id: 'gastos',     nombre: 'Gastos' },
     { id: 'impuestos',  nombre: 'Impuestos' },
+    { id: 'productos',  nombre: 'Productos' },
   ];
   function hubOcultos() {
     try { return JSON.parse(localStorage.getItem('hub_modulos_ocultos') || '[]'); }
