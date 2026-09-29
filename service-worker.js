@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v28-gastos-impuestos';
+const CACHE_VERSION = 'hub-v29-sesion-local';
 const ASSETS = [
   './',
   './index.html',
