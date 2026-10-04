@@ -600,14 +600,40 @@ window.ADORNO_SSO = (function () {
     try { return JSON.parse(localStorage.getItem('hub_modulos_ocultos') || '[]'); }
     catch { return []; }
   }
+  // ── Módulos según el PERFIL del usuario (3-oct-2026, JP) ───────────
+  //  La base dice qué módulos puede usar quien está logueado (hub_modulos():
+  //  reutiliza los permisos de cada módulo). Sin sesión se ven todos: cada
+  //  módulo pide usuario al entrar. Se recuerda por usuario para que no
+  //  parpadee al abrir.
+  let HUB_PERMITIDOS = null;   // null = sin sesión / sin dato → todos
+  function _hubPermCache(email, lista) {
+    try {
+      if (lista) localStorage.setItem('hub_modulos_perfil', JSON.stringify({ email, lista }));
+      else { const c = JSON.parse(localStorage.getItem('hub_modulos_perfil') || 'null'); return c && c.email === email ? c.lista : null; }
+    } catch (_) { return null; }
+  }
+  async function cargarPerfilModulos() {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { HUB_PERMITIDOS = null; aplicarVisibilidad(); return; }
+      const email = (session.user.email || '').toLowerCase();
+      const cache = _hubPermCache(email);
+      if (cache) { HUB_PERMITIDOS = cache; aplicarVisibilidad(); }
+      const { data, error } = await sb.rpc('hub_modulos');
+      if (error || !data || !Array.isArray(data.modulos)) return;
+      HUB_PERMITIDOS = data.modulos; _hubPermCache(email, data.modulos);
+      aplicarVisibilidad();
+    } catch (_) {}
+  }
+  const _hubPermitido = id => !HUB_PERMITIDOS || HUB_PERMITIDOS.includes(id);
   function aplicarVisibilidad() {
     const ocultos = hubOcultos();
     document.querySelectorAll('.card[data-mod]').forEach(c =>
-      c.classList.toggle('oculto', ocultos.includes(c.dataset.mod)));
+      c.classList.toggle('oculto', ocultos.includes(c.dataset.mod) || !_hubPermitido(c.dataset.mod)));
   }
   function abrirConfig() {
     const ocultos = hubOcultos();
-    document.getElementById('config-rows').innerHTML = HUB_MODULOS.map(m => `
+    document.getElementById('config-rows').innerHTML = HUB_MODULOS.filter(m => _hubPermitido(m.id)).map(m => `
       <label class="config-row">
         <input type="checkbox" data-mod="${m.id}" ${ocultos.includes(m.id) ? '' : 'checked'}
                onchange="toggleModulo('${m.id}', this.checked)">
@@ -750,6 +776,8 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     } catch (_) {}
   }
   document.addEventListener('DOMContentLoaded', _pintarBotonSesion);
+  document.addEventListener('DOMContentLoaded', cargarPerfilModulos);
+  sb.auth.onAuthStateChange(function (ev) { if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') cargarPerfilModulos(); });
 
   async function notifLogin() {
     const email = document.getElementById('nf-email').value.trim();

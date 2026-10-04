@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v30-productos';
+const CACHE_VERSION = 'hub-v31-modulos-por-perfil';
 const ASSETS = [
   './',
   './index.html',
