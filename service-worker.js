@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v32-clientes';
+const CACHE_VERSION = 'hub-v33-salud-vps';
 const ASSETS = [
   './',
   './index.html',
