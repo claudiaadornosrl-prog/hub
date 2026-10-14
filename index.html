@@ -507,7 +507,7 @@ window.ADORNO_SSO = (function () {
       <a class="card card-rrhh" data-mod="rrhh" href="https://claudiaadornosrl-prog.github.io/rrhh-adorno/">
         <i class="ti ti-users icon" aria-hidden="true"></i>
         <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-        <div class="title">RRHH</div>
+        <div class="title">Colaboradores</div>
         <div class="desc">Empleadas · Sueldos · Asistencias</div>
       </a>
 
@@ -586,7 +586,7 @@ window.ADORNO_SSO = (function () {
   // ── Módulos visibles por dispositivo (localStorage) ─────────────
   const HUB_MODULOS = [
     { id: 'crm',        nombre: 'Clientes' },
-    { id: 'rrhh',       nombre: 'RRHH' },
+    { id: 'rrhh',       nombre: 'Colaboradores' },
     { id: 'ventas',     nombre: 'Ventas' },
     { id: 'tesoreria',  nombre: 'Tesorería' },
     { id: 'stock',      nombre: 'Stock' },
@@ -710,7 +710,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
 })('hub');
 
   const NOTIF_APPS = [
-    { app: 'rrhh',      nombre: 'RRHH',      icono: '👥' },
+    { app: 'rrhh',      nombre: 'Colaboradores', icono: '👥' },
     { app: 'ventas',    nombre: 'Ventas',    icono: '📊' },
     { app: 'stock',     nombre: 'Stock',     icono: '📦' },
     { app: 'tesoreria', nombre: 'Tesorería', icono: '💰' },
@@ -1138,7 +1138,7 @@ function renderTablero(d) {
     card('ventas', 'Ventas', 'ventas', ventasHtml) +
     card('banco', 'Tesorería', 'tesoreria', tesoHtml) +
     card('compras', 'Compras', 'compras', comprasHtml) +
-    card('rrhh', 'RRHH', 'rrhh', rrhhHtml) +
+    card('rrhh', 'Colaboradores', 'rrhh', rrhhHtml) +
     `<div id="tb-vps"></div>` +
     `<div class="tb-foot">Actualizado ${new Date(d.generado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} · <a onclick="cargarTablero()">↻ actualizar</a></div>`;
   cargarSaludVps();
