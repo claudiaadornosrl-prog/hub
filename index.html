@@ -605,7 +605,10 @@ window.ADORNO_SSO = (function () {
   //  reutiliza los permisos de cada módulo). Sin sesión se ven todos: cada
   //  módulo pide usuario al entrar. Se recuerda por usuario para que no
   //  parpadee al abrir.
-  let HUB_PERMITIDOS = null;   // null = sin sesión / sin dato → todos
+  // (14-oct-2026, JP) Sin sesión NO se muestra todo: solo los módulos de uso general. Los de Oficina
+  // (Compras, Gastos, Impuestos) aparecen recién cuando la base confirma que ese usuario los tiene.
+  const HUB_SIN_SESION = ['crm', 'rrhh', 'ventas', 'tesoreria', 'stock', 'documentos', 'productos'];
+  let HUB_PERMITIDOS = HUB_SIN_SESION;
   function _hubPermCache(email, lista) {
     try {
       if (lista) localStorage.setItem('hub_modulos_perfil', JSON.stringify({ email, lista }));
@@ -615,12 +618,16 @@ window.ADORNO_SSO = (function () {
   async function cargarPerfilModulos() {
     try {
       const { data: { session } } = await sb.auth.getSession();
-      if (!session) { HUB_PERMITIDOS = null; aplicarVisibilidad(); return; }
+      if (!session) { HUB_PERMITIDOS = HUB_SIN_SESION; aplicarVisibilidad(); return; }
       const email = (session.user.email || '').toLowerCase();
       const cache = _hubPermCache(email);
-      if (cache) { HUB_PERMITIDOS = cache; aplicarVisibilidad(); }
-      const { data, error } = await sb.rpc('hub_modulos');
-      if (error || !data || !Array.isArray(data.modulos)) return;
+      HUB_PERMITIDOS = cache || HUB_SIN_SESION; aplicarVisibilidad();
+      let { data, error } = await sb.rpc('hub_modulos');
+      if (error || !data || !Array.isArray(data.modulos)) {   // un reintento si la red falló
+        await new Promise(r => setTimeout(r, 1500));
+        ({ data, error } = await sb.rpc('hub_modulos'));
+        if (error || !data || !Array.isArray(data.modulos)) return;
+      }
       HUB_PERMITIDOS = data.modulos; _hubPermCache(email, data.modulos);
       aplicarVisibilidad();
     } catch (_) {}
@@ -648,9 +655,7 @@ window.ADORNO_SSO = (function () {
     aplicarVisibilidad();
   }
   function cerrarConfig() { document.getElementById('config-overlay').classList.remove('open'); }
-  document.getElementById('config-overlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('config-overlay')) cerrarConfig();
-  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarConfig(); });
   aplicarVisibilidad();
 
   if ('serviceWorker' in navigator) {
