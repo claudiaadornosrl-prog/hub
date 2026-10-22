@@ -380,6 +380,9 @@ window.ADORNO_SSO = (function () {
   .tablero { display: none; }
   body.con-tablero .tablero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
   .tb-card { border: 0.5px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); min-width: 0; }
+  .tb-skel { min-height: 118px; } .tb-skel .sk { background: linear-gradient(90deg, var(--border), var(--surface), var(--border)); background-size: 200% 100%; animation: sk-pulse 1.2s linear infinite; border-radius: 6px; }
+  .tb-skel .sk-t { width: 40%; height: 11px; margin-bottom: 14px; } .tb-skel .sk-n { width: 55%; height: 24px; margin-bottom: 12px; } .tb-skel .sk-l { width: 80%; height: 10px; }
+  @keyframes sk-pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   .tb-card h3 { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted);
     display: flex; align-items: center; gap: 8px; }
   .tb-card h3 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
@@ -1054,6 +1057,14 @@ async function _tbCotizacion() {
 const _tbChica = window.matchMedia('(max-width: 860px)');
 try { _tbChica.addEventListener('change', () => cargarTablero()); } catch (_) { _tbChica.addListener(() => cargarTablero()); }
 
+function _tbEsqueleto() {
+  if (_tbChica.matches) return;
+  document.body.classList.add('con-tablero');
+  const el = document.getElementById('tablero');
+  if (el && !el.innerHTML.trim()) el.innerHTML = Array.from({ length: 6 }, () => '<div class="tb-card tb-skel"><div class="sk sk-t"></div><div class="sk sk-n"></div><div class="sk sk-l"></div></div>').join('');
+}
+// Si este equipo ya mostró el tablero antes (admin en escritorio), lo arma desde el primer dibujo
+try { if (localStorage.getItem('hub_con_tablero') === '1' && !_tbChica.matches) document.addEventListener('DOMContentLoaded', _tbEsqueleto); } catch (_) {}
 async function cargarTablero() {
   try {
     if (_tbChica.matches) {            // celular / ventana angosta → sin tablero
@@ -1063,12 +1074,15 @@ async function cargarTablero() {
       return;
     }
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { document.body.classList.remove('con-tablero'); return; }
+    if (!session) { document.body.classList.remove('con-tablero'); try { localStorage.removeItem('hub_con_tablero'); } catch (_) {} return; }
+    // (22-oct, JP) la vista de escritorio se arma de entrada, con un esqueleto, para que no "pegue el salto" cuando llega la data
+    _tbEsqueleto();
     if (_tbDolar == null) await _tbCotizacion();
     const { data, error } = await sb.rpc('hub_tablero');
     if (error || !data) { document.body.classList.remove('con-tablero'); return; }
     renderTablero(data);
     document.body.classList.add('con-tablero');
+    try { localStorage.setItem('hub_con_tablero', '1'); } catch (_) {}
     if (!_tbTimer) _tbTimer = setInterval(cargarTablero, 5 * 60 * 1000);   // refresca cada 5 min
   } catch (e) { console.warn('[tablero]', e); }
 }

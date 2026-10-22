@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v37-marketing';
+const CACHE_VERSION = 'hub-v38-tablero-sin-salto';
 const ASSETS = [
   './',
   './index.html',
