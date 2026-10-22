@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v39-mosaico';
+const CACHE_VERSION = 'hub-v40-vapid-nueva';
 const ASSETS = [
   './',
   './index.html',
