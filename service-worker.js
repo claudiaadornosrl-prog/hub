@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v40-vapid-nueva';
+const CACHE_VERSION = 'hub-v41-sesion-vieja';
 const ASSETS = [
   './',
   './index.html',
