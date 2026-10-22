@@ -329,6 +329,9 @@ window.ADORNO_SSO = (function () {
     font-size: 13px; cursor: pointer; line-height: 1.35; }
   .notif-confiar input { margin: 2px 0 0; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
   .notif-confiar span { display: block; font-size: 11px; color: var(--muted); }
+  /* (22-oct, JP: 'el texto nos quedó corrido') .notif-login input{width:100%} pisaba al tilde y empujaba el texto fuera del panel */
+  .notif-login .notif-confiar input { width: 16px; flex: 0 0 16px; margin: 2px 0 0; }
+  .notif-confiar > span { flex: 1 1 auto; min-width: 0; }
   .notif-row .estado { font-size: 11px; color: var(--muted); }
   .notif-switch { width: 40px; height: 24px; border-radius: 999px; border: none; cursor: pointer;
     background: #d1d5db; position: relative; transition: background 0.15s; flex-shrink: 0; }
