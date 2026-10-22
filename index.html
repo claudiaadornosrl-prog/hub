@@ -379,6 +379,9 @@ window.ADORNO_SSO = (function () {
   body.con-tablero .container { max-width: 1240px; }
   .tablero { display: none; }
   body.con-tablero .tablero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
+  body.con-tablero .tablero.cols { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  .tablero.cols .tb-col { flex: 1 1 calc(50% - 7px); min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .tablero.cols .tb-foot { width: 100%; }
   .tb-card { border: 0.5px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); min-width: 0; }
   .tb-skel { min-height: 118px; } .tb-skel .sk { background: linear-gradient(90deg, var(--border), var(--surface), var(--border)); background-size: 200% 100%; animation: sk-pulse 1.2s linear infinite; border-radius: 6px; }
   .tb-skel .sk-t { width: 40%; height: 11px; margin-bottom: 14px; } .tb-skel .sk-n { width: 55%; height: 24px; margin-bottom: 12px; } .tb-skel .sk-l { width: 80%; height: 10px; }
@@ -1170,7 +1173,16 @@ function renderTablero(d) {
     card('rrhh', 'Colaboradores', 'rrhh', rrhhHtml) +
     `<div id="tb-vps"></div>` +
     `<div class="tb-foot">Actualizado ${new Date(d.generado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} · <a onclick="cargarTablero()">↻ actualizar</a></div>`;
+  _tbMosaico(el);
   cargarSaludVps();
+}
+// (22-oct, JP) las tarjetas se encastran en dos columnas reales (cada una va a la columna más corta): la grilla dejaba huecos
+function _tbMosaico(el) {
+  const cards = [...el.querySelectorAll(':scope > .tb-card, :scope > #tb-vps')];
+  if (cards.length < 2) return;
+  const a = document.createElement('div'), b = document.createElement('div'); a.className = b.className = 'tb-col';
+  el.insertBefore(a, cards[0]); el.insertBefore(b, cards[0]); el.classList.add('cols');
+  for (const c of cards) (a.offsetHeight <= b.offsetHeight ? a : b).appendChild(c);
 }
 
 // ── (hub v33, 13-oct-2026) Salud del VPS: el reporte del health check, solo para JP ──

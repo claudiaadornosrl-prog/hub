@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v38-tablero-sin-salto';
+const CACHE_VERSION = 'hub-v39-mosaico';
 const ASSETS = [
   './',
   './index.html',
