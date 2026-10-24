@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v43-sesion-iss';
+const CACHE_VERSION = 'hub-v44-publishable';
 const ASSETS = [
   './',
   './index.html',
