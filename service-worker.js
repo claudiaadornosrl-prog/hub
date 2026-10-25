@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v44-publishable';
+const CACHE_VERSION = 'hub-v45-fichas-color';
 const ASSETS = [
   './',
   './index.html',

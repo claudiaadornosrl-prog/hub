@@ -398,12 +398,17 @@ window.ADORNO_SSO = (function () {
   @keyframes sk-pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   .tb-card h3 { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted);
     display: flex; align-items: center; gap: 8px; }
+  /* (25-oct-2026, JP eligió la opción C) cada ficha lleva borde izquierdo y título en el color del módulo (--c) */
+  .tb-card[style*='--c'] { border-left: 5px solid var(--c); }
+  .tb-card[style*='--c'] h3 { color: var(--c); }
+  .tb-card[style*='--c'] h3 .dot { display: none; }
   .tb-card h3 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .tb-card h3 a { margin-left: auto; font-size: 11px; color: var(--accent); text-decoration: none; text-transform: none; letter-spacing: 0; font-weight: 500; }
   .tb-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 0.5px dashed var(--border); font-size: 14px; }
   .tb-row:last-child { border-bottom: none; }
   .tb-row .k { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tb-row .v { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .tb-row .v.lista { white-space: normal; text-align: right; min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
   .tb-row .sub { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 6px; }
   .tb-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
   .tb-kpi { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
@@ -1186,10 +1191,10 @@ function renderTablero(d) {
       <div class="tb-kpi"><div class="lbl">Para resolver</div><div class="num ${pend ? 'warn' : 'ok'}">${pend}<div style="font-size:11px;color:var(--muted);font-weight:500;">${[r.prestamos_propuestos ? r.prestamos_propuestos + ' préstamo(s)' : '', r.extras_pedidos ? r.extras_pedidos + ' pago(s) de extras' : '', r.avisos_no_leidos ? r.avisos_no_leidos + ' aviso(s)' : '', r.sugerencias_pendientes ? r.sugerencias_pendientes + ' sugerencia(s) de fichada' : ''].filter(Boolean).join(' · ') || 'nada pendiente'}</div></div></div>
     </div>
     ${tardes.slice(0, 6).map(x => `<div class="tb-row"><span class="k">⏰ ${_tbNombre(x.nombre)} <span class="sub">${_tbLocal(x.local)} · turno ${x.turno.slice(0,5)}, entró ${x.entro.slice(0,5)}</span></span><span class="v warn" style="color:#b45309;">+${x.minutos} min</span></div>`).join('')}
-    ${sinF.length ? `<div class="tb-row"><span class="k">❔ Sin fichada ayer</span><span class="v" style="font-weight:400;font-size:12px;">${sinF.map(_tbNombre).join(', ')}</span></div>` : ''}
+    ${sinF.length ? `<div class="tb-row"><span class="k">❔ Sin fichada ayer</span><span class="v lista" style="font-weight:400;font-size:12px;">${sinF.map(_tbNombre).join(', ')}</span></div>` : ''}
     ${vac.length ? `<div class="tb-hint">🏖 ${vac.map(x => `${_tbNombre(x.nombre)} (${_tbLocal(x.local)}, hasta ${_tbFecha(x.hasta)})`).join(' · ')}</div>` : ''}`;
 
-  const card = (color, titulo, mod, html) => `<div class="tb-card"><h3><span class="dot" style="background:var(--${color});"></span>${titulo}<a href="${TB_URL[mod]}">abrir →</a></h3>${html}</div>`;
+  const card = (color, titulo, mod, html) => `<div class="tb-card" style="--c:var(--${color});"><h3><span class="dot" style="background:var(--${color});"></span>${titulo}<a href="${TB_URL[mod]}">abrir →</a></h3>${html}</div>`;
   el.innerHTML =
     card('ventas', 'Ventas', 'ventas', ventasHtml) +
     card('banco', 'Tesorería', 'tesoreria', tesoHtml) +
@@ -1223,7 +1228,7 @@ async function cargarSaludVps() {
     window._vpsReps = reps;
     const f = t => new Date(t).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
     const resumen = u ? _tbEsc((u.resumen || u.detalle || '').trim()).split('\n').slice(0, 6).join('\n') : '';
-    el.outerHTML = `<div class="tb-card" id="tb-vps" style="grid-column:1 / -1;">
+    el.outerHTML = `<div class="tb-card" id="tb-vps" style="grid-column:1 / -1;--c:${!u ? '#cbd5e1' : u.ok ? '#16a34a' : '#dc2626'};">
       <h3><span class="dot" style="background:${!u ? '#cbd5e1' : u.ok ? '#16a34a' : '#dc2626'};"></span>Servidor (VPS) · health check
         <span style="margin-left:8px;font-weight:500;text-transform:none;letter-spacing:0;">${u ? `${f(u.at)} · ${u.ok ? '<span style="color:#16a34a">sin problemas</span>' : `<span style="color:#dc2626">${u.problemas || ''} problema(s)</span>`}` : 'todavía no llegó ningún reporte'}</span>
         ${u ? `<a onclick="verSaludVps(${u.id})" style="cursor:pointer;">ver completo →</a>` : ''}</h3>
