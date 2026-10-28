@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voces para Clodi</title>
+<style>
+  :root { --bg:#f6f3ee; --card:#fff; --text:#1f1d1a; --muted:#6b6660; --borde:#e2ddd5; --acento:#d97757; --ok:#166534; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, "Segoe UI", sans-serif; font-size:15px; }
+  main { max-width:820px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 18px; line-height:1.45; }
+  .panel { background:var(--card); border:1px solid var(--borde); border-radius:14px; padding:14px 16px; margin-bottom:16px; }
+  textarea { width:100%; min-height:62px; font:inherit; font-size:16px; padding:8px 10px; border:1px solid var(--borde); border-radius:10px; resize:vertical; }
+  .ctrl { display:flex; flex-wrap:wrap; gap:16px; margin-top:10px; align-items:center; color:var(--muted); font-size:13.5px; }
+  .ctrl input[type=range] { width:140px; vertical-align:middle; }
+  h2 { font-size:15px; margin:22px 0 8px; color:var(--acento); }
+  .fila { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--borde); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .fila.sonando { border-color:var(--acento); box-shadow:0 0 0 2px rgba(217,119,87,.18); }
+  .info { flex:1; min-width:0; }
+  .nombre { font-weight:600; }
+  .det { color:var(--muted); font-size:13px; margin-top:2px; }
+  .tag { display:inline-block; font-size:11.5px; padding:1px 7px; border-radius:20px; background:#f1ece4; color:var(--muted); margin-left:6px; vertical-align:1px; }
+  .tag.nat { background:#e8f3ec; color:var(--ok); }
+  .tag.clodi { background:var(--acento); color:#fff; }
+  button { font:inherit; font-weight:600; border:0; border-radius:10px; padding:8px 14px; background:var(--acento); color:#fff; cursor:pointer; white-space:nowrap; }
+  button.sec { background:transparent; color:var(--muted); border:1px solid var(--borde); font-weight:500; }
+  .vacio { color:var(--muted); background:var(--card); border:1px dashed var(--borde); border-radius:12px; padding:14px; }
+  code { background:#f1ece4; padding:1px 5px; border-radius:5px; font-size:13px; }
+  @media (max-width:560px) { .fila { flex-wrap:wrap; } .fila button { width:100%; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Voces para Clodi</h1>
+  <p class="sub">Estas son las voces en castellano que tiene <b id="nav">este navegador</b> en <b id="equipo">este equipo</b>. Tocá <b>Escuchar</b> en cada una y
+    decime el nombre de la que más se parezca a Claudia. La marcada como <span class="tag clodi">Clodi hoy</span> es la que usaría Clodi acá si no elegís nada.</p>
+
+  <div class="panel">
+    <label for="frase" style="font-weight:600;">Frase de prueba</label>
+    <textarea id="frase">Hola, soy Clodi. Te dejé preparado el pedido de vacaciones del 10 al 17 de diciembre. Revisalo y, si está bien, tocá Enviar.</textarea>
+    <div class="ctrl">
+      <label>Velocidad <input type="range" id="vel" min="0.7" max="1.6" step="0.05" value="1.1"> <span id="velv">1.10</span></label>
+      <label>Tono <input type="range" id="tono" min="0.7" max="1.3" step="0.05" value="1"> <span id="tonov">1.00</span></label>
+      <button class="sec" id="parar">Parar</button>
+      <button class="sec" id="recargar">Recargar lista</button>
+    </div>
+  </div>
+
+  <div id="lista"><div class="vacio">Cargando voces…</div></div>
+  <p class="sub" style="margin-top:18px;">Cada sistema trae sus propias voces: las PC con Windows (Helena, Laura, Sabina…; en Edge además las
+    "naturales"), los iPhone las de Apple y los Android las de Google. Si no aparece ninguna voz, tocá <b>Recargar lista</b>.
+    En el iPhone, si no suena nada, revisá que el botón de silencio del costado no esté activado.</p>
+</main>
+<script>
+  const PAISES = { AR:'Argentina', UY:'Uruguay', MX:'México', US:'Estados Unidos', ES:'España', CO:'Colombia', CL:'Chile', PE:'Perú', VE:'Venezuela',
+    BO:'Bolivia', EC:'Ecuador', PY:'Paraguay', CR:'Costa Rica', DO:'República Dominicana', GT:'Guatemala', HN:'Honduras', NI:'Nicaragua',
+    PA:'Panamá', PR:'Puerto Rico', SV:'El Salvador', CU:'Cuba', GQ:'Guinea Ecuatorial', '419':'Latinoamérica' };
+  const GRUPOS = [['Rioplatenses (Argentina y Uruguay)', ['AR', 'UY']], ['Resto de Latinoamérica', null], ['España', ['ES']]];
+  // Misma elección por defecto que Clodi (_shared/adorno-asistente.js)
+  const PREFERIDAS = ['helena', 'laura', 'elvira', 'mónica', 'monica', 'google español', 'elena', 'dalia', 'paloma', 'sabina', 'paulina', 'google español de estados unidos'];
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const pais = (lang) => { const p = (lang.split(/[-_]/)[1] || '').toUpperCase(); return p; };
+  function deClodi(vs) {
+    const pts = (v) => { const n = v.name.toLowerCase(); const i = PREFERIDAS.findIndex((p) => new RegExp('(^|[^a-záéíóúñ])' + p + '($|[^a-záéíóúñ])').test(n)); return (i < 0 ? 0 : 100 - i * 5) + (v.lang === 'es-AR' ? 30 : 0) + (v.localService ? 0 : 2); };
+    return vs.slice().sort((a, b) => pts(b) - pts(a))[0];
+  }
+  function hablar(v, fila) {
+    speechSynthesis.cancel();
+    document.querySelectorAll('.fila').forEach((f) => f.classList.remove('sonando'));
+    const u = new SpeechSynthesisUtterance(document.getElementById('frase').value);
+    u.voice = v; u.lang = v.lang; u.rate = +document.getElementById('vel').value; u.pitch = +document.getElementById('tono').value;
+    u.onstart = () => fila.classList.add('sonando'); u.onend = u.onerror = () => fila.classList.remove('sonando');
+    speechSynthesis.speak(u);
+  }
+  function pintar() {
+    const vs = speechSynthesis.getVoices().filter((v) => /^es/i.test(v.lang));
+    const cont = document.getElementById('lista');
+    if (!vs.length) { cont.innerHTML = '<div class="vacio">Este navegador no tiene voces en castellano (o todavía no las cargó: esperá unos segundos y recargá).</div>'; return; }
+    const elegida = deClodi(vs);
+    let html = '';
+    for (const [titulo, codigos] of GRUPOS) {
+      const grupo = vs.filter((v) => { const p = pais(v.lang); const enOtros = GRUPOS.some(([, c]) => c && c.includes(p)); return codigos ? codigos.includes(p) : !enOtros; })
+        .sort((a, b) => (a.localService - b.localService) || a.name.localeCompare(b.name));
+      if (!grupo.length) continue;
+      html += `<h2>${titulo}</h2>`;
+      for (const v of grupo) {
+        const nat = /natural|online|neural|google/i.test(v.name) || !v.localService;
+        const corto = v.name.replace(/^(Microsoft|Google)\s+/, '').replace(/\s+Online \(Natural\)/, '').replace(/\s+-\s+Spanish.*$/, '');
+        html += `<div class="fila" data-n="${esc(v.name)}"><div class="info"><div class="nombre">${esc(corto)}`
+          + (nat ? '<span class="tag nat">natural</span>' : '') + (v === elegida ? '<span class="tag clodi">Clodi hoy</span>' : '')
+          + `</div><div class="det">${esc(PAISES[pais(v.lang)] || v.lang)} · <code>${esc(v.name)}</code></div></div><button>Escuchar</button></div>`;
+      }
+    }
+    cont.innerHTML = html;
+    cont.querySelectorAll('.fila').forEach((f) => { const v = vs.find((x) => x.name === f.dataset.n); f.querySelector('button').onclick = () => hablar(v, f); });
+  }
+  const nav = navigator.userAgent.includes('Edg') ? 'Microsoft Edge' : /CriOS|Chrome\//.test(navigator.userAgent) ? 'Chrome' : navigator.userAgent.includes('Firefox') ? 'Firefox' : /Safari/.test(navigator.userAgent) ? 'Safari' : 'este navegador';
+  document.getElementById('nav').textContent = nav;
+  const ua = navigator.userAgent;
+  document.getElementById('equipo').textContent = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document) ? 'este iPhone' : /Android/.test(ua) ? 'este Android' : /Windows/.test(ua) ? 'esta PC con Windows' : 'este equipo';
+  document.getElementById('recargar').onclick = () => pintar();
+  for (const id of ['vel', 'tono']) document.getElementById(id).oninput = (e) => { document.getElementById(id + 'v').textContent = (+e.target.value).toFixed(2); };
+  document.getElementById('parar').onclick = () => speechSynthesis.cancel();
+  if ('speechSynthesis' in window) { pintar(); speechSynthesis.onvoiceschanged = pintar; setTimeout(pintar, 800); }
+  else document.getElementById('lista').innerHTML = '<div class="vacio">Este navegador no puede leer en voz alta.</div>';
+</script>
+</body>
+</html>
