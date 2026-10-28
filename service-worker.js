@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v47-clodi';
+const CACHE_VERSION = 'hub-v48-clodi3d';
 const ASSETS = [
   './',
   './index.html',
