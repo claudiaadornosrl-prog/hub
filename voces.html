@@ -62,7 +62,12 @@
   const PREFERIDAS = ['helena', 'laura', 'elvira', 'mónica', 'monica', 'google español', 'elena', 'dalia', 'paloma', 'sabina', 'paulina', 'google español de estados unidos'];
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const pais = (lang) => { const p = (lang.split(/[-_]/)[1] || '').toUpperCase(); return p; };
-  function deClodi(vs) {
+  const AJUSTES = { pc: { velocidad: 1.1, tono: 1.0 }, ios: { velocidad: 1.1, tono: 0.7 }, android: { velocidad: 1.1, tono: 1.1 } };
+  function plataforma() { const ua = navigator.userAgent || ''; if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document)) return 'ios'; return /Android/.test(ua) ? 'android' : 'pc'; }
+  function deClodi(vs) {   // misma elección que Clodi (_shared/adorno-asistente.js)
+    const pl = plataforma();
+    if (pl === 'ios') { const v = vs.find((x) => /paulina/i.test(x.name)) || vs.find((x) => /m[oó]nica/i.test(x.name)); if (v) return v; }
+    if (pl === 'android') { const us = vs.filter((x) => /^es[-_]us$/i.test(x.lang)); if (us.length) return us.find((x) => x.localService) || us[0]; }
     const pts = (v) => { const n = v.name.toLowerCase(); const i = PREFERIDAS.findIndex((p) => new RegExp('(^|[^a-záéíóúñ])' + p + '($|[^a-záéíóúñ])').test(n)); return (i < 0 ? 0 : 100 - i * 5) + (v.lang === 'es-AR' ? 30 : 0) + (v.localService ? 0 : 2); };
     return vs.slice().sort((a, b) => pts(b) - pts(a))[0];
   }
@@ -101,6 +106,7 @@
   const ua = navigator.userAgent;
   document.getElementById('equipo').textContent = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document) ? 'este iPhone' : /Android/.test(ua) ? 'este Android' : /Windows/.test(ua) ? 'esta PC con Windows' : 'este equipo';
   document.getElementById('recargar').onclick = () => pintar();
+  { const aj = AJUSTES[plataforma()]; for (const [id, val] of [['vel', aj.velocidad], ['tono', aj.tono]]) { document.getElementById(id).value = val; document.getElementById(id + 'v').textContent = val.toFixed(2); } }
   for (const id of ['vel', 'tono']) document.getElementById(id).oninput = (e) => { document.getElementById(id + 'v').textContent = (+e.target.value).toFixed(2); };
   document.getElementById('parar').onclick = () => speechSynthesis.cancel();
   if ('speechSynthesis' in window) { pintar(); speechSynthesis.onvoiceschanged = pintar; setTimeout(pintar, 800); }
