@@ -417,6 +417,8 @@ window.ADORNO_SSO = (function () {
     --impuestos-soft: #fdba74;
     --productos: #0369a1;
     --marketing: #be185d;
+    --obra: #b45309;
+    --obra-soft: #fde68a;
     --productos-soft: #bae6fd;
   }
   @media (prefers-color-scheme: dark) {
@@ -563,6 +565,8 @@ window.ADORNO_SSO = (function () {
   .card-impuestos .desc { color: var(--impuestos-soft); }
   .card-productos { --card-bg: var(--productos); }
   .card-marketing { --card-bg: var(--marketing); }
+  .card-obra { --card-bg: var(--obra); }
+  .card-obra .desc { color: var(--obra-soft); }
   .card-productos .desc { color: var(--productos-soft); }
   .card.proximamente {
     opacity: 0.6;
@@ -908,6 +912,13 @@ window.ADORNO_SSO = (function () {
         <div class="desc">Redes · pauta · web · métricas</div>
       </a>
 
+      <a class="card card-obra" data-mod="obra" href="https://claudiaadornosrl-prog.github.io/obra-adorno/">
+        <i class="ti ti-hammer icon" aria-hidden="true"></i>
+        <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+        <div class="title">Obra</div>
+        <div class="desc">Local Martínez · tareas · presupuestos · pagos</div>
+      </a>
+
     </div>
     </div><!-- /tb-layout -->
 
@@ -932,6 +943,7 @@ window.ADORNO_SSO = (function () {
     { id: 'impuestos',  nombre: 'Impuestos' },
     { id: 'productos',  nombre: 'Productos' },
     { id: 'marketing',  nombre: 'Marketing' },
+    { id: 'obra',       nombre: 'Obra' },
   ];
   function hubOcultos() {
     try { return JSON.parse(localStorage.getItem('hub_modulos_ocultos') || '[]'); }
