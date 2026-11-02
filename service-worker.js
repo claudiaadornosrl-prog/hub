@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v61-mis-fichas';
+const CACHE_VERSION = 'hub-v62-avisos';
 const ASSETS = [
   './',
   './index.html',

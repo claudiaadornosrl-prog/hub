@@ -580,6 +580,8 @@ window.ADORNO_SSO = (function () {
   .notif-login .notif-confiar input { width: 16px; flex: 0 0 16px; margin: 2px 0 0; }
   .notif-confiar > span { flex: 1 1 auto; min-width: 0; }
   .notif-row .estado { font-size: 11px; color: var(--muted); }
+  .notif-ic { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font-size: 15px; }
+  .notif-ic svg { width: 15px; height: 15px; }
   .notif-switch { width: 40px; height: 24px; border-radius: 999px; border: none; cursor: pointer;
     background: #d1d5db; position: relative; transition: background 0.15s; flex-shrink: 0; }
   .notif-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
@@ -1097,12 +1099,10 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
   });
 })('hub');
 
-  const NOTIF_APPS = [
-    { app: 'rrhh',      nombre: 'Colaboradores', icono: '👥' },
-    { app: 'ventas',    nombre: 'Ventas',    icono: '📊' },
-    { app: 'stock',     nombre: 'Stock',     icono: '📦' },
-    { app: 'tesoreria', nombre: 'Tesorería', icono: '💰' },
-  ];
+  // (hub v62, 2-nov-2026, JP: "solo aparecen 4 módulos para activar") todos los módulos que mandan avisos con su propio
+  // nombre (el `app` de enviar-push), con su moneda, y solo los que el usuario puede usar. Obra y Marketing todavía
+  // firman sus avisos como Colaboradores ('rrhh'): se suman acá cuando cambien eso. Los otros 4 no mandan avisos.
+  const NOTIF_APPS = ['crm', 'rrhh', 'ventas', 'tesoreria', 'stock', 'compras'];
 
   function urlB64ToUint8(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -1253,14 +1253,15 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
       </div>
       ${aviso ? `<div class="hint" style="color:#b45309;">${aviso}</div>` : ''}
       <div class="hint">Elegí de qué módulos querés recibir avisos en este dispositivo.</div>
-      ${NOTIF_APPS.map(m => `
+      ${NOTIF_APPS.filter(id => _hubPermitido(id) || activas.has(id)).map(id => { const m = _hubMod(id); return `
         <div class="config-row notif-row" style="cursor:default;">
-          <span style="font-size:17px;">${m.icono}</span>
+          <span class="notif-ic" style="--c:var(--${m.color});">${_icono(id)}</span>
           <span class="nombre">${m.nombre}</span>
-          <button class="notif-switch ${activas.has(m.app) ? 'on' : ''}" data-app="${m.app}"
-                  onclick="notifToggle('${m.app}', this)" ${soporta ? '' : 'disabled'}></button>
-        </div>`).join('')}
-      <div class="hint" style="margin-top:10px;">💡 Si además tenés la campanita activada adentro de un módulo, ese aviso puede llegarte dos veces — desactivala en el módulo.</div>`;
+          <button class="notif-switch ${activas.has(id) ? 'on' : ''}" data-app="${id}"
+                  onclick="notifToggle('${id}', this)" ${soporta ? '' : 'disabled'}></button>
+        </div>`; }).join('')}
+      <div class="hint" style="margin-top:10px;">Los avisos de Obra y Marketing llegan por Colaboradores. Documentos, Gastos, Impuestos y Productos no mandan avisos.</div>
+      <div class="hint">💡 Si además tenés la campanita activada adentro de un módulo, ese aviso puede llegarte dos veces — desactivala en el módulo.</div>`;
     document.getElementById('notif-btn').classList.toggle('activo', activas.size > 0);
   }
 
