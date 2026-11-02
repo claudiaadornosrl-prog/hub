@@ -828,6 +828,10 @@ window.ADORNO_SSO = (function () {
   .sal-acc button:disabled { opacity: .5; cursor: default; }
   .sal-acc .si { background: var(--boton); color: var(--boton-txt); }
   .sal-acc .no { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--border); }
+  .sal-arreglos { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow: auto; margin-bottom: 10px; }
+  .sal-arr { padding-left: 9px; border-left: 2px solid var(--ok); font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; }
+  .sal-arr.mal { border-left-color: var(--mal); }
+  .sal-arr b { display: block; margin: 0; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
   /* Sin fichas (celular, locales, ventana angosta): el saludo en el medio, y el health check debajo (JP) */
   .cel-centro { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .cel-centro .s1 { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 500; line-height: 1.1; }
@@ -1482,7 +1486,7 @@ const _quieto = () => { try { return matchMedia('(prefers-reduced-motion: reduce
 // Las fichas del medio van solo en una compu ancha; en una ventana más angosta queda como en el celular.
 const _tbChica = window.matchMedia('(max-width: 1100px)');
 try { _tbChica.addEventListener('change', () => cargarTablero()); } catch (_) { _tbChica.addListener(() => cargarTablero()); }
-let _tbData = null, _salud = null, _tbAnimar = true, _saludPedido = null, _salTimer = null;
+let _tbData = null, _salud = null, _tbAnimar = true, _saludPedido = null, _salTimer = null, _salArreglos = [];
 const FICHAS_CON_DATOS = HUB_MODULOS.map(m => m.id);
 const BASE_TABLERO = ['ventas', 'tesoreria', 'compras', 'rrhh'];   // (hub v60) éstas vienen en hub_tablero; las demás, de hub_resumen
 const _res = {};   // resúmenes de los otros módulos, por id (se piden solo para las fichas a la vista)
@@ -1795,9 +1799,10 @@ function medallonHTML() {
     `<span class="sal-t">Servidor</span><span class="sal-e">${estado}</span><span class="sal-h">${u.resuelto_at && !u.ok ? 'resuelto ' : ''}${cuando}</span></div>`;
 }
 // (hub v64, 2-nov-2026, JP) un reporte con problemas que ya se resolvió cuenta como bien; desde el detalle se marca
-// resuelto a mano. "Pedirle a Claude que lo arregle" (vps_health_pedidos + una tarea de la PC que corre Claude sola con
-// acceso al servidor) queda apagado: el control de permisos de Claude Code frenó armar esa tarea; decide JP cómo seguir.
-const _SAL_PEDIR_A_CLAUDE = false;
+// resuelto a mano. (v65, opción B de JP) "Pedirle a Claude que lo arregle" deja un pedido en vps_health_pedidos; lo toma
+// la tarea CRM_Adorno_ArreglarServidor de la PC de JP (arreglar_servidor.py: claude -p con su cuenta y SSH al VPS), que
+// arregla solo y deja el relato para el seguimiento "Lo que arregló Claude".
+const _SAL_PEDIR_A_CLAUDE = true;
 const _salBien = r => r.ok || !!r.resuelto_at;
 const _salPedidoAbierto = () => !!(_saludPedido && ['pendiente', 'trabajando'].includes(_saludPedido.estado));
 const _cuandoSal = t => { const d = new Date(t), esHoy = d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }) === _hoyAR();
@@ -1809,13 +1814,20 @@ function _salAccionHTML(u) {
   if (!p) return botones;
   if (p.estado === 'pendiente') return `<div class="sal-nota">Le pediste a Claude que lo arregle (${_cuandoSal(p.pedido_at)}). Lo toma tu compu en unos minutos: tiene que estar prendida y con tu usuario abierto.</div>`;
   if (p.estado === 'trabajando') return `<div class="sal-nota">Claude lo está revisando en ${_tbEsc(p.equipo || 'tu compu')} desde ${_cuandoSal(p.tomado_at)}. Cuando termine te llega un aviso.</div>`;
-  return `<div class="sal-nota mal">Claude no lo pudo arreglar (${_cuandoSal(p.terminado_at || p.pedido_at)}): ${_tbEsc(p.diagnostico || 'sin detalle')}</div>` + botones;
+  return `<div class="sal-nota mal">Claude no lo pudo arreglar (${_cuandoSal(p.terminado_at || p.pedido_at)}): ${_tbEsc(p.relato || p.diagnostico || 'sin detalle')}</div>` + botones;
+}
+// (JP: "que haya un seguimiento a pesar de que esté automatizado") los últimos arreglos de Claude, contados en criollo
+function _salSeguimientoHTML() {
+  const hechos = (_salArreglos || []).filter(p => p.relato && !['pendiente', 'trabajando'].includes(p.estado));
+  if (!hechos.length) return '';
+  return `<div class="h-sub">Lo que arregló Claude</div><div class="sal-arreglos">` + hechos.map(p =>
+    `<div class="sal-arr ${p.estado === 'arreglado' ? 'ok' : 'mal'}"><b>${_cuandoSal(p.terminado_at || p.pedido_at)}</b>${_tbEsc(p.relato)}</div>`).join('') + '</div>';
 }
 function saludDetalleHTML() {
   const u = _salud[0], malos = _salud.filter(r => !_salBien(r)).length;
   const lineas = String(u.resumen || u.detalle || '').split('\n').map(l => l.replace(/^[•\-\s]+/, '').trim()).filter(Boolean).slice(0, 6);
   return `<div class="sal-detalle"><b>Health check · ${new Date(u.at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</b>` +
-    `<ul>${lineas.map(l => `<li class="${u.ok ? '' : u.resuelto_at ? 'res' : 'mal'}">${_tbEsc(l.length > 160 ? l.slice(0, 157) + '…' : l)}</li>`).join('')}</ul>` + _salAccionHTML(u) +
+    `<ul>${lineas.map(l => `<li class="${u.ok ? '' : u.resuelto_at ? 'res' : 'mal'}">${_tbEsc(l.length > 160 ? l.slice(0, 157) + '…' : l)}</li>`).join('')}</ul>` + _salAccionHTML(u) + _salSeguimientoHTML() +
     `<span>Últimos ${_salud.length}: ${_salud.length - malos} sin problemas, ${malos} con problemas · <a onclick="verSaludVps(${u.id})">ver completo →</a></span></div>`;
 }
 async function _salAccion(que, btn) {
@@ -1936,10 +1948,11 @@ async function cargarSalud() {
     const { data, error } = await sb.from('vps_health_reportes').select('id,at,ok,resumen,problemas,detalle,resuelto_at,resuelto_por,resolucion').order('at', { ascending: false }).limit(8);
     if (error) return;
     _salud = data || []; window._vpsReps = _salud;
-    _saludPedido = null;
-    if (_SAL_PEDIR_A_CLAUDE && _salud[0] && !_salBien(_salud[0])) {
-      const { data: ps } = await sb.from('vps_health_pedidos').select('id,estado,pedido_at,tomado_at,terminado_at,equipo,diagnostico').eq('reporte_id', _salud[0].id).order('id', { ascending: false }).limit(1);
-      _saludPedido = (ps || [])[0] || null;
+    _saludPedido = null; _salArreglos = [];
+    if (_SAL_PEDIR_A_CLAUDE && _salud[0]) {
+      const { data: ps } = await sb.from('vps_health_pedidos').select('id,reporte_id,estado,pedido_at,tomado_at,terminado_at,equipo,diagnostico,relato').order('id', { ascending: false }).limit(5);
+      _salArreglos = ps || [];
+      if (!_salBien(_salud[0])) _saludPedido = _salArreglos.find(p => p.reporte_id === _salud[0].id) || null;
     }
     _actualizarMedallon();
     const ab = document.querySelector('#escena .sal-detalle'); if (ab) ab.outerHTML = saludDetalleHTML();
