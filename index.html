@@ -710,6 +710,67 @@ window.ADORNO_SSO = (function () {
   .chips { display: flex; flex-wrap: wrap; gap: 5px; }
   .chips span { padding: 3px 10px; border-radius: 999px; font-size: 11px; background: #fef3c7; color: #92400e; }
   .chips span.ok { background: #dcfce7; color: #166534; }
+  /* (hub v60, 2-nov-2026) formatos de las otras 8 fichas: cada módulo con lo que le va a lo suyo */
+  @keyframes traza { to { stroke-dashoffset: 0; } }
+  @keyframes hoja { from { transform: rotateX(-90deg); opacity: 0; } }
+  .fz-pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
+  .fz-pills span { padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--c) 12%, var(--surface)); font-size: 11px; color: var(--muted); }
+  .fz-pills b { color: var(--text); font-weight: 600; margin-left: 3px; }
+  /* Clientes: pedidos por estado */
+  .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0 6px; }
+  .kb { position: relative; overflow: hidden; border-radius: 14px; padding: 9px 4px 7px; text-align: center; background: color-mix(in srgb, var(--c) 12%, var(--surface)); }
+  .kb::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c); transform-origin: left; animation: traza-x .7s ease-out both; animation-delay: calc(.3s + var(--d) * .12s); }
+  .kb b { display: block; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kb span { display: block; font-size: 10px; color: var(--muted); line-height: 1.15; }
+  .kb.warn b { color: #b45309; } .kb.warn::before { background: #f59e0b; }
+  /* Productos y Documentos: lista con tildes */
+  .check { display: flex; flex-direction: column; gap: 7px; margin: 8px 0 4px; }
+  .ck { display: grid; grid-template-columns: 18px 1fr 64px 48px; align-items: center; gap: 8px; font-size: 12px; }
+  .ck svg { width: 18px; height: 18px; }
+  .ck-c { fill: none; stroke: var(--c); stroke-width: 1.8; }
+  .ck-t { fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: traza .45s ease-out forwards; animation-delay: calc(.5s + var(--d) * .2s); }
+  .ck.falta .ck-c { stroke: var(--border); }
+  .ck > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ck > b { text-align: right; font-weight: 600; font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Gastos: este mes contra el anterior, por unidad */
+  .dobles { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 6px; }
+  .db { display: grid; grid-template-columns: 84px 1fr 58px; align-items: center; gap: 8px; font-size: 12px; }
+  .db > span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .db > b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .db-barras { display: flex; flex-direction: column; gap: 2px; }
+  .db-barras i { display: block; height: 6px; border-radius: 999px; width: calc(var(--w) * 100%); background: var(--c); animation: llena 1s cubic-bezier(.3, .7, .3, 1) both; animation-delay: calc(.4s + var(--d) * .15s); }
+  .db-barras i.ant { background: color-mix(in srgb, var(--c) 30%, var(--surface)); }
+  /* Impuestos: calendario de vencimientos (las hojas caen una por una) */
+  .cal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0 6px; perspective: 500px; }
+  .cal-d { overflow: hidden; border-radius: 12px; text-align: center; padding-bottom: 6px; background: var(--surface); box-shadow: 0 0 0 .5px color-mix(in srgb, var(--c) 35%, var(--border)); transform-origin: top; animation: hoja .6s cubic-bezier(.3, .7, .3, 1) both; animation-delay: calc(.3s + var(--d) * .14s); }
+  .cal-mes { padding: 2px 0; background: var(--c); color: #fff; font-size: 9.5px; letter-spacing: .8px; text-transform: uppercase; }
+  .cal-dia { font-family: 'Spectral', serif; font-size: 22px; line-height: 1.15; }
+  .cal-q { height: 23px; overflow: hidden; padding: 0 3px; font-size: 9.5px; line-height: 1.2; color: var(--muted); }
+  .cal-m { font-size: 10.5px; font-weight: 600; }
+  .cal-d.prox { box-shadow: 0 0 0 2px var(--c); }
+  .cal-d.vep .cal-mes { background: #16a34a; }
+  /* Obra: línea de tiempo por rubro */
+  .hitos { position: relative; display: grid; grid-template-columns: repeat(var(--n), 1fr); margin: 12px 0 8px; }
+  .hitos::before, .hitos .linea { content: ''; position: absolute; left: calc(50% / var(--n)); top: 6px; height: 3px; border-radius: 3px; }
+  .hitos::before { width: calc(100% - 100% / var(--n)); background: color-mix(in srgb, var(--c) 16%, var(--surface)); }
+  .hitos .linea { width: calc((100% - 100% / var(--n)) * var(--p)); background: var(--c); transform-origin: left; animation: traza-x 1.4s cubic-bezier(.3, .7, .3, 1) .3s both; }
+  .hito { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+  .hito i { width: 15px; height: 15px; border-radius: 50%; background: var(--surface); border: 2px solid color-mix(in srgb, var(--c) 30%, var(--border)); }
+  .hito.hecho i { background: var(--c); border-color: var(--c); }
+  .hito.ahora i { border: 3px solid var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent); }
+  /* los nombres van en zigzag (uno arriba, otro más abajo) para que los largos entren sin cortarse */
+  .hito span { font-size: 9.5px; line-height: 1.15; text-align: center; color: var(--muted); white-space: nowrap; }
+  .hito:nth-child(odd) span { margin-top: 12px; }
+  .hito.ahora span { color: var(--text); font-weight: 600; }
+  /* Marketing: la curva de la semana se dibuja sola */
+  .curva { margin: 10px 0 2px; }
+  .cv-graf { position: relative; height: 34px; }
+  .cv-graf svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .cv-linea { fill: none; stroke: var(--c); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: traza 1.4s ease-out .5s forwards; }
+  .cv-area { fill: color-mix(in srgb, var(--c) 14%, transparent); animation: asoma .8s ease-out 1.4s both; }
+  .cv-punto { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); animation: asoma .3s ease-out 1.85s both; }
+  .cv-lbl { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  @media (prefers-reduced-motion: reduce) { .cv-linea, .ck-t { stroke-dashoffset: 0; } }
   /* Cambiar la ficha: botón ⇄ al lado del título (aparece al pasar el mouse) o arrastrar una moneda arriba de la ficha */
   .fz-cambiar { border: 0; background: transparent; color: var(--muted); width: 26px; height: 26px; padding: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer; font-size: 16px; opacity: 0; transition: opacity .2s, background .2s, color .2s; }
   .fz:hover .fz-cambiar, .fz.eligiendo .fz-cambiar, .fz-cambiar:focus-visible { opacity: 1; }
@@ -730,6 +791,7 @@ window.ADORNO_SSO = (function () {
   .fz.soltar::after { content: attr(data-soltar); position: absolute; inset: 0; z-index: 7; border-radius: inherit; border: 2px dashed var(--accent); background: color-mix(in srgb, var(--surface) 78%, transparent); display: grid; place-items: center; padding: 20px; text-align: center; font-size: 14px; color: var(--accent); }
   .fz.re *, .fz.re *::before, .fz.re *::after { animation: none !important; }
   .sin-anim .fz, .sin-anim .fz *, .sin-anim .fz *::before, .sin-anim .fz *::after, .sin-anim .medallon * { animation: none !important; }
+  .sin-anim .cv-linea, .sin-anim .ck-t { stroke-dashoffset: 0; }
   .fz-esq { min-height: 220px; } .fz-esq .sk { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 14%, var(--surface)), var(--surface), color-mix(in srgb, var(--c) 14%, var(--surface))); background-size: 200% 100%; animation: sk-pulse 1.2s linear infinite; border-radius: 6px; height: 12px; margin: 10px 0; }
   @keyframes sk-pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   /* El centro del rosetón: el health check del servidor (JP) o la fecha. El anillo son los últimos días (verde sin problemas,
@@ -1360,7 +1422,9 @@ const _quieto = () => { try { return matchMedia('(prefers-reduced-motion: reduce
 const _tbChica = window.matchMedia('(max-width: 1100px)');
 try { _tbChica.addEventListener('change', () => cargarTablero()); } catch (_) { _tbChica.addListener(() => cargarTablero()); }
 let _tbData = null, _salud = null, _tbAnimar = true;
-const FICHAS_CON_DATOS = ['ventas', 'tesoreria', 'compras', 'rrhh'];   // las demás se van sumando (cada una necesita su resumen)
+const FICHAS_CON_DATOS = HUB_MODULOS.map(m => m.id);
+const BASE_TABLERO = ['ventas', 'tesoreria', 'compras', 'rrhh'];   // (hub v60) éstas vienen en hub_tablero; las demás, de hub_resumen
+const _res = {};   // resúmenes de los otros módulos, por id (se piden solo para las fichas a la vista)
 const FICHAS_BASE = ['ventas', 'tesoreria', 'compras', 'rrhh'];
 function _hubSlots() {
   try { const s = JSON.parse(localStorage.getItem('hub_fichas') || 'null');
@@ -1448,6 +1512,28 @@ function _metaH(p, lbl) {   // barra contra la meta; lo que se pasó (más de 10
 const _barrasH = filas => `<div class="barras">${filas.map((b, i) => `<div class="br-fila"><span>${b[0]}</span><div class="br-pista"><i style="--w:${Math.max(0, b[2]).toFixed(3)};--d:${i};"></i></div><b>${b[1]}</b></div>`).join('')}</div>`;
 const _hhmm = t => { const [h, m] = String(t || '0:0').split(':').map(Number); return h * 60 + m; };
 const _iniciales = n => { const p = String(n || '').trim().split(/\s+/); return ((p[0] || '')[0] || '') + (p.length > 1 ? (p[p.length - 1][0] || '') : ''); };
+const _num = n => Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+const _mesNom = f => new Date(String(f).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-AR', { month: 'long' });
+const _fechaC = f => f ? String(f).slice(0, 10).split('-').reverse().join('/').replace(/\/(\d{2})(\d{2})$/, '/$2') : '';
+const _pctH = (a, b) => b ? Math.round(a / b * 100) : 0;
+function _repartidaH(partes, minimo) {   // barra repartida; las partes chicas igual se ven (mínimo)
+  const tot = partes.reduce((a, p) => a + p[1], 0) || 1, w = partes.map(p => Math.max(minimo, p[1] / tot)), sw = w.reduce((a, x) => a + x, 0);
+  return `<div class="compo">${partes.map((p, i) => `<i style="--w:${(w[i] / sw).toFixed(3)};--s:${p[2]};--d:${i};" title="${p[0]}: ${_num(p[1])}"></i>`).join('')}</div>`;
+}
+function _checkH(filas) {   // [etiqueta, hechos, total]; tilde si está completo (98% o más)
+  return `<div class="check">${filas.map(([t, n, tot], i) => {
+    const p = tot ? n / tot : 0, ok = tot > 0 && p >= .98;
+    return `<div class="ck ${ok ? '' : 'falta'}"><svg viewBox="0 0 18 18" aria-hidden="true"><circle class="ck-c" cx="9" cy="9" r="7.5"/>${ok ? `<path class="ck-t" style="--d:${i};" d="M5.4 9.3 L8 11.8 L12.7 6.6" pathLength="1"/>` : ''}</svg>` +
+      `<span title="${t}">${t}</span><div class="br-pista"><i style="--w:${Math.min(1, p).toFixed(3)};--d:${i};"></i></div><b>${tot > 200 ? Math.round(p * 100) + '%' : `${_num(n)}/${_num(tot)}`}</b></div>`;
+  }).join('')}</div>`;
+}
+function _curvaH(vals, lbl) {   // la línea se dibuja sola (pathLength=1) y aparece un punto en el último día
+  const max = Math.max(...vals), min = Math.min(...vals), W = 300, H = 34;
+  const pts = vals.map((v, i) => [i / Math.max(1, vals.length - 1) * W, H - 4 - (max === min ? .5 : (v - min) / (max - min)) * (H - 10)]);
+  const d = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' '), u = pts[pts.length - 1];
+  return `<div class="curva"><div class="cv-graf"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="cv-area" d="${d} L${W},${H} L0,${H} Z"/>` +
+    `<path class="cv-linea" d="${d}" pathLength="1"/></svg><i class="cv-punto" style="left:${(u[0] / W * 100).toFixed(1)}%;top:${(u[1] / H * 100).toFixed(1)}%;"></i></div><div class="cv-lbl">${lbl}</div></div>`;
+}
 
 const FICHA = {
   ventas(d) {
@@ -1521,6 +1607,88 @@ const FICHA = {
       _subH('Para resolver') + `<div class="chips">${pend.length ? pend.map(t => `<span>${t}</span>`).join('') : '<span class="ok">nada pendiente</span>'}</div>` +
       (ayer ? `<div class="fz-sub" style="margin-top:8px;">Ayer: ${ayer}</div>` : '');
   },
+  // ── (hub v60) las otras 8: reciben su resumen (hub_resumen) ──
+  stock(r) {
+    const s = r.semaforo || {}, partes = [['Arriba del mínimo', s.ok || 0, '#16a34a'], ['En el mínimo o abajo', s.bajo || 0, '#f59e0b'], ['Sin stock', s.sin || 0, '#dc2626']];
+    const filas = [];
+    if (r.traslados) filas.push(['Traslados por resolver', r.traslados, 'warn']);
+    if (r.apartados) filas.push(['Apartados para traslado', r.apartados, '']);
+    if (r.redistribucion) filas.push(['Redistribución sugerida', `${_num(r.redistribucion)} artículos`, '']);
+    return _subH('Artículos con mínimo, en los 3 locales') + _repartidaH(partes, .06) + _leyH(partes.map(p => [`${p[0]} <b>${_num(p[1])}</b>`, p[2]])) +
+      ((r.reponer || []).length ? _subH('Para reponer') + r.reponer.map((x, i) => _filaH(_tbEsc(_tbNombre(x.descripcion)), `<span style="font-weight:400;color:var(--muted);">${_tbLocal(x.local)} · mín. ${_num(x.minimo)}</span>`, '', i)).join('') : '') +
+      filas.map((f, i) => _filaH(f[0], f[1], f[2], i + 3)).join('');
+  },
+  crm(r) {
+    const est = [['Esperan mercadería', r.esperan], ['Para avisar', r.para_avisar, r.para_avisar ? 'warn' : ''], ['Avisados, sin retirar', r.avisados, r.avisados ? 'warn' : ''], ['Entregados (30 días)', r.entregados_30]];
+    const w = r.web_30 || {}, filas = [];
+    if (r.avisados_7d) filas.push(['Avisados hace más de 7 días', r.avisados_7d, 'warn']);
+    if (r.no_contesto) filas.push(['No contestaron el aviso', r.no_contesto, '']);
+    filas.push(['Tienda online (30 días)', `${_num(w.n)} pedidos · ${_tbMk(w.total)}`, '']);
+    return _subH('Pedidos de clientes por estado') + `<div class="kanban">${est.map((e, i) => `<div class="kb ${e[2] || ''}" style="--d:${i};"><b class="contar">${_num(e[1])}</b><span>${e[0]}</span></div>`).join('')}</div>` +
+      filas.map((f, i) => _filaH(f[0], f[1], f[2], i)).join('');
+  },
+  productos(r) {
+    const a = r.activos || 0, filas = [];
+    if (r.altas_borrador) filas.push(['Altas en borrador', r.altas_borrador, 'warn']);
+    if (r.juegos) filas.push(['Juegos sin confirmar', `${_num(r.juegos_sin_confirmar)} de ${_num(r.juegos)}`, r.juegos_sin_confirmar ? 'warn' : '']);
+    return _heroH('Productos activos', _num(a), r.nuevos_30 ? `${_num(r.nuevos_30)} nuevos en los últimos 30 días` : '') +
+      _checkH([['Con foto', r.con_foto, a], ['Con precio de lista', r.con_precio, a], ['Con proveedor', r.con_proveedor, a], ['Con categoría', r.con_categoria, a]]) +
+      filas.map((f, i) => _filaH(f[0], f[1], f[2], i)).join('');
+  },
+  gastos(r) {
+    const us = (r.unidades || []).filter(u => u.m1 || u.m0), t1 = us.reduce((a, u) => a + Number(u.m1 || 0), 0), t0 = us.reduce((a, u) => a + Number(u.m0 || 0), 0);
+    const tm = (r.unidades || []).reduce((a, u) => a + Number(u.mes || 0), 0), dif = t0 ? (t1 - t0) / t0 * 100 : 0;
+    const max = Math.max(1, ...us.flatMap(u => [Number(u.m1 || 0), Number(u.m0 || 0)]));
+    return _heroH(`Gastos de ${_mesNom(r.m1)}`, _tbMk(t1), t0 ? `${dif <= 0 ? '▼' : '▲'} ${Math.abs(dif).toFixed(0)}% vs. ${_mesNom(r.m0)}` : '', dif <= 0 ? 'up' : '') +
+      `<div class="dobles">${us.map((u, i) => `<div class="db"><span>${_tbEsc(u.nombre)}</span><div class="db-barras"><i style="--w:${(Number(u.m1 || 0) / max).toFixed(3)};--d:${i};"></i><i class="ant" style="--w:${(Number(u.m0 || 0) / max).toFixed(3)};--d:${i};"></i></div><b>${_tbMk(u.m1)}</b></div>`).join('')}</div>` +
+      _leyH([[_mesNom(r.m1), 'var(--c)'], [_mesNom(r.m0), 'color-mix(in srgb, var(--c) 30%, var(--surface))']]) +
+      (tm ? _filaH(`En ${_mesNom(r.mes)} va`, _tbMk(tm), '', 0) : '');
+  },
+  impuestos(r) {
+    const px = r.proximos || [], filas = [];
+    if (r.vencidas) filas.push(['Vencidos sin pago registrado', `${r.vencidas} · ${_tbMk(r.vencidas_total)}`, 'bad']);
+    if (r.mes_total) filas.push([`Este mes`, `${r.mes_pagadas} de ${r.mes_total} pagados`, '']);
+    if (r.ultimo_pago) filas.push([`Último pago · ${_tbEsc(r.ultimo_pago.nombre)}`, `${_fechaC(r.ultimo_pago.fecha)} · ${_tbMk(r.ultimo_pago.importe)}`, '']);
+    const mes = f => new Date(f + 'T12:00:00').toLocaleDateString('es-AR', { month: 'short' }).replace('.', '');
+    return _subH('Próximos vencimientos') + (px.length ? `<div class="cal">${px.map((c, i) => `<div class="cal-d ${i === 0 ? 'prox' : ''} ${c.estado === 'con_vep' ? 'vep' : ''}" style="--d:${i};" title="${_tbEsc(c.nombre)}${c.subperiodo ? ' · ' + _tbEsc(c.subperiodo) : ''}${c.estado === 'con_vep' ? ' · VEP listo' : ''}">` +
+        `<div class="cal-mes">${c.estado === 'con_vep' ? 'VEP' : mes(c.vencimiento)}</div><div class="cal-dia">${Number(String(c.vencimiento).slice(8, 10))}</div><div class="cal-q">${_tbEsc(c.nombre)}</div><div class="cal-m">${c.importe ? _tbMk(c.importe) : 'a calcular'}</div></div>`).join('')}</div>`
+      : '<div class="fz-sub">No hay vencimientos próximos cargados.</div>') + filas.map((f, i) => _filaH(f[0], f[1], f[2], i)).join('');
+  },
+  marketing(r) {
+    const al = (r.alcance || []).map(x => Number(x.valor || 0)), tot = al.reduce((a, x) => a + x, 0), ant = Number(r.alcance_ant || 0), dif = ant ? (tot - ant) / ant * 100 : 0;
+    const seg = Number(r.seguidores || 0), dseg = r.seguidores_7 ? seg - Number(r.seguidores_7) : null;
+    const pills = [];
+    if (seg) pills.push(`Seguidores<b>${_num(seg)}${dseg ? ` (${dseg > 0 ? '+' : ''}${_num(dseg)})` : ''}</b>`);
+    (r.google || []).forEach(g => pills.push(`Google ${_tbLocal(g.local)}<b>★ ${Number(g.rating).toLocaleString('es-AR')} · ${_num(g.resenas)}</b>`));
+    const filas = [];
+    if (r.sin_responder) filas.push(['Mensajes sin responder', r.sin_responder, 'warn']);
+    if (r.con_error) filas.push(['Respuestas que no se pudieron mandar', r.con_error, 'bad']);
+    if (r.tareas) filas.push(['Tareas pendientes', r.tareas, '']);
+    return _heroH('Alcance de Instagram · 7 días', _num(tot), ant ? `${dif >= 0 ? '▲' : '▼'} ${Math.abs(dif).toFixed(0)}% vs. la semana anterior` : '', dif >= 0 ? 'up' : '') +
+      (al.length > 1 ? _curvaH(al, 'alcance por día') : '') + `<div class="fz-pills">${pills.map(p => `<span>${p}</span>`).join('')}</div>` + filas.map((f, i) => _filaH(f[0], f[1], f[2], i)).join('');
+  },
+  obra(r) {
+    const est = x => x.hechas >= x.n ? 'hecho' : (x.en_curso || x.hechas) ? 'ahora' : '';
+    const rubros = (r.rubros || []).slice().sort((a, b) => ({ hecho: 0, ahora: 1, '': 2 }[est(a)] - { hecho: 0, ahora: 1, '': 2 }[est(b)]) || a.orden - b.orden).slice(0, 7);
+    const ult = rubros.map(est).lastIndexOf('ahora'), hasta = ult >= 0 ? ult : rubros.map(est).lastIndexOf('hecho'), n = rubros.length;
+    const filas = [];
+    if ((r.en_curso || []).length) filas.push(['En curso', _tbEsc(r.en_curso.join(' · ')), '']);
+    if (r.proximo) filas.push([`Próximo vencimiento · ${_tbEsc(r.proximo.titulo)}`, _fechaC(r.proximo.fecha), '']);
+    if (r.pagos_pendientes && r.pagos_pendientes.n) filas.push(['Pedidos de pago', `${r.pagos_pendientes.n} · ${_tbMk(r.pagos_pendientes.total)}`, 'warn']);
+    return _heroH(`Avance · ${_tbEsc(r.obra || 'obra')}`, `${_pctH(r.etapas_hechas, r.etapas)}%`, `${_num(r.etapas_hechas)} de ${_num(r.etapas)} etapas hechas`) +
+      (n ? `<div class="hitos" style="--n:${n};--p:${n > 1 && hasta > 0 ? (hasta / (n - 1)).toFixed(3) : 0};"><i class="linea"></i>${rubros.map(x => `<div class="hito ${est(x)}" title="${_tbEsc(x.rubro)}: ${x.hechas} de ${x.n} tareas terminadas${x.en_curso ? ', ' + x.en_curso + ' en curso' : ''}"><i></i><span>${_tbEsc(x.rubro)}</span></div>`).join('')}</div>` : '') +
+      filas.map((f, i) => _filaH(f[0], f[1], f[2], i)).join('');
+  },
+  documentos(r) {
+    const rec = r.recibos || [], co = r.comprobantes || {}, va = r.vacaciones || {};
+    const filas = rec.map(x => [`Recibos de ${_mesNom(x.periodo)}`, x.firmados, x.n]);
+    if (co.n) filas.push(['Comprobantes de caja · 30 días', co.firmados, co.n]);
+    if (va.n) filas.push(['Vacaciones · 60 días', va.firmados, va.n]);
+    const falta = filas.reduce((a, f) => a + (f[2] - f[1]), 0);
+    const sinCtrl = rec.reduce((a, x) => a + (x.firmados - x.controlados), 0) + (co.firmados || 0) - (co.controlados || 0) + (va.firmados || 0) - (va.controlados || 0);
+    return _heroH('Falta firmar', _num(falta), falta ? 'documentos sin la firma de la empleada' : 'todo firmado', falta ? '' : 'up') + _checkH(filas) +
+      (sinCtrl > 0 ? _filaH('Firmados sin controlar', sinCtrl, 'warn', 0) : '');
+  },
 };
 
 // ── El centro ──
@@ -1560,18 +1728,34 @@ function _cabFicha(id, k) {
   return `<div class="fz-cab"><span class="fz-ic">${_icono(id)}</span><span class="fz-t">${m.nombre}</span>` +
     `<button class="fz-cambiar" type="button" data-slot="${k}" title="Cambiar esta ficha" aria-label="Cambiar esta ficha"><i class="ti ti-arrows-exchange"></i></button></div>`;
 }
+function _fichaHTML(id, k, d) {
+  const q = ['tl', 'tr', 'bl', 'br'], arriba = k < 2, cab = _cabFicha(id, k);
+  const abrir = `<a class="fz-abrir" href="${TB_URL[id]}">abrir →</a>`;
+  const datos = BASE_TABLERO.includes(id) ? d : _res[id];   // (hub v60) las 8 nuevas usan su resumen
+  let cuerpo = '';
+  try { cuerpo = datos ? FICHA[id](datos) : '<div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div>'; }
+  catch (e) { console.warn('[ficha ' + id + ']', e); cuerpo = '<div class="fz-sub">No pude armar esta ficha.</div>'; }
+  return `<div class="fz q-${q[k]}${datos ? '' : ' fz-esq'}" data-f="${id}" data-slot="${k}" style="--c:var(--${_hubMod(id).color});--k:${k};">` +
+    (arriba ? cab : `<div class="fzC-banda">${cab}</div>`) + cuerpo +
+    (arriba ? `<div class="fzC-banda">${abrir}</div>` : `<div class="fzC-pie">${abrir}</div>`) + '</div>';
+}
+// (hub v60) pide el resumen de las fichas a la vista que no vienen en hub_tablero; con pintar, repinta cada una al llegar
+async function _resumenesVisibles(pintar) {
+  const faltan = _hubSlots().filter(id => !BASE_TABLERO.includes(id));
+  await Promise.all(faltan.map(async id => {
+    try { const { data, error } = await sb.rpc('hub_resumen', { p_modulo: id }); if (!error && data) _res[id] = data; } catch (_) {}
+    if (pintar) _pintarFicha(id);
+  }));
+}
+function _pintarFicha(id) {
+  const f = document.querySelector(`#centro .fz[data-f="${id}"]`); if (!f || !_tbData || !_res[id]) return;
+  f.outerHTML = _fichaHTML(id, +f.dataset.slot, _tbData);
+  const nueva = document.querySelector(`#centro .fz[data-f="${id}"]`);
+  if (nueva) { nueva.style.animation = 'none'; _contar(nueva); nueva._t = performance.now(); }
+  acomodarHub();
+}
 function rosetonHTML(d) {
-  const q = ['tl', 'tr', 'bl', 'br'];
-  const abrir = id => `<a class="fz-abrir" href="${TB_URL[id]}">abrir →</a>`;
-  return '<div class="roseton">' + _hubSlots().map((id, k) => {
-    const arriba = k < 2, cab = _cabFicha(id, k);
-    let cuerpo = '';
-    try { cuerpo = d ? FICHA[id](d) : '<div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div>'; }
-    catch (e) { console.warn('[ficha ' + id + ']', e); cuerpo = '<div class="fz-sub">No pude armar esta ficha.</div>'; }
-    return `<div class="fz q-${q[k]}${d ? '' : ' fz-esq'}" data-f="${id}" data-slot="${k}" style="--c:var(--${_hubMod(id).color});--k:${k};">` +
-      (arriba ? cab : `<div class="fzC-banda">${cab}</div>`) + cuerpo +
-      (arriba ? `<div class="fzC-banda">${abrir(id)}</div>` : `<div class="fzC-pie">${abrir(id)}</div>`) + '</div>';
-  }).join('') + medallonHTML() + '</div>' +
+  return '<div class="roseton">' + _hubSlots().map((id, k) => _fichaHTML(id, k, d)).join('') + medallonHTML() + '</div>' +
   (d ? `<div class="fz-foot">Actualizado ${new Date(d.generado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })} · <a onclick="cargarTablero()">↻ actualizar</a></div>` : '');
 }
 function renderCentro() {
@@ -1624,7 +1808,9 @@ async function cargarTablero() {
     if (error || !data) { _tbData = null; document.body.classList.remove('con-tablero'); renderCentro(); return; }
     const primera = !_tbData; _tbData = data;
     document.body.classList.add('con-tablero');
+    if (!primera) await _resumenesVisibles(false);
     _tbAnimar = primera; renderCentro(); _tbAnimar = true;   // al refrescar cada 5 min no vuelve a hacer las animaciones
+    if (primera) _resumenesVisibles(true);
     try { localStorage.setItem('hub_con_tablero', '1'); } catch (_) {}
     if (!_tbTimer) _tbTimer = setInterval(cargarTablero, 5 * 60 * 1000);
   } catch (e) { console.warn('[tablero]', e); }
@@ -1676,6 +1862,7 @@ function _ponerFicha(slot, id) {
   s[slot] = id;
   try { localStorage.setItem('hub_fichas', JSON.stringify(s)); } catch (_) {}
   renderCentro();
+  if (!_res[id] && !BASE_TABLERO.includes(id)) _resumenesVisibles(true);
 }
 (function () {
   const esc = document.getElementById('escena'); if (!esc) return;
