@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v63-atelier';
+const CACHE_VERSION = 'hub-v64-resuelto';
 const ASSETS = [
   './',
   './index.html',

@@ -817,6 +817,17 @@ window.ADORNO_SSO = (function () {
   .sal-detalle li.mal { color: var(--mal); } .sal-detalle li.mal::before { background: var(--mal); }
   .sal-detalle span { font-size: 11px; color: var(--muted); }
   .sal-detalle a { color: var(--accent); cursor: pointer; }
+  /* (hub v64) resuelto (por Claude o a mano) = verde; mientras Claude lo arregla, ámbar y sin la alarma */
+  .medallon.salud.arreglando { --sal: var(--aviso); animation: none; }
+  .sal-seg.res { stroke: var(--ok); opacity: .6; }
+  .sal-detalle li.res { color: var(--muted); text-decoration: line-through; }
+  .sal-nota { margin: 2px 0 10px; padding: 8px 10px; font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; background: color-mix(in srgb, var(--n, var(--aviso)) 12%, var(--surface)); }
+  .sal-nota.ok { --n: var(--ok); } .sal-nota.mal { --n: var(--mal); }
+  .sal-acc { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 10px; }
+  .sal-acc button { border: 0; cursor: pointer; font: inherit; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; padding: 9px 11px; }
+  .sal-acc button:disabled { opacity: .5; cursor: default; }
+  .sal-acc .si { background: var(--boton); color: var(--boton-txt); }
+  .sal-acc .no { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--border); }
   /* Sin fichas (celular, locales, ventana angosta): el saludo en el medio, y el health check debajo (JP) */
   .cel-centro { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .cel-centro .s1 { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 500; line-height: 1.1; }
@@ -1471,7 +1482,7 @@ const _quieto = () => { try { return matchMedia('(prefers-reduced-motion: reduce
 // Las fichas del medio van solo en una compu ancha; en una ventana más angosta queda como en el celular.
 const _tbChica = window.matchMedia('(max-width: 1100px)');
 try { _tbChica.addEventListener('change', () => cargarTablero()); } catch (_) { _tbChica.addListener(() => cargarTablero()); }
-let _tbData = null, _salud = null, _tbAnimar = true;
+let _tbData = null, _salud = null, _tbAnimar = true, _saludPedido = null, _salTimer = null;
 const FICHAS_CON_DATOS = HUB_MODULOS.map(m => m.id);
 const BASE_TABLERO = ['ventas', 'tesoreria', 'compras', 'rrhh'];   // (hub v60) éstas vienen en hub_tablero; las demás, de hub_resumen
 const _res = {};   // resúmenes de los otros módulos, por id (se piden solo para las fichas a la vista)
@@ -1775,21 +1786,45 @@ function medallonHTML() {
   }
   const reps = _salud.slice(0, 8).reverse(), n = reps.length, u = reps[n - 1];
   const C = 2 * Math.PI * 52, seg = C / n, hueco = n > 1 ? 6 : 0, giro = -90 - (n - .5) * 360 / n;   // el último, arriba al medio
-  const arcos = reps.map((r, i) => `<circle cx="60" cy="60" r="52" class="sal-seg ${r.ok ? 'ok' : 'mal'} ${i === n - 1 ? 'hoy' : ''}" style="stroke-dasharray:${(seg - hueco).toFixed(1)} ${(C - seg + hueco).toFixed(1)};stroke-dashoffset:${(-i * seg).toFixed(1)};--d:${i};"/>`).join('');
-  const d = new Date(u.at), esHoy = d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }) === _hoyAR();
-  const cuando = (esHoy ? 'hoy ' : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) + ' ') + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const np = Number(u.problemas) || 1, estado = u.ok ? 'todo bien' : `${np} problema${np === 1 ? '' : 's'}`;
-  return `<div class="medallon salud ${u.ok ? 'ok' : 'mal'}" role="button" tabindex="0" title="Servidor · health check ${cuando}: ${estado}. El anillo son los últimos ${n} reportes (arriba, el más grueso, es el último). Tocá para ver el resumen.">` +
+  const arcos = reps.map((r, i) => `<circle cx="60" cy="60" r="52" class="sal-seg ${r.ok ? 'ok' : r.resuelto_at ? 'res' : 'mal'} ${i === n - 1 ? 'hoy' : ''}" style="stroke-dasharray:${(seg - hueco).toFixed(1)} ${(C - seg + hueco).toFixed(1)};stroke-dashoffset:${(-i * seg).toFixed(1)};--d:${i};"/>`).join('');
+  const cuando = _cuandoSal(u.resuelto_at || u.at), arreglando = !_salBien(u) && _salPedidoAbierto();
+  const np = Number(u.problemas) || 1, estado = _salBien(u) ? 'todo bien' : arreglando ? 'arreglando…' : `${np} problema${np === 1 ? '' : 's'}`;
+  return `<div class="medallon salud ${_salBien(u) ? 'ok' : 'mal'}${arreglando ? ' arreglando' : ''}" role="button" tabindex="0" title="Servidor · health check ${cuando}: ${estado}. El anillo son los últimos ${n} reportes (arriba, el más grueso, es el último). Tocá para ver el resumen.">` +
     `<svg class="sal-anillo" viewBox="0 0 120 120" style="transform:rotate(${giro}deg);" aria-hidden="true">${arcos}</svg>` +
     `<svg class="sal-ecg" viewBox="0 0 64 20" aria-hidden="true"><path class="ecg-base" d="${_ECG}"/><path class="ecg-pulso" d="${_ECG}" pathLength="1"/></svg>` +
-    `<span class="sal-t">Servidor</span><span class="sal-e">${estado}</span><span class="sal-h">${cuando}</span></div>`;
+    `<span class="sal-t">Servidor</span><span class="sal-e">${estado}</span><span class="sal-h">${u.resuelto_at && !u.ok ? 'resuelto ' : ''}${cuando}</span></div>`;
+}
+// (hub v64, 2-nov-2026, JP) un reporte con problemas que ya se resolvió cuenta como bien; desde el detalle se marca
+// resuelto a mano. "Pedirle a Claude que lo arregle" (vps_health_pedidos + una tarea de la PC que corre Claude sola con
+// acceso al servidor) queda apagado: el control de permisos de Claude Code frenó armar esa tarea; decide JP cómo seguir.
+const _SAL_PEDIR_A_CLAUDE = false;
+const _salBien = r => r.ok || !!r.resuelto_at;
+const _salPedidoAbierto = () => !!(_saludPedido && ['pendiente', 'trabajando'].includes(_saludPedido.estado));
+const _cuandoSal = t => { const d = new Date(t), esHoy = d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }) === _hoyAR();
+  return (esHoy ? 'hoy ' : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) + ' ') + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }); };
+function _salAccionHTML(u) {
+  if (u.ok) return '';
+  if (u.resuelto_at) return `<div class="sal-nota ok">Resuelto ${_cuandoSal(u.resuelto_at)} · ${_tbEsc(u.resuelto_por || '')}${u.resolucion ? '<br>' + _tbEsc(u.resolucion) : ''}</div>`;
+  const p = _saludPedido, botones = `<div class="sal-acc">${_SAL_PEDIR_A_CLAUDE ? '<button class="si" data-sal="pedir">Pedirle a Claude que lo arregle</button>' : ''}<button class="no" data-sal="resuelto">Ya está resuelto</button></div>`;
+  if (!p) return botones;
+  if (p.estado === 'pendiente') return `<div class="sal-nota">Le pediste a Claude que lo arregle (${_cuandoSal(p.pedido_at)}). Lo toma tu compu en unos minutos: tiene que estar prendida y con tu usuario abierto.</div>`;
+  if (p.estado === 'trabajando') return `<div class="sal-nota">Claude lo está revisando en ${_tbEsc(p.equipo || 'tu compu')} desde ${_cuandoSal(p.tomado_at)}. Cuando termine te llega un aviso.</div>`;
+  return `<div class="sal-nota mal">Claude no lo pudo arreglar (${_cuandoSal(p.terminado_at || p.pedido_at)}): ${_tbEsc(p.diagnostico || 'sin detalle')}</div>` + botones;
 }
 function saludDetalleHTML() {
-  const u = _salud[0], malos = _salud.filter(r => !r.ok).length;
+  const u = _salud[0], malos = _salud.filter(r => !_salBien(r)).length;
   const lineas = String(u.resumen || u.detalle || '').split('\n').map(l => l.replace(/^[•\-\s]+/, '').trim()).filter(Boolean).slice(0, 6);
   return `<div class="sal-detalle"><b>Health check · ${new Date(u.at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</b>` +
-    `<ul>${lineas.map(l => `<li class="${u.ok ? '' : 'mal'}">${_tbEsc(l.length > 160 ? l.slice(0, 157) + '…' : l)}</li>`).join('')}</ul>` +
+    `<ul>${lineas.map(l => `<li class="${u.ok ? '' : u.resuelto_at ? 'res' : 'mal'}">${_tbEsc(l.length > 160 ? l.slice(0, 157) + '…' : l)}</li>`).join('')}</ul>` + _salAccionHTML(u) +
     `<span>Últimos ${_salud.length}: ${_salud.length - malos} sin problemas, ${malos} con problemas · <a onclick="verSaludVps(${u.id})">ver completo →</a></span></div>`;
+}
+async function _salAccion(que, btn) {
+  const u = _salud && _salud[0]; if (!u) return;
+  if (que === 'resuelto' && !confirm('¿Lo marco como resuelto sin que Claude lo revise?')) return;
+  btn.disabled = true;
+  const { error } = que === 'pedir' ? await sb.rpc('vps_health_pedir_arreglo', { p_reporte: u.id }) : await sb.rpc('vps_health_marcar_resuelto', { p_reporte: u.id });
+  if (error) { btn.disabled = false; alert('No se pudo: ' + error.message); return; }
+  await cargarSalud();
 }
 function saludoHTML() {
   const h = new Date().getHours(), s = h < 13 ? 'Buen día' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
@@ -1898,10 +1933,17 @@ async function cargarSalud() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (!session || !_VPS_SOLO.includes((session.user.email || '').toLowerCase())) { if (_salud) { _salud = null; renderCentro(); } return; }
-    const { data, error } = await sb.from('vps_health_reportes').select('id,at,ok,resumen,problemas,detalle').order('at', { ascending: false }).limit(8);
+    const { data, error } = await sb.from('vps_health_reportes').select('id,at,ok,resumen,problemas,detalle,resuelto_at,resuelto_por,resolucion').order('at', { ascending: false }).limit(8);
     if (error) return;
     _salud = data || []; window._vpsReps = _salud;
+    _saludPedido = null;
+    if (_SAL_PEDIR_A_CLAUDE && _salud[0] && !_salBien(_salud[0])) {
+      const { data: ps } = await sb.from('vps_health_pedidos').select('id,estado,pedido_at,tomado_at,terminado_at,equipo,diagnostico').eq('reporte_id', _salud[0].id).order('id', { ascending: false }).limit(1);
+      _saludPedido = (ps || [])[0] || null;
+    }
     _actualizarMedallon();
+    const ab = document.querySelector('#escena .sal-detalle'); if (ab) ab.outerHTML = saludDetalleHTML();
+    clearTimeout(_salTimer); if (_salPedidoAbierto()) _salTimer = setTimeout(cargarSalud, 30000);   // mientras Claude trabaja, se mira cada 30 s
   } catch (e) { console.warn('[vps]', e); }
 }
 function verSaludVps(id) {
@@ -1952,6 +1994,7 @@ function _ponerFicha(slot, id) {
     if (elegir) { _ponerFicha(+elegir.closest('.fz').dataset.slot, elegir.dataset.elegir); return; }
     if (e.target.closest('[data-restaurar]')) { _guardarSlots(FICHAS_BASE.slice()); renderCentro(); return; }
     if (med) { const ab = esc.querySelector('.sal-detalle'); if (ab) ab.remove(); else med.insertAdjacentHTML('afterend', saludDetalleHTML()); return; }
+    const sal = e.target.closest('[data-sal]'); if (sal) { _salAccion(sal.dataset.sal, sal); return; }
     if (!e.target.closest('.sal-detalle')) esc.querySelectorAll('.sal-detalle').forEach(x => x.remove());
     if (!e.target.closest('.selector')) _cerrarSelector();
   });
