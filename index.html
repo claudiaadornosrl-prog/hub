@@ -1431,6 +1431,29 @@ function _hubSlots() {
     if (Array.isArray(s) && s.length === 4 && s.every(x => FICHAS_CON_DATOS.includes(x)) && new Set(s).size === 4) return s; } catch (_) {}
   return FICHAS_BASE.slice();
 }
+// (hub v61, 2-nov-2026, JP) las 4 fichas se guardan en el usuario (hub_preferencias) y en este equipo (para dibujar al instante)
+async function _guardarSlots(s) {
+  try { localStorage.setItem('hub_fichas', JSON.stringify(s)); } catch (_) {}
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await sb.from('hub_preferencias').upsert({ usuario: session.user.id, fichas: s, actualizado_at: new Date().toISOString() });
+  } catch (_) {}
+}
+async function _traerSlots() {   // al entrar: si el usuario ya eligió (en esta u otra compu), manda eso; true si cambió
+  try {
+    const { data: { session } } = await sb.auth.getSession(); if (!session) return false;
+    const { data, error } = await sb.from('hub_preferencias').select('fichas').eq('usuario', session.user.id).maybeSingle();
+    if (error) return false;
+    const local = _hubSlots();
+    if (data && Array.isArray(data.fichas) && data.fichas.length === 4) {
+      if (JSON.stringify(data.fichas) === JSON.stringify(local)) return false;
+      try { localStorage.setItem('hub_fichas', JSON.stringify(data.fichas)); } catch (_) {}
+      return true;
+    }
+    if (JSON.stringify(local) !== JSON.stringify(FICHAS_BASE)) _guardarSlots(local);   // primera vez: sube lo que ya había elegido en este equipo
+    return false;
+  } catch (_) { return false; }
+}
 const _hubMod = id => HUB_MODULOS.find(m => m.id === id) || {};
 const _icono = id => { const m = _hubMod(id); return m.icono ? `<i class="ti ${m.icono}" aria-hidden="true"></i>` : _HUB_SAFE; };
 
@@ -1741,6 +1764,7 @@ function _fichaHTML(id, k, d) {
 }
 // (hub v60) pide el resumen de las fichas a la vista que no vienen en hub_tablero; con pintar, repinta cada una al llegar
 async function _resumenesVisibles(pintar) {
+  try { if (!(await sb.auth.getSession()).data.session) return; } catch (_) { return; }   // sin sesión no hay fichas
   const faltan = _hubSlots().filter(id => !BASE_TABLERO.includes(id));
   await Promise.all(faltan.map(async id => {
     try { const { data, error } = await sb.rpc('hub_resumen', { p_modulo: id }); if (!error && data) _res[id] = data; } catch (_) {}
@@ -1804,6 +1828,7 @@ async function cargarTablero() {
     let antes = false; try { antes = localStorage.getItem('hub_con_tablero') === '1'; } catch (_) {}
     if (!_tbData && antes) { document.body.classList.add('con-tablero'); renderCentro(); }   // esqueleto mientras llega la data
     if (_tbDolar == null) await _tbCotizacion();
+    if (!_tbData) await _traerSlots();
     const { data, error } = await sb.rpc('hub_tablero');
     if (error || !data) { _tbData = null; document.body.classList.remove('con-tablero'); renderCentro(); return; }
     const primera = !_tbData; _tbData = data;
@@ -1852,7 +1877,7 @@ function _selectorHTML(slot) {
       const ok = FICHAS_CON_DATOS.includes(m.id), usada = s.includes(m.id) && m.id !== actual;
       return `<button type="button" class="sel-op ${m.id === actual ? 'actual' : ''}" data-elegir="${m.id}" ${ok ? '' : 'disabled'} title="${ok ? (usada ? 'Ya está en otra ficha: se intercambian de lugar' : m.nombre) : 'Su ficha todavía no está lista'}">` +
         `<span class="sel-bola" style="--c:var(--${m.color});">${_icono(m.id)}</span>${m.nombre}${ok ? '' : '<small>pronto</small>'}</button>`;
-    }).join('') + `</div><div class="sel-pie"><span>También podés arrastrar una moneda arriba de la ficha.</span><a data-restaurar>volver a las de siempre</a></div></div>`;
+    }).join('') + `</div><div class="sel-pie"><span>Queda guardado en tu usuario. También podés arrastrar una moneda arriba de la ficha.</span><a data-restaurar>volver a las de siempre</a></div></div>`;
 }
 function _ponerFicha(slot, id) {
   if (!FICHAS_CON_DATOS.includes(id)) return;
@@ -1860,7 +1885,7 @@ function _ponerFicha(slot, id) {
   if (j === slot) { _cerrarSelector(); return; }
   if (j >= 0) s[j] = s[slot];   // si ya estaba en otra ficha, se intercambian de lugar
   s[slot] = id;
-  try { localStorage.setItem('hub_fichas', JSON.stringify(s)); } catch (_) {}
+  _guardarSlots(s);
   renderCentro();
   if (!_res[id] && !BASE_TABLERO.includes(id)) _resumenesVisibles(true);
 }
@@ -1875,7 +1900,7 @@ function _ponerFicha(slot, id) {
       return;
     }
     if (elegir) { _ponerFicha(+elegir.closest('.fz').dataset.slot, elegir.dataset.elegir); return; }
-    if (e.target.closest('[data-restaurar]')) { try { localStorage.removeItem('hub_fichas'); } catch (_) {} renderCentro(); return; }
+    if (e.target.closest('[data-restaurar]')) { _guardarSlots(FICHAS_BASE.slice()); renderCentro(); return; }
     if (med) { const ab = esc.querySelector('.sal-detalle'); if (ab) ab.remove(); else med.insertAdjacentHTML('afterend', saludDetalleHTML()); return; }
     if (!e.target.closest('.sal-detalle')) esc.querySelectorAll('.sal-detalle').forEach(x => x.remove());
     if (!e.target.closest('.selector')) _cerrarSelector();
@@ -1930,7 +1955,7 @@ function _ponerFicha(slot, id) {
   addEventListener('resize', () => { clearTimeout(tRes); tRes = setTimeout(acomodarHub, 120); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(acomodarHub);
 })();
-sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') setTimeout(cargarTablero, 50); });
+sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { try { localStorage.removeItem('hub_fichas'); } catch (_) {} setTimeout(cargarTablero, 50); } });
 renderCentro();
 cargarTablero();
 
