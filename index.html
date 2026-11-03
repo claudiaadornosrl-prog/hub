@@ -400,7 +400,7 @@ window.ADORNO_SSO = (function () {
     --aster: #95867B; --boton: #1C1612; --boton-txt: #F7F3EC; --activo: #A65A42;
     --ok: #5E7F52; --ok-suave: #E4EBDD; --mal: #A84B37; --mal-suave: #F4E1DA; --aviso: #A2702C; --aviso-claro: #C99A4B; --aviso-suave: #F3E9D6;
     --crm: #6E7D5A; --rrhh: #7A6274; --ventas: #A65A42; --banco: #A07F45; --reportes: #5D7080; --stock: #4F6B68;
-    --compras: #B07A55; --gastos: #7C7650; --impuestos: #6B4C3B; --productos: #59698A; --marketing: #A3656F; --obra: #8A7B70;
+    --compras: #B07A55; --gastos: #7C7650; --impuestos: #6B4C3B; --productos: #59698A; --marketing: #A3656F; --obra: #8A7B70; --pos: #3D7C88;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -408,7 +408,7 @@ window.ADORNO_SSO = (function () {
       --aster: #C8B89A; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
       --ok: #8FB07F; --ok-suave: #2B3326; --mal: #D9826B; --mal-suave: #3A2620; --aviso: #D6A75C; --aviso-claro: #D6A75C; --aviso-suave: #382D1C;
       --crm: #93A27E; --rrhh: #A88DA0; --ventas: #C98267; --banco: #C4A266; --reportes: #8499AA; --stock: #7C9A96;
-      --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C;
+      --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C; --pos: #78ADB6;
     }
   }
   :root[data-theme="dark"] {
@@ -416,7 +416,7 @@ window.ADORNO_SSO = (function () {
     --aster: #C8B89A; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
     --ok: #8FB07F; --ok-suave: #2B3326; --mal: #D9826B; --mal-suave: #3A2620; --aviso: #D6A75C; --aviso-claro: #D6A75C; --aviso-suave: #382D1C;
     --crm: #93A27E; --rrhh: #A88DA0; --ventas: #C98267; --banco: #C4A266; --reportes: #8499AA; --stock: #7C9A96;
-    --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C;
+    --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C; --pos: #78ADB6;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -1008,6 +1008,8 @@ window.ADORNO_SSO = (function () {
     { id: 'productos',  nombre: 'Productos',     desc: 'Ficha por artículo · juegos · proveedores', icono: 'ti-tags',           color: 'productos', g: 'neg', url: 'https://claudiaadornosrl-prog.github.io/productos-adorno/' },
     { id: 'marketing',  nombre: 'Marketing',     desc: 'Redes · pauta · web · métricas',           icono: 'ti-speakerphone',    color: 'marketing', g: 'neg', url: 'https://claudiaadornosrl-prog.github.io/marketing-adorno/' },
     { id: 'obra',       nombre: 'Obra',          desc: 'Local Martínez · tareas · presupuestos · pagos', icono: 'ti-hammer',    color: 'obra',      g: 'neg', url: 'https://claudiaadornosrl-prog.github.io/obra-adorno/' },
+    // (hub v66, 3-nov-2026, JP) POS: punto de venta de los locales; por ahora lo ve solo admin (hub_modulos)
+    { id: 'pos',        nombre: 'POS',           desc: 'Facturas · notas de crédito · sin factura', icono: 'ti-receipt',        color: 'pos',       g: 'neg', url: 'https://claudiaadornosrl-prog.github.io/pos-adorno/' },
   ];
   // caja fuerte: dibujo propio estilo tabler (el set no tiene "safe")
   const _HUB_SAFE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><circle cx="12" cy="11" r="3.2"/><path d="M12 6.2v1.6M12 14.2v1.6M7.2 11h1.6M15.2 11h1.6M6 19v2M18 19v2"/></svg>';
