@@ -93,7 +93,9 @@ window.ADORNO_MFA = (function () {
   }
 
   // Sesión guardada sin el código (la de antes de activarlo): la base ya la rechaza, así que se pide y se recarga.
+  // De paso, en un equipo que entra con la cara, pide la cara (ADORNO_CARA).
   async function alCargar(sb) {
+    if (window.ADORNO_CARA) ADORNO_CARA.vigilar(sb);
     try {
       var s = (await sb.auth.getSession()).data.session;
       if (!s || await nivelActual(sb) === 'aal2' || !(await factorVerificado(sb))) return;
@@ -159,5 +161,100 @@ window.ADORNO_MFA = (function () {
     return true;
   }
 
-  return { pedirCodigo: pedirCodigo, alCargar: alCargar, activo: activo, activar: activar, desactivar: desactivar };
+  return { pedirCodigo: pedirCodigo, alCargar: alCargar, activo: activo, activar: activar, desactivar: desactivar, modal: modal };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ADORNO_CARA — entrar con la cara (o la huella) en este equipo
+//  (3-nov-2026, JP: "que Clau deje su celular registrado y que solo le pida la cara")
+//  · Desde el panel de sesión del Hub se registra una passkey de Supabase y el equipo queda marcado
+//    (localStorage adorno-cara = email). Salir de la sesión no borra la marca.
+//  · En un equipo marcado se pide la cara al abrir y al volver después de 5 minutos en segundo plano, como el home
+//    banking. Entrar con la cara es un login real contra Supabase (signInWithPasskey), no un candado de pantalla.
+// ═══════════════════════════════════════════════════════════════════════
+window.ADORNO_CARA = (function () {
+  var MARCA = 'adorno-cara', ABIERTA = 'adorno-cara-ok', FUERA = 'adorno-cara-fuera', PAUSA = 5 * 60 * 1000;
+  function get(st, k) { try { return st.getItem(k); } catch (e) { return null; } }
+  function set(st, k, v) { try { st.setItem(k, String(v)); } catch (e) {} }
+  function del(st, k) { try { st.removeItem(k); } catch (e) {} }
+
+  function soporta() { return !!window.PublicKeyCredential; }
+  function marca() { return get(localStorage, MARCA); }
+  function marcadoPara(email) { var m = marca(); return !!m && (m === '1' || m === String(email || '').toLowerCase()); }
+
+  function _ok(email) {
+    set(localStorage, MARCA, String(email || '1').toLowerCase());
+    set(sessionStorage, ABIERTA, Date.now());
+    try { ADORNO_SSO.confiar(true); } catch (e) {}     // es su equipo: los módulos no le vuelven a pedir la clave
+  }
+
+  function mensajeError(e) {
+    var t = String((e && (e.code || e.name || e.message)) || '');
+    if (/NotAllowed|AbortError|cancel/i.test(t)) return '';                         // la persona canceló
+    if (/passkey_disabled/i.test(t)) return 'Todavía no está prendido en Supabase. Avisale a JP.';
+    if (/credential_not_found/i.test(t)) return 'Esta cara no está registrada en el sistema. Entrá con tu clave.';
+    return 'No se pudo. Probá de nuevo.';
+  }
+
+  async function entrar(sb) {
+    var r = await sb.auth.signInWithPasskey();
+    if (r.error) return { error: r.error, mensaje: mensajeError(r.error) };
+    _ok(r.data && r.data.user && r.data.user.email);
+    return r;
+  }
+
+  async function registrar(sb) {
+    var r = await sb.auth.registerPasskey();
+    if (r.error && !/credential_exists/i.test(String(r.error.code || r.error.message))) {
+      return { error: r.error, mensaje: mensajeError(r.error) };
+    }
+    var s = (await sb.auth.getSession()).data.session;
+    _ok(s && s.user.email);
+    return { ok: true };
+  }
+
+  function olvidar() { del(localStorage, MARCA); del(sessionStorage, ABIERTA); }
+
+  // Pantalla que tapa todo hasta que entra con la cara
+  function candado(sb) {
+    if (document.querySelector('.amfa-candado')) return;
+    var o = ADORNO_MFA.modal('<h3>Hola</h3><p>Para entrar, mirá el celular.</p><div class="amfa-error"></div>' +
+      '<div class="amfa-botones"><button class="amfa-sec">Salir</button><button class="amfa-pri">Entrar con la cara</button></div>');
+    o.classList.add('amfa-candado');
+    o.style.background = 'var(--bg, #fafaf9)';                                       // opaco: no se ve lo de atrás
+    var err = o.querySelector('.amfa-error'), btn = o.querySelector('.amfa-pri');
+    btn.onclick = async function () {
+      btn.disabled = true; err.textContent = '';
+      var r = await entrar(sb);
+      btn.disabled = false;
+      if (r.error) {
+        err.textContent = r.mensaje;
+        if (/credential_not_found/i.test(String(r.error.code || r.error.message))) olvidar();
+        return;
+      }
+      o.remove();
+    };
+    o.querySelector('.amfa-sec').onclick = async function () {
+      try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+      location.reload();
+    };
+  }
+
+  async function vigilar(sb) {
+    try {
+      if (!marca() || !soporta()) return;
+      var s = (await sb.auth.getSession()).data.session;
+      if (!s || !marcadoPara(s.user.email)) return;
+      if (!get(sessionStorage, ABIERTA)) candado(sb);
+      if (window.__adornoCaraVigila) return;
+      window.__adornoCaraVigila = true;
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { set(sessionStorage, FUERA, Date.now()); return; }
+        var f = +get(sessionStorage, FUERA) || 0;
+        if (f && Date.now() - f > PAUSA) { del(sessionStorage, ABIERTA); candado(sb); }
+      });
+    } catch (e) {}
+  }
+
+  return { soporta: soporta, marcadoPara: marcadoPara, entrar: entrar, registrar: registrar, olvidar: olvidar, vigilar: vigilar };
 })();

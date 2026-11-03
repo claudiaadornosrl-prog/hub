@@ -379,7 +379,7 @@ window.ADORNO_SSO = (function () {
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Forum&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="/hub/seguridad.js?v=1"></script>
+<script src="/hub/seguridad.js?v=2"></script>
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -1205,8 +1205,13 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
   }
 
   function renderNotifLogin(msj) {
+    // (hub v69, 3-nov-2026) entrar con la cara (passkey): primero si este equipo ya la tiene registrada
+    const cara = window.ADORNO_CARA && ADORNO_CARA.soporta();
+    const caraPrimero = cara && !!localStorage.getItem('adorno-cara');
+    const btnCara = (pri) => `<button class="config-cerrar" style="margin-top:${pri ? '0' : '8px'};${pri ? '' : 'background:transparent;color:var(--text);border:1px solid var(--border);'}" onclick="notifEntrarCara()">Entrar con la cara</button>`;
     document.getElementById('notif-body').innerHTML = `
       <div class="hint">Ingresá una sola vez con tu cuenta del sistema para manejar las notificaciones de todos los módulos desde acá.</div>
+      ${caraPrimero ? `<div class="notif-login" style="margin-bottom:14px;">${btnCara(true)}<div class="hint" style="margin:8px 0 0;">O con tu email y contraseña:</div></div>` : ''}
       <div class="notif-login">
         <input id="nf-email" type="email" placeholder="Email" autocomplete="username">
         <input id="nf-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
@@ -1218,7 +1223,19 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
         </label>
         <div class="notif-error">${msj || ''}</div>
         <button class="config-cerrar" style="margin-top:0;" onclick="notifLogin()">Ingresar</button>
+        ${cara && !caraPrimero ? btnCara(false) : ''}
       </div>`;
+  }
+
+  async function notifEntrarCara() {
+    const r = await ADORNO_CARA.entrar(sb);
+    if (r.error) {
+      const el = document.querySelector('#notif-body .notif-error');
+      if (r.mensaje && el) el.textContent = r.mensaje;
+      return;
+    }
+    await renderNotifPanel(r.data.session);
+    cargarTablero();
   }
 
   // (hub v68) prende o apaga el código del celular de esta cuenta
@@ -1229,6 +1246,20 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     } finally { btn.disabled = false; }
     const { data: { session } } = await sb.auth.getSession();
     if (session) await renderNotifPanel(session);
+  }
+
+  // (hub v69) registra la cara de este equipo (passkey) o se olvida de ella acá
+  async function toggleCara(btn) {
+    btn.disabled = true;
+    let mensaje = '';
+    try {
+      if (btn.classList.contains('on')) ADORNO_CARA.olvidar();
+      else { const r = await ADORNO_CARA.registrar(sb); if (r.error) mensaje = r.mensaje; }
+    } finally { btn.disabled = false; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await renderNotifPanel(session);
+    const el = document.getElementById('cara-error');
+    if (el && mensaje) el.textContent = mensaje;
   }
 
   async function toggleConfiarEquipo() {
@@ -1331,7 +1362,16 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     if (window.ADORNO_MFA && !HUB_ROL) { try { const { data } = await sb.rpc('hub_modulos'); HUB_ROL = (data && data.rol) || null; } catch (_) {} }
     if (window.ADORNO_MFA && ['admin', 'directora'].includes(HUB_ROL)) {
       const on = await ADORNO_MFA.activo(sb);
-      filaMfa = `<div class="notif-row" style="border-bottom:1px solid var(--border);padding:10px 0;margin:-12px 0 12px;">
+      const cara = window.ADORNO_CARA && ADORNO_CARA.soporta() && ADORNO_CARA.marcadoPara(session.user.email);
+      filaMfa = (window.ADORNO_CARA && ADORNO_CARA.soporta() ? `<div class="notif-row" style="border-bottom:1px solid var(--border);padding:10px 0;margin:-12px 0 12px;">
+        <div>
+          <strong style="font-size:13px;">Entrar con la cara en este equipo</strong>
+          <div class="estado">${cara ? 'Activado: al abrir el Hub te pide la cara (o la huella) y no hace falta la clave.'
+            : 'Registrá la cara de este celular o computadora para entrar sin escribir la clave.'}</div>
+          <div class="estado" id="cara-error" style="color:var(--mal);"></div>
+        </div>
+        <button class="notif-switch ${cara ? 'on' : ''}" onclick="toggleCara(this)"></button>
+      </div>` : '') + `<div class="notif-row" style="border-bottom:1px solid var(--border);padding:10px 0;margin:-12px 0 12px;">
         <div>
           <strong style="font-size:13px;">Código del celular al entrar</strong>
           <div class="estado">${on ? 'Activado: además de la clave, te pide el código de la app del celular.'

@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v68-doble-factor';
+const CACHE_VERSION = 'hub-v69-cara';
 const ASSETS = [
   './',
   './index.html',
