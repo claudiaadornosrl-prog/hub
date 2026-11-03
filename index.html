@@ -379,7 +379,7 @@ window.ADORNO_SSO = (function () {
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Forum&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="/hub/seguridad.js?v=2"></script>
+<script src="/hub/seguridad.js?v=3"></script>
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -1366,16 +1366,16 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
       filaMfa = (window.ADORNO_CARA && ADORNO_CARA.soporta() ? `<div class="notif-row" style="border-bottom:1px solid var(--border);padding:10px 0;margin:-12px 0 12px;">
         <div>
           <strong style="font-size:13px;">Entrar con la cara en este equipo</strong>
-          <div class="estado">${cara ? 'Activado: al abrir el Hub te pide la cara (o la huella) y no hace falta la clave.'
-            : 'Registrá la cara de este celular o computadora para entrar sin escribir la clave.'}</div>
+          <div class="estado">${cara ? 'Activado: este equipo entra con la cara (o la huella), sin clave ni código. Te la pide al abrir.'
+            : 'Registrá la cara de este celular: entra sin clave ni código.'}</div>
           <div class="estado" id="cara-error" style="color:var(--mal);"></div>
         </div>
         <button class="notif-switch ${cara ? 'on' : ''}" onclick="toggleCara(this)"></button>
       </div>` : '') + `<div class="notif-row" style="border-bottom:1px solid var(--border);padding:10px 0;margin:-12px 0 12px;">
         <div>
           <strong style="font-size:13px;">Código del celular al entrar</strong>
-          <div class="estado">${on ? 'Activado: además de la clave, te pide el código de la app del celular.'
-            : 'Apagado: con saber tu clave alcanza para entrar.'}</div>
+          <div class="estado">${on ? 'Activado: en cada computadora te pide el código de la app del celular, y después cada 30 días.'
+            : 'Apagado: desde una computadora, con saber tu clave alcanza para entrar.'}</div>
         </div>
         <button class="notif-switch ${on ? 'on' : ''}" onclick="toggleDobleFactor(this)"></button>
       </div>`;

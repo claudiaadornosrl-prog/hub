@@ -69,22 +69,35 @@ window.ADORNO_MFA = (function () {
     return ((r.data && r.data.totp) || []).filter(function (f) { return f.status === 'verified'; })[0] || null;
   }
 
-  async function nivelActual(sb) {
-    var r = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
-    return (r.data && r.data.currentLevel) || 'aal1';
+  // (3-nov, JP) el celular registrado con la cara ya son dos factores; en la computadora el código vale 30 días.
+  // Las mismas reglas las hace cumplir adorno_pre_request() en la base.
+  var DIAS_CODIGO = 30;
+  async function estadoSesion(sb) {
+    var d = ((await sb.auth.mfa.getAuthenticatorAssuranceLevel()).data) || {};
+    var ms = d.currentAuthenticationMethods || [], t = 0, cara = false;
+    ms.forEach(function (m) {
+      var metodo = String((m && m.method) || m);
+      if (/webauthn|passkey/.test(metodo)) cara = true;
+      if (metodo === 'totp') t = Math.max(t, +m.timestamp || 0);
+    });
+    var vencido = t > 0 && (Date.now() / 1000 - t) > DIAS_CODIGO * 86400;
+    return { conCara: cara, codigoAlDia: d.currentLevel === 'aal2' && !vencido, vencido: vencido };
   }
 
-  // true = puede seguir (no tiene el código activado, ya lo pasó, o lo acaba de ingresar); false = canceló
+  // true = puede seguir (no tiene el código activado, ya lo pasó, entró con la cara, o lo acaba de ingresar); false = canceló
   async function pedirCodigo(sb) {
-    var f;
+    var f, e;
     try {
-      if (await nivelActual(sb) === 'aal2') return true;
+      e = await estadoSesion(sb);
+      if (e.conCara || e.codigoAlDia) return true;
       f = await factorVerificado(sb);
-    } catch (e) { return true; }     // sin red no se traba el login: igual la base rechaza lo que falte
+    } catch (x) { return true; }     // sin red no se traba el login: igual la base rechaza lo que falte
     if (!f) return true;
     return new Promise(function (listo) {
-      var o = modal('<h3>Código del celular</h3>' +
-        '<p>Abrí la app de autenticación del celular y escribí el código de 6 números de Claudia Adorno.</p>' + CAMPO +
+      var o = modal((e.vencido ? '<h3>Pasaron 30 días</h3><p>Por seguridad, cada 30 días la computadora te pide de nuevo el código. ' +
+                                 'Abrí la app de autenticación del celular y escribí el código de 6 números de Claudia Adorno.</p>'
+                               : '<h3>Código del celular</h3>' +
+        '<p>Abrí la app de autenticación del celular y escribí el código de 6 números de Claudia Adorno.</p>') + CAMPO +
         '<div class="amfa-botones"><button class="amfa-sec">Cancelar</button><button class="amfa-pri">Entrar</button></div>');
       o.querySelector('.amfa-sec').onclick = function () { o.remove(); listo(false); };
       atarCampo(o, function (c) { return sb.auth.mfa.challengeAndVerify({ factorId: f.id, code: c }); },
@@ -98,7 +111,9 @@ window.ADORNO_MFA = (function () {
     if (window.ADORNO_CARA) ADORNO_CARA.vigilar(sb);
     try {
       var s = (await sb.auth.getSession()).data.session;
-      if (!s || await nivelActual(sb) === 'aal2' || !(await factorVerificado(sb))) return;
+      if (!s) return;
+      var e = await estadoSesion(sb);
+      if (e.conCara || e.codigoAlDia || !(await factorVerificado(sb))) return;
       var ok = await pedirCodigo(sb);
       if (!ok) await sb.auth.signOut({ scope: 'local' });
       location.reload();
@@ -161,7 +176,8 @@ window.ADORNO_MFA = (function () {
     return true;
   }
 
-  return { pedirCodigo: pedirCodigo, alCargar: alCargar, activo: activo, activar: activar, desactivar: desactivar, modal: modal };
+  return { pedirCodigo: pedirCodigo, alCargar: alCargar, activo: activo, activar: activar, desactivar: desactivar, modal: modal,
+           estado: estadoSesion, factor: factorVerificado };
 })();
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -210,7 +226,9 @@ window.ADORNO_CARA = (function () {
     }
     var s = (await sb.auth.getSession()).data.session;
     _ok(s && s.user.email);
-    return { ok: true };
+    // Recién registrada, entra con la cara: con la cara registrada (y sin código) la clave sola ya no alcanza en la base
+    var r2 = await entrar(sb);
+    return { ok: true, entro: !r2.error };
   }
 
   function olvidar() { del(localStorage, MARCA); del(sessionStorage, ABIERTA); }
@@ -242,9 +260,16 @@ window.ADORNO_CARA = (function () {
 
   async function vigilar(sb) {
     try {
-      if (!marca() || !soporta()) return;
+      if (!soporta()) return;
       var s = (await sb.auth.getSession()).data.session;
-      if (!s || !marcadoPara(s.user.email)) return;
+      if (!s) return;
+      // Cuenta que solo entra con la cara (sin código) y sesión de clave: la base la rechaza, así que se pide la cara
+      var e = await ADORNO_MFA.estado(sb);
+      if (!e.conCara && sb.auth.passkey && !(await ADORNO_MFA.factor(sb))) {
+        var pk = await sb.auth.passkey.list();
+        if (pk && pk.data && pk.data.length) { candado(sb); return; }
+      }
+      if (!marcadoPara(s.user.email)) return;
       if (!get(sessionStorage, ABIERTA)) candado(sb);
       if (window.__adornoCaraVigila) return;
       window.__adornoCaraVigila = true;
