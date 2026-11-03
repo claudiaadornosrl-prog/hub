@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v66-pos';
+const CACHE_VERSION = 'hub-v67-giro';
 const ASSETS = [
   './',
   './index.html',

@@ -1587,6 +1587,22 @@ function girar(m, on) {
     anim.onfinish = () => { if (m._giro && m._giro.anim === anim) { m._giro = null; m._ang = hasta % 360; } };
   }
 }
+// (hub v67, 3-nov-2026, JP) en el celular no hay mouse encima: al tocar una moneda pega una vuelta y recién ahí abre el módulo
+function girarYAbrir(m) {
+  if (m._abriendo) return; m._abriendo = true;
+  let listo = false;
+  const ir = () => { if (listo) return; listo = true; m._abriendo = false; location.href = m.href; };
+  const mon = m.querySelector('.moneda');
+  if (!mon || !mon.animate || _quieto()) { ir(); return; }
+  const a = _anguloActual(m);
+  if (m._giro) m._giro.anim.cancel();
+  const hasta = Math.ceil((a + 300) / 180) * 180;   // una vuelta y queda de frente o de dorso
+  mon.style.transform = _rot(hasta % 360);
+  const anim = mon.animate([{ transform: _rot(a) }, { transform: _rot(hasta) }], { duration: 650, easing: 'cubic-bezier(.45, 0, .25, 1)' });
+  m._giro = { tipo: 'frena', desde: a, hasta, anim };
+  anim.onfinish = () => { if (m._giro && m._giro.anim === anim) { m._giro = null; m._ang = hasta % 360; } ir(); };
+  setTimeout(ir, 1000);   // por si la animación no termina (pestaña en segundo plano)
+}
 
 // ── Piezas de las fichas ──
 const _heroH = (lbl, num, sub, subCls) => `<div class="fz-hero"><span class="fz-lbl">${lbl}</span><span class="fz-num contar">${num}</span>${sub ? `<span class="fz-sub ${subCls || ''}">${sub}</span>` : ''}</div>`;
@@ -1998,7 +2014,11 @@ function _ponerFicha(slot, id) {
 }
 (function () {
   const esc = document.getElementById('escena'); if (!esc) return;
+  let toque = false;   // (hub v67) el último toque fue con el dedo (o lápiz), no con el mouse
+  esc.addEventListener('pointerdown', e => { toque = e.pointerType !== 'mouse'; });
   esc.addEventListener('click', e => {
+    const mod = e.target.closest('.mod[href]');
+    if (mod && toque) { e.preventDefault(); girarYAbrir(mod); return; }
     const cambiar = e.target.closest('.fz-cambiar'), elegir = e.target.closest('[data-elegir]'), med = e.target.closest('.medallon.salud');
     if (cambiar) {
       const f = cambiar.closest('.fz'), abierto = f.classList.contains('eligiendo');
