@@ -1680,6 +1680,30 @@ function girarYAbrir(m) {
   anim.onfinish = () => { if (m._giro && m._giro.anim === anim) { m._giro = null; m._ang = hasta % 360; } ir(); };
   setTimeout(ir, 1000);   // por si la animación no termina (pestaña en segundo plano)
 }
+// (hub v72, 4-nov-2026, JP: "apenas termine de girar que entre al módulo") al apoyar el dedo en una moneda se empieza a
+//   bajar el módulo (su página y sus scripts de la misma web) mientras gira: queda en la caché del navegador
+//   (GitHub Pages da max-age 600) y al terminar el giro el módulo abre sin esperar la red.
+function precargarModulo(m) {
+  if (!m || !window.fetch) return;
+  if (m._precarga && Date.now() - m._precarga < 300000) return;
+  m._precarga = Date.now();
+  let base;
+  try { base = new URL(m.href, location.href); } catch (_) { return; }
+  if (base.origin !== location.origin) return;
+  fetch(base.href, { credentials: 'same-origin' }).then(r => (r.ok ? r.text() : '')).then(html => {
+    const urls = new Set();
+    for (const t of html.match(/<(?:script|link)\b[^>]*>/gi) || []) {
+      if (/^<link/i.test(t) && !/\brel=["']?(?:stylesheet|modulepreload)/i.test(t)) continue;
+      const u = (t.match(/\b(?:src|href)=["']([^"']+)["']/i) || [])[1];
+      if (!u) continue;
+      try { const x = new URL(u, base); if (x.origin === location.origin) urls.add(x.href); } catch (_) {}
+    }
+    for (const f of html.match(/url\(\s*["']?[^"')]+\.(?:woff2?|ttf|otf)\b/gi) || []) {   // la letra de la marca (@font-face)
+      try { const x = new URL(f.replace(/^url\(\s*["']?/i, ''), base); if (x.origin === location.origin) urls.add(x.href); } catch (_) {}
+    }
+    urls.forEach(u => fetch(u, { credentials: 'same-origin' }).catch(() => {}));
+  }).catch(() => {});
+}
 
 // ── Piezas de las fichas ──
 const _heroH = (lbl, num, sub, subCls) => `<div class="fz-hero"><span class="fz-lbl">${lbl}</span><span class="fz-num contar">${num}</span>${sub ? `<span class="fz-sub ${subCls || ''}">${sub}</span>` : ''}</div>`;
@@ -2092,7 +2116,10 @@ function _ponerFicha(slot, id) {
 (function () {
   const esc = document.getElementById('escena'); if (!esc) return;
   let toque = false;   // (hub v67) el último toque fue con el dedo (o lápiz), no con el mouse
-  esc.addEventListener('pointerdown', e => { toque = e.pointerType !== 'mouse'; });
+  esc.addEventListener('pointerdown', e => {
+    toque = e.pointerType !== 'mouse';
+    if (toque) precargarModulo(e.target.closest('.mod[href]'));   // (hub v72) mientras gira ya baja el módulo
+  });
   esc.addEventListener('click', e => {
     const mod = e.target.closest('.mod[href]');
     if (mod && toque) { e.preventDefault(); girarYAbrir(mod); return; }

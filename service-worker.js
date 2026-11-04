@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v71-cara-solo-registrado';
+const CACHE_VERSION = 'hub-v72-modulo-al-girar';
 const ASSETS = [
   './',
   './index.html',
@@ -33,6 +33,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   // Solo cacheamos same-origin (no Google Fonts, no Tabler CDN — esos los maneja el browser)
   if (url.origin !== self.location.origin) return;
+  // (hub v72) solo lo del Hub: las páginas de los módulos que el Hub baja por adelantado van a la caché del navegador
+  if (!url.pathname.startsWith(new URL(self.registration.scope).pathname)) return;
   event.respondWith(
     fetch(event.request)
       .then((response) => {
