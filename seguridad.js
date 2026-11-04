@@ -233,8 +233,10 @@ window.ADORNO_CARA = (function () {
 
   function olvidar() { del(localStorage, MARCA); del(sessionStorage, ABIERTA); }
 
-  // Pantalla que tapa todo hasta que entra con la cara
-  function candado(sb) {
+  // Pantalla que tapa todo hasta que entra con la cara.
+  // (4-nov-2026, JP: "¿no lo puede pedir directamente sin que tenga que tocar el botón?") con sola=true pide la cara
+  //   apenas aparece; si el celular no lo deja sin un toque (o la persona cancela), queda el botón como siempre.
+  function candado(sb, sola) {
     if (document.querySelector('.amfa-candado')) return;
     var o = ADORNO_MFA.modal('<h3>Hola</h3><p>Para entrar, mirá el celular.</p><div class="amfa-error"></div>' +
       '<div class="amfa-botones"><button class="amfa-sec">Salir</button><button class="amfa-pri">Entrar con la cara</button></div>');
@@ -256,6 +258,7 @@ window.ADORNO_CARA = (function () {
       try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
       location.reload();
     };
+    if (sola && !document.hidden) btn.onclick();
   }
 
   async function vigilar(sb) {
@@ -270,16 +273,35 @@ window.ADORNO_CARA = (function () {
         if (pk && pk.data && pk.data.length) { candado(sb); return; }
       }
       if (!marcadoPara(s.user.email)) return;
-      if (!get(sessionStorage, ABIERTA)) candado(sb);
+      if (!get(sessionStorage, ABIERTA)) candado(sb, true);
       if (window.__adornoCaraVigila) return;
       window.__adornoCaraVigila = true;
       document.addEventListener('visibilitychange', function () {
         if (document.hidden) { set(sessionStorage, FUERA, Date.now()); return; }
         var f = +get(sessionStorage, FUERA) || 0;
-        if (f && Date.now() - f > PAUSA) { del(sessionStorage, ABIERTA); candado(sb); }
+        if (f && Date.now() - f > PAUSA) { del(sessionStorage, ABIERTA); candado(sb, true); }
       });
     } catch (e) {}
   }
 
   return { soporta: soporta, marcadoPara: marcadoPara, entrar: entrar, registrar: registrar, olvidar: olvidar, vigilar: vigilar };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ADORNO_SSO.migrar seguro (4-nov-2026, charla Infraestructura)
+//  Cada módulo, antes de crear su cliente, llamaba ADORNO_SSO.migrar(claveVieja): si la sesión compartida
+//  (adorno-auth) estaba vacía, copiaba la que hubiera guardada con la clave vieja del módulo. Esas claves quedaron
+//  con sesiones de antes del cambio de proyecto (22-oct: el refresh da 400 "Refresh Token Not Found" y se vuelve a
+//  pedir la cara) o, la clave por defecto sb-<proyecto>-auth-token, con la sesión de OTRA persona que entró en una
+//  página suelta (4-nov: el iPhone de JP quedó con la sesión de Analía). Ahora no se copia nada: las claves viejas
+//  de cada módulo se borran y la por defecto no se toca (la usan páginas sueltas de Obra) pero tampoco se adopta.
+//  Este archivo se carga después de definir ADORNO_SSO y antes de que el módulo llame a migrar (Hub y módulos).
+// ═══════════════════════════════════════════════════════════════════════
+(function () {
+  if (!window.ADORNO_SSO || ADORNO_SSO.migrarSeguro) return;
+  ADORNO_SSO.migrarSeguro = true;
+  ADORNO_SSO.migrar = function (keyVieja) {
+    if (!keyVieja || keyVieja === ADORNO_SSO.KEY || keyVieja.indexOf('sb-') === 0) return;
+    try { localStorage.removeItem(keyVieja); } catch (e) {}
+  };
 })();

@@ -379,7 +379,7 @@ window.ADORNO_SSO = (function () {
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Forum&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="/hub/seguridad.js?v=3"></script>
+<script src="/hub/seguridad.js?v=4"></script>
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -398,7 +398,7 @@ window.ADORNO_SSO = (function () {
   :root {
     --bg: #E9E2D5; --surface: #FFFFFF; --text: #1C1612; --muted: #685B51; --border: #D6CCBA; --accent: #685B51;
     --arena: #E9E2D5; --beige: #C8B89A; --conejo: #95867B; --noble: #43464A; --oscuro: #1C1612; --crema: #F7F3EC; --ic: #F7F3EC;
-    --aster: #95867B; --boton: #1C1612; --boton-txt: #F7F3EC; --activo: #A65A42;
+    --aster: #D97757; --boton: #1C1612; --boton-txt: #F7F3EC; --activo: #A65A42;   /* (hub v74, JP) asterisco naranja, como el de Claude */
     --ok: #5E7F52; --ok-suave: #E4EBDD; --mal: #A84B37; --mal-suave: #F4E1DA; --aviso: #A2702C; --aviso-claro: #C99A4B; --aviso-suave: #F3E9D6;
     --crm: #6E7D5A; --rrhh: #7A6274; --ventas: #A65A42; --banco: #A07F45; --reportes: #5D7080; --stock: #4F6B68;
     --compras: #B07A55; --gastos: #7C7650; --impuestos: #6B4C3B; --productos: #59698A; --marketing: #A3656F; --obra: #8A7B70; --pos: #3D7C88;
@@ -406,7 +406,7 @@ window.ADORNO_SSO = (function () {
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #17120E; --surface: #221C17; --text: #EDE6DA; --muted: #B2A597; --border: #3A3129; --accent: #C8B89A;
-      --aster: #C8B89A; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
+      --aster: #D97757; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
       --ok: #8FB07F; --ok-suave: #2B3326; --mal: #D9826B; --mal-suave: #3A2620; --aviso: #D6A75C; --aviso-claro: #D6A75C; --aviso-suave: #382D1C;
       --crm: #93A27E; --rrhh: #A88DA0; --ventas: #C98267; --banco: #C4A266; --reportes: #8499AA; --stock: #7C9A96;
       --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C; --pos: #78ADB6;
@@ -414,7 +414,7 @@ window.ADORNO_SSO = (function () {
   }
   :root[data-theme="dark"] {
     --bg: #17120E; --surface: #221C17; --text: #EDE6DA; --muted: #B2A597; --border: #3A3129; --accent: #C8B89A;
-    --aster: #C8B89A; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
+    --aster: #D97757; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
     --ok: #8FB07F; --ok-suave: #2B3326; --mal: #D9826B; --mal-suave: #3A2620; --aviso: #D6A75C; --aviso-claro: #D6A75C; --aviso-suave: #382D1C;
     --crm: #93A27E; --rrhh: #A88DA0; --ventas: #C98267; --banco: #C4A266; --reportes: #8499AA; --stock: #7C9A96;
     --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C; --pos: #78ADB6;
@@ -1675,14 +1675,16 @@ function girarYAbrir(m) {
   if (m._giro) m._giro.anim.cancel();
   const hasta = Math.ceil((a + 300) / 180) * 180;   // una vuelta y queda de frente o de dorso
   mon.style.transform = _rot(hasta % 360);
-  // (hub v73, 4-nov-2026, JP: "sigue largo, achicalo más") giro de 650 → 480 ms, y el módulo se empieza a abrir a mitad
-  //   de la vuelta: el celular tarda un rato en armar la página nueva y mientras tanto la moneda termina de girar
+  // (hub v73, 4-nov-2026, JP: "sigue largo, achicalo más") giro de 650 → 480 ms, y el módulo se empieza a abrir antes
+  //   de que termine la vuelta: el celular tarda un rato en armar la página nueva y mientras tanto la moneda termina de girar
   const GIRO = 480;
   const anim = mon.animate([{ transform: _rot(a) }, { transform: _rot(hasta) }], { duration: GIRO, easing: 'cubic-bezier(.45, 0, .25, 1)' });
   m._giro = { tipo: 'frena', desde: a, hasta, anim };
   anim.onfinish = () => { if (m._giro && m._giro.anim === anim) { m._giro = null; m._ang = hasta % 360; } ir(); };
-  // entra cuando la moneda pasó la mitad de la vuelta Y la página ya bajó (si no bajó, entra igual al terminar el giro)
-  Promise.all([new Promise(r => setTimeout(r, Math.round(GIRO * 0.55))), m._precargaHtml || Promise.resolve()]).then(ir);
+  // entra cuando la moneda va por el 90 % de la vuelta Y la página ya bajó (si no bajó, entra igual al terminar el giro).
+  // (hub v74, JP: "la ficha no termina de girar y entra") antes era a mitad de vuelta; el celular tarda unas décimas
+  //   en mostrar la página nueva, así que con 90 % la moneda termina de girar antes del cambio
+  Promise.all([new Promise(r => setTimeout(r, Math.round(GIRO * 0.9))), m._precargaHtml || Promise.resolve()]).then(ir);
   setTimeout(ir, 1000);   // por si la animación no termina (pestaña en segundo plano)
 }
 // (hub v72, 4-nov-2026, JP: "apenas termine de girar que entre al módulo") al apoyar el dedo en una moneda se empieza a
