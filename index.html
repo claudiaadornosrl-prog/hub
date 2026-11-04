@@ -1675,9 +1675,14 @@ function girarYAbrir(m) {
   if (m._giro) m._giro.anim.cancel();
   const hasta = Math.ceil((a + 300) / 180) * 180;   // una vuelta y queda de frente o de dorso
   mon.style.transform = _rot(hasta % 360);
-  const anim = mon.animate([{ transform: _rot(a) }, { transform: _rot(hasta) }], { duration: 650, easing: 'cubic-bezier(.45, 0, .25, 1)' });
+  // (hub v73, 4-nov-2026, JP: "sigue largo, achicalo más") giro de 650 → 480 ms, y el módulo se empieza a abrir a mitad
+  //   de la vuelta: el celular tarda un rato en armar la página nueva y mientras tanto la moneda termina de girar
+  const GIRO = 480;
+  const anim = mon.animate([{ transform: _rot(a) }, { transform: _rot(hasta) }], { duration: GIRO, easing: 'cubic-bezier(.45, 0, .25, 1)' });
   m._giro = { tipo: 'frena', desde: a, hasta, anim };
   anim.onfinish = () => { if (m._giro && m._giro.anim === anim) { m._giro = null; m._ang = hasta % 360; } ir(); };
+  // entra cuando la moneda pasó la mitad de la vuelta Y la página ya bajó (si no bajó, entra igual al terminar el giro)
+  Promise.all([new Promise(r => setTimeout(r, Math.round(GIRO * 0.55))), m._precargaHtml || Promise.resolve()]).then(ir);
   setTimeout(ir, 1000);   // por si la animación no termina (pestaña en segundo plano)
 }
 // (hub v72, 4-nov-2026, JP: "apenas termine de girar que entre al módulo") al apoyar el dedo en una moneda se empieza a
@@ -1690,7 +1695,9 @@ function precargarModulo(m) {
   let base;
   try { base = new URL(m.href, location.href); } catch (_) { return; }
   if (base.origin !== location.origin) return;
-  fetch(base.href, { credentials: 'same-origin' }).then(r => (r.ok ? r.text() : '')).then(html => {
+  const pHtml = fetch(base.href, { credentials: 'same-origin' }).then(r => (r.ok ? r.text() : ''));
+  m._precargaHtml = pHtml.catch(() => '');   // (hub v73) girarYAbrir espera esto para no pedir la página dos veces
+  pHtml.then(html => {
     const urls = new Set();
     for (const t of html.match(/<(?:script|link)\b[^>]*>/gi) || []) {
       if (/^<link/i.test(t) && !/\brel=["']?(?:stylesheet|modulepreload)/i.test(t)) continue;

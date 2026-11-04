@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v72-modulo-al-girar';
+const CACHE_VERSION = 'hub-v73-giro-corto';
 const ASSETS = [
   './',
   './index.html',
