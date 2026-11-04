@@ -1681,10 +1681,10 @@ function girarYAbrir(m) {
   const anim = mon.animate([{ transform: _rot(a) }, { transform: _rot(hasta) }], { duration: GIRO, easing: 'cubic-bezier(.45, 0, .25, 1)' });
   m._giro = { tipo: 'frena', desde: a, hasta, anim };
   anim.onfinish = () => { if (m._giro && m._giro.anim === anim) { m._giro = null; m._ang = hasta % 360; } ir(); };
-  // entra cuando la moneda va por el 90 % de la vuelta Y la página ya bajó (si no bajó, entra igual al terminar el giro).
-  // (hub v74, JP: "la ficha no termina de girar y entra") antes era a mitad de vuelta; el celular tarda unas décimas
-  //   en mostrar la página nueva, así que con 90 % la moneda termina de girar antes del cambio
-  Promise.all([new Promise(r => setTimeout(r, Math.round(GIRO * 0.9))), m._precargaHtml || Promise.resolve()]).then(ir);
+  // entra cuando la moneda va por el 72 % de la vuelta Y la página ya bajó (si no bajó, entra igual al terminar el giro).
+  // (JP, 4-nov) 55 % (v73): "no termina de girar y entra"; 90 % (v74): "entre que termina de girar y abre, muy largo".
+  //   El celular tarda unas décimas en mostrar la página nueva: con 72 % la vuelta termina justo antes del cambio.
+  Promise.all([new Promise(r => setTimeout(r, Math.round(GIRO * 0.72))), m._precargaHtml || Promise.resolve()]).then(ir);
   setTimeout(ir, 1000);   // por si la animación no termina (pestaña en segundo plano)
 }
 // (hub v72, 4-nov-2026, JP: "apenas termine de girar que entre al módulo") al apoyar el dedo en una moneda se empieza a
