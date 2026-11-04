@@ -1713,8 +1713,43 @@ function precargarModulo(m) {
       try { const x = new URL(f.replace(/^url\(\s*["']?/i, ''), base); if (x.origin === location.origin) urls.add(x.href); } catch (_) {}
     }
     urls.forEach(u => fetch(u, { credentials: 'same-origin' }).catch(() => {}));
+    // (hub v78) también los scripts y estilos de afuera (supabase, xlsx, letras de Google): suelen estar guardados de
+    //   antes y esto no baja nada, pero si el celular los borró quedan listos antes de tocar
+    for (const t of (html.split(/<\/head>/i)[0] || '').match(/<(?:script|link)\b[^>]*>/gi) || []) {
+      if (/^<link/i.test(t) && !/\brel=["']?stylesheet/i.test(t)) continue;
+      const u = (t.match(/\b(?:src|href)=["'](https:\/\/[^"']+)["']/i) || [])[1];
+      if (!u || u.startsWith(location.origin + '/')) continue;
+      fetch(u, /\bcrossorigin\b/i.test(t) ? { mode: 'cors', credentials: 'same-origin' } : { mode: 'no-cors', credentials: 'include' }).catch(() => {});
+    }
   }).catch(() => {});
 }
+// (hub v78, 4-nov-2026, JP: "entre que termina de girar y abre el módulo queda mucho, que abra apenas termina el giro")
+//   lo que quedaba era bajar la página del módulo, que recién empezaba al tocar (en el celular con datos tarda más que el
+//   giro). Ahora el Hub baja todos los módulos de la persona en segundo plano apenas abre (de a uno, primero los que más
+//   usa) y los renueva cada 8 minutos mientras está a la vista: al tocar, la página ya está en el celular.
+const _USOS = 'hub-usos';
+function _usos() { try { return JSON.parse(localStorage.getItem(_USOS) || '{}') || {}; } catch (_) { return {}; } }
+function _ruta(a) { try { return new URL(a.href, location.href).pathname; } catch (_) { return ''; } }
+function _contarUso(m) { try { const u = _usos(), k = _ruta(m); if (!k) return; u[k] = (u[k] || 0) + 1; localStorage.setItem(_USOS, JSON.stringify(u)); } catch (_) {} }
+let _precargaTodos = 0, _precargaIntentos = 0;
+function precargarTodos() {
+  if (!window.fetch || document.hidden || Date.now() - _precargaTodos < 480000) return;
+  const c = navigator.connection;
+  if (c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || ''))) return;   // ahorro de datos o señal muy mala: solo al tocar
+  const u = _usos();
+  const cola = [...document.querySelectorAll('#escena .mod[href]')].sort((a, b) => (u[_ruta(b)] || 0) - (u[_ruta(a)] || 0));
+  if (!cola.length) { if (++_precargaIntentos < 6) setTimeout(precargarTodos, 2000); return; }   // las monedas todavía no están
+  _precargaTodos = Date.now();
+  const sig = () => {
+    const a = cola.shift(); if (!a || document.hidden) return;
+    precargarModulo(a);
+    (a._precargaHtml || Promise.resolve()).then(() => setTimeout(sig, 120));
+  };
+  sig();
+}
+window.addEventListener('load', () => setTimeout(precargarTodos, 1500));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(precargarTodos, 800); });
+setInterval(precargarTodos, 490000);
 
 // ── Piezas de las fichas ──
 const _heroH = (lbl, num, sub, subCls) => `<div class="fz-hero"><span class="fz-lbl">${lbl}</span><span class="fz-num contar">${num}</span>${sub ? `<span class="fz-sub ${subCls || ''}">${sub}</span>` : ''}</div>`;
@@ -2133,6 +2168,7 @@ function _ponerFicha(slot, id) {
   });
   esc.addEventListener('click', e => {
     const mod = e.target.closest('.mod[href]');
+    if (mod) _contarUso(mod);   // (hub v78) para bajar primero los módulos que más usa
     if (mod && toque) { e.preventDefault(); girarYAbrir(mod); return; }
     const cambiar = e.target.closest('.fz-cambiar'), elegir = e.target.closest('[data-elegir]'), med = e.target.closest('.medallon.salud');
     if (cambiar) {
