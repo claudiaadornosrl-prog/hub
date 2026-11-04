@@ -10,17 +10,17 @@
 window.ADORNO_MFA = (function () {
   var CSS = [
     '.amfa-fondo{position:fixed;inset:0;z-index:99999;background:rgba(20,18,16,.55);display:flex;align-items:center;justify-content:center;padding:16px;font-family:inherit}',
-    '.amfa-caja{background:var(--surface,#fff);color:var(--text,#1c1917);border:1px solid var(--border,#e7e5e4);max-width:380px;width:100%;padding:22px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25);max-height:calc(100vh - 32px);overflow:auto}',
+    '.amfa-caja{background:var(--surface,#fff);color:var(--text,#1c1917);border:1px solid var(--border,#e7e5e4);border-radius:26px;max-width:380px;width:100%;padding:22px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25);max-height:calc(100vh - 32px);overflow:auto}',
     '.amfa-caja h3{margin:0 0 8px;font-size:17px;font-weight:600}',
     '.amfa-caja p,.amfa-caja li{font-size:13px;line-height:1.45;color:var(--muted,#57534e);margin:0 0 10px}',
     '.amfa-caja ol{padding-left:18px;margin:0 0 6px}',
     '.amfa-qr{display:block;width:180px;height:180px;margin:6px auto 10px;background:#fff;padding:6px}',
     '.amfa-clave{font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-all;background:var(--bg,#f5f5f4);padding:6px 8px;display:block;margin:4px 0 12px;user-select:all}',
     '.amfa-link{font-size:13px;color:var(--text,#1c1917);text-decoration:underline;text-underline-offset:3px}',
-    '.amfa-codigo{width:100%;box-sizing:border-box;font-size:24px;letter-spacing:8px;text-align:center;padding:10px;border:1px solid var(--border,#d6d3d1);background:var(--surface,#fff);color:var(--text,#1c1917);margin:4px 0 6px;font-family:ui-monospace,Consolas,monospace}',
+    '.amfa-codigo{width:100%;box-sizing:border-box;font-size:24px;letter-spacing:8px;text-align:center;padding:10px 20px;border:1px solid var(--border,#d6d3d1);border-radius:999px;background:var(--surface,#fff);color:var(--text,#1c1917);margin:4px 0 6px;font-family:ui-monospace,Consolas,monospace}',
     '.amfa-error{min-height:18px;font-size:12px;color:#b91c1c;margin-bottom:8px}',
     '.amfa-botones{display:flex;gap:10px;justify-content:flex-end}',
-    '.amfa-botones button{font:inherit;font-size:14px;padding:9px 16px;border:1px solid var(--border,#d6d3d1);cursor:pointer;background:transparent;color:var(--text,#1c1917)}',
+    '.amfa-botones button{font:inherit;font-size:14px;padding:9px 20px;border:1px solid var(--border,#d6d3d1);border-radius:999px;cursor:pointer;background:transparent;color:var(--text,#1c1917)}',
     '.amfa-botones .amfa-pri{background:var(--boton,#1c1917);color:var(--boton-txt,#fff);border-color:transparent}',
     '.amfa-botones button:disabled{opacity:.5;cursor:default}',
     '@media (prefers-color-scheme: dark){.amfa-caja{background:var(--surface,#1c1917);color:var(--text,#f5f5f4)}}'

@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v76-hola-clodi';
+const CACHE_VERSION = 'hub-v77-pastillas';
 const ASSETS = [
   './',
   './index.html',

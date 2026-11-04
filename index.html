@@ -151,11 +151,11 @@ window.ADORNO_ASISTENTE = (function () {
   .asist-err{align-self:flex-start;color:#991b1b;background:#fee2e2;border-radius:10px;padding:7px 10px;font-size:12.5px}
   .asist-vacio{color:var(--muted,#5f5e5a);font-size:12.5px;line-height:1.45}
   .asist-in{display:flex;align-items:flex-end;gap:4px;padding:8px 10px 10px;border-top:0.5px solid var(--border,#d3d1c7)}
-  .asist-in textarea{flex:1;resize:none;border:0.5px solid var(--border,#d3d1c7);border-radius:10px;padding:8px 10px;font:inherit;background:var(--bg,#fafaf9);color:inherit;min-height:38px;max-height:110px;outline:none}
+  .asist-in textarea{flex:1;resize:none;border:0.5px solid var(--border,#d3d1c7);border-radius:19px;padding:8px 14px;font:inherit;background:var(--bg,#fafaf9);color:inherit;min-height:38px;max-height:110px;outline:none}
   .asist-in textarea:focus{border-color:var(--accent,#d97757)}
   .asist-in .asist-env{color:var(--accent,#d97757)} .asist-in .asist-env:hover{background:rgba(217,119,87,.12)}
   .asist-card{align-self:stretch;border:1px solid var(--accent,#d97757);border-radius:12px;padding:9px 11px;background:var(--surface,#fff);line-height:1.4}
-  .asist-bts{display:flex;gap:8px;margin-top:9px} .asist-bt{border:0;border-radius:9px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer}
+  .asist-bts{display:flex;gap:8px;margin-top:9px} .asist-bt{border:0;border-radius:999px;padding:7px 16px;font:inherit;font-weight:600;cursor:pointer}
   .asist-bt.si{background:var(--accent,#d97757);color:#fff} .asist-bt.no{background:transparent;color:var(--muted,#5f5e5a);border:0.5px solid var(--border,#d3d1c7)}
   .asist-bt:disabled{opacity:.6;cursor:default} .asist-fin{margin-top:8px;font-size:13px} .asist-fin.ok{color:#166534} .asist-fin.mal{color:#991b1b}
   .asist-resalta{outline:3px solid var(--accent,#d97757)!important;outline-offset:2px;border-radius:8px;transition:outline-color 1.2s}
@@ -379,7 +379,7 @@ window.ADORNO_SSO = (function () {
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Forum&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="/hub/seguridad.js?v=5"></script>
+<script src="/hub/seguridad.js?v=6"></script>
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -825,7 +825,7 @@ window.ADORNO_SSO = (function () {
   .sal-nota { margin: 2px 0 10px; padding: 8px 10px; font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; background: color-mix(in srgb, var(--n, var(--aviso)) 12%, var(--surface)); }
   .sal-nota.ok { --n: var(--ok); } .sal-nota.mal { --n: var(--mal); }
   .sal-acc { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 10px; }
-  .sal-acc button { border: 0; cursor: pointer; font: inherit; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; padding: 9px 11px; }
+  .sal-acc button { border: 0; border-radius: 999px; cursor: pointer; font: inherit; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; padding: 9px 15px; }
   .sal-acc button:disabled { opacity: .5; cursor: default; }
   .sal-acc .si { background: var(--boton); color: var(--boton-txt); }
   .sal-acc .no { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--border); }
@@ -857,20 +857,22 @@ window.ADORNO_SSO = (function () {
   .wordmark .aster { fill: var(--aster); }
   .subtitle { font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; }
   /* botones de arriba: solo el ícono, sin recuadro (regla de diseño de JP) */
-  .config-btn { background: transparent; border: 0; box-shadow: none; border-radius: 0; color: var(--muted); font-size: 19px; }
+  /* (hub v77, 4-nov-2026, JP: "todas las casillas en formato pastilla, que es más moderno; el de notificación, redondeale
+     las puntas") casillas, botones y llaves en pastilla; paneles con las puntas redondeadas. Las fichas siguen igual. */
+  .config-btn { background: transparent; border: 0; box-shadow: none; border-radius: 50%; color: var(--muted); font-size: 19px; }
   .config-btn:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
-  .install-btn { border-radius: 0; background: transparent; box-shadow: none; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; }
+  .install-btn { border-radius: 999px; background: transparent; box-shadow: none; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; }
   .install-btn:hover { transform: none; box-shadow: none; background: color-mix(in srgb, var(--text) 5%, transparent); }
   /* paneles (módulos visibles, notificaciones, mi cuenta) */
   .config-overlay { background: rgba(28, 22, 18, .42); }
-  .config-panel { border-radius: 0; padding: 26px 24px 22px; box-shadow: 0 24px 60px -20px rgba(28, 22, 18, .45); }
+  .config-panel { border-radius: 26px; padding: 26px 24px 22px; box-shadow: 0 24px 60px -20px rgba(28, 22, 18, .45); }
   .config-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 25px; font-weight: 500; margin-bottom: 8px; }
   .config-row .nombre { font-size: 14px; }
-  .config-cerrar { border-radius: 0; font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; padding: 13px; }
-  .notif-switch { border-radius: 0; background: color-mix(in srgb, var(--conejo) 35%, var(--surface)); }
-  .notif-switch::after { border-radius: 0; box-shadow: none; }
+  .config-cerrar { border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; padding: 13px; }
+  .notif-switch { border-radius: 999px; background: color-mix(in srgb, var(--conejo) 35%, var(--surface)); }
+  .notif-switch::after { border-radius: 50%; box-shadow: none; }
   .notif-switch.on::after { background: var(--boton-txt); }
-  .notif-login input { border-radius: 0; }
+  .notif-login input:not([type=checkbox]) { border-radius: 999px; padding: 12px 20px; }
   .notif-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .notif-user a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
   .footer { font-size: 10.5px; letter-spacing: .06em; }
@@ -890,7 +892,7 @@ window.ADORNO_SSO = (function () {
   .fz-lbl { font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; }
   .fz-num { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 500; line-height: 1; margin: 2px 0; }
   .h-sub { font-size: 9px; letter-spacing: .2em; }
-  .tb-pill, .chips span, .fz-pills span, .ag-dia, .kb, .cal-d, .sal-detalle, .selector, .sel-op, .fz-esq .sk, .pers.tarde::after { border-radius: 0; }
+  .ag-dia, .kb, .cal-d, .fz-esq .sk, .pers.tarde::after { border-radius: 0; }   /* (v77) etiquetas, menú de fichas y detalle de salud vuelven a ser redondeados */
   .meta-barra, .mb-fill, .mb-extra, .br-pista, .br-pista i, .compo, .db-barras i { border-radius: 0; }
   .leyenda span::before { border-radius: 0; }
   .kb b, .cal-dia { font-family: 'Cormorant Garamond', serif; font-weight: 500; }
@@ -2091,9 +2093,9 @@ function verSaludVps(id) {
   const r = (window._vpsReps || []).find(x => x.id === id); if (!r) return;
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:10040;display:flex;align-items:center;justify-content:center;padding:16px;';
-  ov.innerHTML = `<div style="background:var(--surface);color:var(--text);border-radius:14px;max-width:820px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+  ov.innerHTML = `<div style="background:var(--surface);color:var(--text);border-radius:26px;max-width:820px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);">
       <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:0.5px solid var(--border);font-weight:600;">🩺 Health check · ${new Date(r.at).toLocaleString('es-AR')} · ${r.ok ? '<span style="color:var(--ok)">sin problemas</span>' : '<span style="color:var(--mal)">' + (r.problemas || '') + ' problema(s)</span>'}
-        <span style="flex:1"></span><button onclick="this.closest('div[style*=fixed]').remove()" style="border:0.5px solid var(--border);background:var(--bg);color:var(--text);border-radius:8px;padding:4px 10px;cursor:pointer;">✕</button></div>
+        <span style="flex:1"></span><button onclick="this.closest('div[style*=fixed]').remove()" style="border:0.5px solid var(--border);background:var(--bg);color:var(--text);border-radius:999px;padding:4px 12px;cursor:pointer;">✕</button></div>
       <pre style="margin:0;padding:14px 16px;overflow:auto;font-size:12px;line-height:1.45;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;">${_tbEsc(r.detalle || r.resumen || '')}</pre></div>`;
   document.body.appendChild(ov);
 }
