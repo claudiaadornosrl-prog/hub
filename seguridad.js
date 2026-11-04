@@ -236,14 +236,77 @@ window.ADORNO_CARA = (function () {
   // Pantalla que tapa todo hasta que entra con la cara.
   // (4-nov-2026, JP: "¿no lo puede pedir directamente sin que tenga que tocar el botón?") con sola=true pide la cara
   //   apenas aparece; si el celular no lo deja sin un toque (o la persona cancela), queda el botón como siempre.
-  function candado(sb, sola) {
+  // (4-nov-2026, JP eligió el diseño) Clodi 3D en video saludando (Kling, 5 s, primer y último cuadro iguales: loop sin
+  //   corte; fondo del video #E7DFD1), el saludo escrito sobre el fondo y el ícono de la cara como botón.
+  var APODOS = { 'juanpsimonelli@gmail.com': 'JP', 'clau@claudiaadorno.com': 'Clau' };
+  var CARA_SVG = '<svg viewBox="0 0 66 66" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M6 20V12a6 6 0 0 1 6-6h8M46 6h8a6 6 0 0 1 6 6v8M60 46v8a6 6 0 0 1-6 6h-8M20 60h-8a6 6 0 0 1-6-6v-8M24 25v4M42 25v4M33 25v13h-3M25 45c4.5 3.6 11.5 3.6 16 0"/></svg>';
+  var CSS_HOLA = [
+    "@font-face{font-family:'URW Gothic';src:url('/hub/fonts/URWGothic-Book.ttf') format('truetype');font-weight:300 700}",
+    '.amfa-candado{position:fixed;inset:0;z-index:99999;background:#E7DFD1;color:#1C1612;overflow:hidden;font-family:Jost,system-ui,sans-serif;-webkit-font-smoothing:antialiased;transition:opacity .35s}',
+    '.amfa-candado.ah-sale{opacity:0}',
+    '.amfa-candado .ah-col{position:relative;height:100%;max-width:440px;margin:0 auto;text-align:center;padding-top:calc(env(safe-area-inset-top,0px) + 34px)}',
+    '.amfa-candado .ah-col>*:not(.ah-clodi){position:relative;z-index:1}',
+    '.amfa-candado .ah-marca{display:flex;align-items:center;justify-content:center;gap:7px;opacity:0;animation:ah-aparece .6s ease-out .1s forwards}',
+    '.amfa-candado .ah-marca svg{width:28px;height:28px}.amfa-candado .ah-marca rect{fill:#D97757}',
+    ".amfa-candado .ah-marca b{font:500 22px/1 'Cormorant Garamond',Georgia,serif}.amfa-candado .ah-marca i{font:normal 19px/1 'URW Gothic',Jost,sans-serif}",
+    ".amfa-candado .ah-hola{margin:42px 0 0;font:500 42px/1.05 'Cormorant Garamond',Georgia,serif;color:#1C1612}",
+    '.amfa-candado .ah-hola .l{display:inline-block;opacity:0;animation:ah-letra .6s cubic-bezier(.2,.7,.3,1) forwards;animation-delay:calc(.9s + var(--i) * 55ms)}',
+    '.amfa-candado .ah-mira{margin:10px 0 0;font:400 15px/1.3 Jost,system-ui,sans-serif;color:#685B51;opacity:0;animation:ah-aparece .6s ease-out 1.5s forwards}',
+    '.amfa-candado .ah-cara{display:block;margin:24px auto 0;width:76px;height:76px;padding:0;border:0;background:transparent;color:#1C1612;cursor:pointer;opacity:0;animation:ah-aparece .5s ease-out 1.8s forwards;-webkit-tap-highlight-color:transparent}',
+    '.amfa-candado .ah-cara svg{width:100%;height:100%;display:block}.amfa-candado .ah-cara:active{transform:scale(.94)}.amfa-candado .ah-cara:disabled{cursor:default}',
+    '.amfa-candado .ah-escaneo{position:absolute;left:10px;right:10px;height:2px;top:12px;background:#D97757;border-radius:2px;box-shadow:0 0 10px #D97757;opacity:0;animation:ah-escanea 1.9s ease-in-out 2.2s infinite}',
+    '.amfa-candado .ah-error{min-height:18px;margin-top:6px;padding:0 24px;font-size:12.5px;line-height:1.35;color:#A84B37}',
+    '.amfa-candado .ah-salir{background:transparent;border:0;color:#685B51;font:400 11px/1 Jost,system-ui,sans-serif;letter-spacing:.2em;text-transform:uppercase;padding:10px 14px;cursor:pointer;opacity:0;animation:ah-aparece .5s ease-out 2.1s forwards}',
+    // Clodi abajo: 130 % del ancho, pegada a la derecha; en pantallas bajas se achica para no tapar el botón. El borde
+    // de abajo del video queda fuera de la pantalla y el de arriba se funde con el fondo.
+    '.amfa-candado .ah-clodi{position:absolute;z-index:0;bottom:-9%;right:-2%;width:min(130%,calc(100vh - 300px));aspect-ratio:1/1;pointer-events:none;transform:translateY(100%);animation:ah-asoma 1.05s cubic-bezier(.22,1.12,.36,1) .25s forwards}',
+    '.amfa-candado .ah-clodi video{width:100%;height:100%;display:block;object-fit:cover;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16%);mask-image:linear-gradient(to bottom,transparent 0,#000 16%)}',
+    // en pantallas anchas se ven los costados del video: también se funden
+    '@media (min-width:600px){.amfa-candado .ah-clodi video{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16%),linear-gradient(to right,transparent 0,#000 9%,#000 91%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,transparent 0,#000 16%),linear-gradient(to right,transparent 0,#000 9%,#000 91%,transparent 100%);mask-composite:intersect}}',
+    '@keyframes ah-aparece{to{opacity:1}}',
+    '@keyframes ah-letra{from{opacity:0;transform:translateY(14px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}',
+    '@keyframes ah-asoma{to{transform:translateY(0)}}',
+    '@keyframes ah-escanea{0%{top:12px;opacity:0}15%,85%{opacity:1}100%{top:62px;opacity:0}}',
+    '@media (prefers-reduced-motion:reduce){.amfa-candado *{animation-duration:.01s!important;animation-delay:0s!important;animation-iteration-count:1!important}}'
+  ].join('');
+
+  function candado(sb, sola, email) {
     if (document.querySelector('.amfa-candado')) return;
-    var o = ADORNO_MFA.modal('<h3>Hola</h3><p>Para entrar, mirá el celular.</p><div class="amfa-error"></div>' +
-      '<div class="amfa-botones"><button class="amfa-sec">Salir</button><button class="amfa-pri">Entrar con la cara</button></div>');
-    o.classList.add('amfa-candado');
-    o.style.background = 'var(--bg, #fafaf9)';                                       // opaco: no se ve lo de atrás
-    var err = o.querySelector('.amfa-error'), btn = o.querySelector('.amfa-pri');
+    if (!document.getElementById('amfa-hola-css')) {
+      var st = document.createElement('style'); st.id = 'amfa-hola-css'; st.textContent = CSS_HOLA; document.head.appendChild(st);
+      if (!document.querySelector('link[href*="Cormorant"]')) {
+        var lk = document.createElement('link'); lk.rel = 'stylesheet';
+        lk.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Jost:wght@400;500&display=swap';
+        document.head.appendChild(lk);
+      }
+    }
+    var nombre = APODOS[String(email || '').toLowerCase()];
+    var hola = 'Hola' + (nombre ? ', ' + nombre : '');
+    var letras = hola.split('').map(function (c, i) { return '<span class="l" style="--i:' + i + '">' + (c === ' ' ? '&nbsp;' : c) + '</span>'; }).join('');
+    var rayos = ''; for (var k = 0; k < 12; k++) rayos += '<g transform="rotate(' + k * 15 + ' 50 50)"><rect x="48" y="6" width="4" height="88" rx="2"/></g>';
+    var o = document.createElement('div');
+    o.className = 'amfa-candado'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', hola);
+    o.innerHTML = '<div class="ah-col">' +
+      '<div class="ah-clodi"><video src="/hub/clodi/clodi_saluda.mp4" poster="/hub/clodi/clodi_saluda_poster.webp" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video></div>' +
+      '<div class="ah-marca"><svg viewBox="0 0 100 100" aria-hidden="true">' + rayos + '</svg><b>Claude</b><i>Adorno</i></div>' +
+      '<h1 class="ah-hola" aria-label="' + hola + '">' + letras + '</h1>' +
+      '<p class="ah-mira">Mirá el celular para entrar</p>' +
+      '<button class="ah-cara" aria-label="Entrar con la cara">' + CARA_SVG + '<i class="ah-escaneo"></i></button>' +
+      '<div class="ah-error" role="status"></div>' +
+      '<button class="ah-salir">Salir</button></div>';
+    document.body.appendChild(o);
+    // el video arranca solo (sin sonido); si la página estaba oculta, apenas se ve
+    var v = o.querySelector('video');
+    var arrancar = function () { if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } };
+    arrancar();
+    document.addEventListener('visibilitychange', function vis() {
+      if (!o.isConnected) { document.removeEventListener('visibilitychange', vis); return; }
+      if (!document.hidden) arrancar();
+    });
+    var err = o.querySelector('.ah-error'), btn = o.querySelector('.ah-cara');
     btn.onclick = async function () {
+      if (btn.disabled) return;
       btn.disabled = true; err.textContent = '';
       var r = await entrar(sb);
       btn.disabled = false;
@@ -252,9 +315,10 @@ window.ADORNO_CARA = (function () {
         if (/credential_not_found/i.test(String(r.error.code || r.error.message))) olvidar();
         return;
       }
-      o.remove();
+      o.classList.add('ah-sale');
+      setTimeout(function () { o.remove(); }, 360);
     };
-    o.querySelector('.amfa-sec').onclick = async function () {
+    o.querySelector('.ah-salir').onclick = async function () {
       try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
       location.reload();
     };
@@ -270,16 +334,16 @@ window.ADORNO_CARA = (function () {
       var e = await ADORNO_MFA.estado(sb);
       if (!e.conCara && sb.auth.passkey && !(await ADORNO_MFA.factor(sb))) {
         var pk = await sb.auth.passkey.list();
-        if (pk && pk.data && pk.data.length) { candado(sb); return; }
+        if (pk && pk.data && pk.data.length) { candado(sb, false, s.user.email); return; }
       }
       if (!marcadoPara(s.user.email)) return;
-      if (!get(sessionStorage, ABIERTA)) candado(sb, true);
+      if (!get(sessionStorage, ABIERTA)) candado(sb, true, s.user.email);
       if (window.__adornoCaraVigila) return;
       window.__adornoCaraVigila = true;
       document.addEventListener('visibilitychange', function () {
         if (document.hidden) { set(sessionStorage, FUERA, Date.now()); return; }
         var f = +get(sessionStorage, FUERA) || 0;
-        if (f && Date.now() - f > PAUSA) { del(sessionStorage, ABIERTA); candado(sb, true); }
+        if (f && Date.now() - f > PAUSA) { del(sessionStorage, ABIERTA); candado(sb, true, s.user.email); }
       });
     } catch (e) {}
   }
