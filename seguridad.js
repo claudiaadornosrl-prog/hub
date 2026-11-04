@@ -369,3 +369,11 @@ window.ADORNO_CARA = (function () {
     try { localStorage.removeItem(keyVieja); } catch (e) {}
   };
 })();
+
+// (infra, 4-nov-2026, JP) la versión del módulo en el título de la pestaña y el aviso de versión nueva: /hub/version.js
+(function () {
+  if (window.ADORNO_VERSION || document.querySelector('script[src*="/hub/version.js"]')) return;
+  var s = document.createElement('script');
+  s.src = '/hub/version.js?v=1'; s.async = true;
+  (document.head || document.documentElement).appendChild(s);
+})();
