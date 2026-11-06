@@ -1,4 +1,4 @@
-// pos-autorizar.js · v1 (6-nov-2026) · Compartido por el Hub y RRHH (se carga como /hub/pos-autorizar.js).
+// pos-autorizar.js · v2 (6-nov-2026) · Compartido por el Hub y RRHH (se carga como /hub/pos-autorizar.js).
 // El POS pide autorización a una encargada/cajera: le llega un push (app rrhh) con el link ?autorizar=ID. En el iPhone la
 // notificación solo puede abrir la PWA que la recibió (el Hub o RRHH), así que el Aceptar / Rechazar vive acá y no en el POS.
 // Usa el cliente `sb` que ya tiene la página (sesión compartida por ADORNO_SSO) y la RPC pos_autorizacion_resolver.
@@ -14,7 +14,7 @@
     return ov;
   }
   function cerrar() { const ov = document.getElementById('pos-aut-ov'); if (ov) ov.remove(); }
-  const B = (txt, color, fondo, borde) => 'style="font-family:inherit;font-size:15px;font-weight:700;border-radius:999px;padding:10px 20px;cursor:pointer;border:1.5px solid ' + borde + ';background:' + fondo + ';color:' + color + '"';
+  const B = (color, fondo, borde) => 'style="font-family:inherit;font-size:15px;font-weight:700;border-radius:999px;padding:10px 20px;cursor:pointer;border:1.5px solid ' + borde + ';background:' + fondo + ';color:' + color + '"';
   async function responder(id) {
     let cli = null; for (let i = 0; i < 60; i++) { try { if (typeof sb !== 'undefined' && sb && sb.rpc) { cli = sb; break; } } catch (e) {} await new Promise(r => setTimeout(r, 250)); }
     if (!cli) return;
