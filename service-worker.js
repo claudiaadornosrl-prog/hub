@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v83-autorizar';
+const CACHE_VERSION = 'hub-v84-autorizar';
 const ASSETS = [
   './',
   './index.html',
@@ -89,11 +89,13 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       const propios = clientList.filter((c) => c.url.startsWith(scope));
-      const client = propios[0];   // solo una ventana del Hub; si no hay, se abre una nueva (nunca enfocar otro módulo)
+      // (6-nov) En el iPhone la PWA del Hub muestra el último módulo usado (p.ej. el POS): esa ventana no la controla este SW
+      // (navigate falla), pero el mensaje sí le llega y el módulo muestra la cajita de autorización.
+      const client = propios[0] || clientList.find((c) => c.url.startsWith(self.location.origin));
       if (client && 'focus' in client) {
         client.focus();
         try { client.postMessage({ tipo: 'abrir-url', url: targetUrl }); } catch (_) {}
-        if ('navigate' in client) client.navigate(targetUrl).catch(() => {});
+        if (propios[0] && 'navigate' in client) client.navigate(targetUrl).catch(() => {});
         return;
       }
       if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
