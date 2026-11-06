@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v81-autorizar';
+const CACHE_VERSION = 'hub-v82-autorizar';
 const ASSETS = [
   './',
   './index.html',
@@ -72,15 +72,19 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || './';
+  const targetUrl = new URL((event.notification.data && event.notification.data.url) || './', self.registration.scope).href;
+  const scope = self.registration.scope;
+  // (6-nov-2026) Primero una ventana del Hub (mismo scope): le avisamos por mensaje (pos-autorizar.js escucha 'abrir-url') y
+  // además navegamos; en el iPhone la PWA no puede abrir otra app, así que el link siempre tiene que ser del Hub.
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus();
-          if ('navigate' in client) client.navigate(targetUrl).catch(() => {});
-          return;
-        }
+      const propios = clientList.filter((c) => c.url.startsWith(scope));
+      const client = propios[0] || clientList.find((c) => c.url.includes(self.location.origin));
+      if (client && 'focus' in client) {
+        client.focus();
+        try { client.postMessage({ tipo: 'abrir-url', url: targetUrl }); } catch (_) {}
+        if ('navigate' in client) client.navigate(targetUrl).catch(() => {});
+        return;
       }
       if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
     })
