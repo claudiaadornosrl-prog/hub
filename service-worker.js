@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v82-autorizar';
+const CACHE_VERSION = 'hub-v83-autorizar';
 const ASSETS = [
   './',
   './index.html',
@@ -63,7 +63,8 @@ self.addEventListener('push', (event) => {
     icon:  payload.icon  || './icon-192-v2.png',
     badge: payload.badge || './icon-192-v2.png',
     tag:   payload.tag   || 'hub-default',
-    data:  { url: payload.url || './' },
+    data:  Object.assign({ url: payload.url || './' }, payload.data || {}),
+    actions: Array.isArray(payload.actions) ? payload.actions : [],
     requireInteraction: false,
     vibrate: [200, 100, 200],
   };
@@ -72,6 +73,15 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  // (6-nov-2026) Botones Aceptar/Rechazar de un pedido de autorización del POS: se resuelve acá mismo con el token, sin abrir nada
+  const nd = event.notification.data || {};
+  if ((event.action === 'aceptar' || event.action === 'rechazar') && nd.aut && nd.token) {
+    const K = 'sb_publishable_udSPma98Sw9eskeeLCgdCw_S2vIX0Fk', acepta = event.action === 'aceptar';
+    event.waitUntil(fetch('https://jfwtiagteuwmyvblgwms.supabase.co/rest/v1/rpc/pos_autorizacion_token', { method: 'POST', headers: { apikey: K, Authorization: 'Bearer ' + K, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_id: nd.aut, p_token: nd.token, p_acepta: acepta }) }).then((r) => r.json()).catch(() => ({ ok: false, msg: 'Sin conexión: abrí el Hub y resolvelo desde ahí' }))
+      .then((j) => self.registration.showNotification(j && j.ok ? (acepta ? '✔ Autorizado' : '✖ Rechazado') : 'No se pudo', { body: (j && j.msg) || '', tag: 'pos-aut-r-' + nd.aut, icon: './icon-192-v2.png', data: { url: './' } })));
+    return;
+  }
   const targetUrl = new URL((event.notification.data && event.notification.data.url) || './', self.registration.scope).href;
   const scope = self.registration.scope;
   // (6-nov-2026) Primero una ventana del Hub (mismo scope): le avisamos por mensaje (pos-autorizar.js escucha 'abrir-url') y
@@ -79,7 +89,7 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       const propios = clientList.filter((c) => c.url.startsWith(scope));
-      const client = propios[0] || clientList.find((c) => c.url.includes(self.location.origin));
+      const client = propios[0];   // solo una ventana del Hub; si no hay, se abre una nueva (nunca enfocar otro módulo)
       if (client && 'focus' in client) {
         client.focus();
         try { client.postMessage({ tipo: 'abrir-url', url: targetUrl }); } catch (_) {}
