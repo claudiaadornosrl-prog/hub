@@ -9,9 +9,9 @@
 //  La cargan sola los módulos que usan /hub/seguridad.js; los demás con <script src="/hub/version.js" defer></script>.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 // (11-nov-2026) los módulos que cargan solo este archivo también suman la traba de equipos (/hub/equipo.js) y el
-//   selector de módulos del banner (/hub/selector.js)
+//   selector de módulos del banner (/hub/selector.js) y los íconos animados (/hub/animaciones.js)
 (function () {
-  [['ADORNO_EQUIPO', '/hub/equipo.js', '?v=3'], ['ADORNO_SELECTOR', '/hub/selector.js', '?v=5']].forEach(function (x) {
+  [['ADORNO_EQUIPO', '/hub/equipo.js', '?v=3'], ['ADORNO_SELECTOR', '/hub/selector.js', '?v=6'], ['ADORNO_ANIM', '/hub/animaciones.js', '?v=1']].forEach(function (x) {
     if (window[x[0]] || document.querySelector('script[src*="' + x[1] + '"]')) return;
     var s = document.createElement('script'); s.src = x[1] + x[2]; s.async = true;
     (document.head || document.documentElement).appendChild(s);
