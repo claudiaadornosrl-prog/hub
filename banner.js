@@ -52,7 +52,7 @@
   // ── el botón Manual: varios módulos lo agregan como un apartado más (manual.js); va a la derecha, primero ──
   function moverManual() {
     if (!tabs || !der) return;
-    var mb = tabs.querySelector(':scope > button[title="Manual"]:not(.ab-espejo)');
+    var mb = tabs.querySelector(':scope > button[title="Manual"]:not(.ab-espejo), :scope > button[title^="Manual de"]:not(.ab-espejo), :scope > #btn-manual');
     if (!mb) return;
     mb.classList.add('hbtn', 'ab-manual');
     // primero de la derecha (después del ☰, que en la compu no se ve)
