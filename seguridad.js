@@ -377,3 +377,11 @@ window.ADORNO_CARA = (function () {
   s.src = '/hub/version.js?v=1'; s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
+
+// (infra, 11-nov-2026, JP) equipos trabados al usuario del local: /hub/equipo.js (en un equipo común no hace nada)
+(function () {
+  if (window.ADORNO_EQUIPO || document.querySelector('script[src*="/hub/equipo.js"]')) return;
+  var s = document.createElement('script');
+  s.src = '/hub/equipo.js?v=1'; s.async = true;
+  (document.head || document.documentElement).appendChild(s);
+})();

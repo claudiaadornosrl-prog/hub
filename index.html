@@ -379,7 +379,7 @@ window.ADORNO_SSO = (function () {
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Forum&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="/hub/seguridad.js?v=7"></script>
+<script src="/hub/seguridad.js?v=8"></script>
 <script src="/hub/pos-autorizar.js?v=2"></script>
 
 <style>
@@ -538,6 +538,17 @@ window.ADORNO_SSO = (function () {
   .perm-fijo { flex: 0 0 auto; font-size: 12px; color: var(--muted); padding: 8px 14px; }
   .perm-estado { min-height: 18px; margin: 10px 0 6px; font-size: 12px; line-height: 1.35; color: var(--muted); }
   .perm-estado.ok { color: var(--ok); } .perm-estado.mal { color: var(--mal); }
+  /* (hub v87) equipos trabados */
+  .eq-btn { border: 0; border-radius: 999px; padding: 8px 16px; font: inherit; font-size: 12.5px; cursor: pointer; background: var(--boton); color: var(--boton-txt); white-space: nowrap; }
+  .eq-btn.sec { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+  .eq-btn:disabled { opacity: .5; cursor: default; }
+  .eq-acc { display: flex; gap: 6px; flex: 0 0 auto; }
+  .eq-fila { border-bottom: 1px solid var(--border); padding: 10px 0 12px; margin: -12px 0 12px; }
+  .eq-fila strong { font-size: 13px; }
+  .eq-fila .estado { font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+  .eq-pedir { display: flex; gap: 8px; margin-top: 10px; }
+  .eq-pedir input { flex: 1; min-width: 0; margin: 0; padding: 9px 16px; border: 1px solid var(--border); border-radius: 999px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text); }
+  @media (max-width: 600px) { .eq-pedir input { font-size: 16px; } }
   @media (max-width: 600px) {
     .perm-grid { grid-template-columns: 1fr; }
     .config-panel.perm-panel { padding: 22px 18px 16px; max-height: calc(100vh - 40px); }
@@ -1008,6 +1019,7 @@ window.ADORNO_SSO = (function () {
     <div class="perm-tabs" role="tablist">
       <button type="button" class="perm-tab on" data-t="perfiles" onclick="permTab('perfiles')">Perfiles</button>
       <button type="button" class="perm-tab" data-t="personas" onclick="permTab('personas')">Personas</button>
+      <button type="button" class="perm-tab" data-t="equipos" onclick="permTab('equipos')">Equipos</button>
     </div>
     <div class="perm-cuerpo" id="perm-cuerpo"></div>
     <div class="perm-estado" id="perm-estado" role="status"></div>
@@ -1122,6 +1134,7 @@ window.ADORNO_SSO = (function () {
   let HUB_PERMITIDOS = HUB_SIN_SESION;
   let HUB_ROL = null;   // (hub v68) para el interruptor del código del celular
   let HUB_EDITA = false;   // (hub v86) puede manejar los permisos (rol admin de Colaboradores)
+  let HUB_PERFIL = null;   // (hub v87) perfil del Hub de quien está (admin, oficina, encargada, local…)
   function _hubPermCache(email, lista) {
     try {
       if (lista) localStorage.setItem('hub_modulos_perfil', JSON.stringify({ email, lista }));
@@ -1143,6 +1156,7 @@ window.ADORNO_SSO = (function () {
       }
       HUB_PERMITIDOS = data.modulos; _hubPermCache(email, data.modulos); HUB_ROL = data.rol || null;
       HUB_EDITA = !!data.edita_permisos;   // (hub v86) administración ve el botón de Permisos
+      HUB_PERFIL = data.perfil || null;    // (hub v87) la cuenta de local puede pedir trabar el equipo
       const bp = document.getElementById('btn-permisos'); if (bp) bp.hidden = !HUB_EDITA;
       aplicarVisibilidad();
     } catch (_) {}
@@ -1205,6 +1219,9 @@ window.ADORNO_SSO = (function () {
           return `<div class="perm-mod"><span class="notif-ic" style="--c:var(--${m.color});">${_icono(m.id)}</span>` +
             `<span class="nombre">${_tbEsc(m.nombre)}${m.pronto ? '<small>en construcción</small>' : ''}</span>` +
             `<button type="button" class="notif-switch ${on ? 'on' : ''}" ${p.fijo ? 'disabled' : ''} aria-pressed="${on}" aria-label="${_tbEsc(m.nombre)}" onclick="permModulo('${p.id}','${m.id}',this)"></button></div>`; }).join('')}</div>`;
+    } else if (_permTab === 'equipos') {
+      c.innerHTML = '<div class="hint">Cargando…</div>';
+      _permEquipos();
     } else {
       c.innerHTML = `<input class="perm-buscar" type="search" placeholder="Buscar por nombre, mail o local" value="${_tbEsc(_permBuscar)}" oninput="permBuscar(this.value)">` +
         `<div id="perm-lista">${_permListaHTML()}</div>`;
@@ -1253,6 +1270,69 @@ window.ADORNO_SSO = (function () {
     if (error) { sel.value = antes || ''; _permEstado('No se guardó: ' + error.message, 'mal'); return; }
     u.perfil = sel.value; u.por_defecto = false;
     _permEstado(`Guardado: ${_permQuien(u)} ahora es ${_permNombrePerfil(u.perfil)}. Lo ve la próxima vez que abra el Hub.`, 'ok');
+  }
+
+  // ── (hub v87, 11-nov-2026, JP) Equipos trabados al usuario del local ──
+  // En el equipo del local (Mi cuenta, con el usuario del local): pedir la traba. Acá, en Permisos → Equipos:
+  // aprobar, rechazar o destrabar. La traba en sí la hace /hub/equipo.js en cada página.
+  async function equipoPedir(btn) {
+    const inp = document.getElementById('eq-nombre'), err = document.getElementById('eq-error');
+    const nombre = ((inp && inp.value) || '').trim();
+    if (!nombre) { if (err) err.textContent = 'Poné un nombre para reconocerlo (ej. Mostrador 1).'; return; }
+    if (!window.ADORNO_EQUIPO) { if (err) err.textContent = 'Recargá la página y probá de nuevo.'; return; }
+    btn.disabled = true;
+    const tok = ADORNO_EQUIPO.token();
+    const { data, error } = await sb.rpc('hub_equipo_pedir', { p_token: tok, p_nombre: nombre, p_agente: navigator.userAgent.slice(0, 200) });
+    btn.disabled = false;
+    if (error || !data) { if (err) err.textContent = error ? error.message : 'No hubo respuesta'; return; }
+    ADORNO_EQUIPO.guardar({ token: tok, estado: data.estado, usuario: data.usuario, nombre: data.nombre, local: data.local, id: data.id });
+    const { data: { session } } = await sb.auth.getSession(); if (session) await renderNotifPanel(session);
+    _equipoEsperar();
+  }
+  let _eqTimer = null;
+  function _equipoEsperar() {   // mientras está pedida, se fija cada 8 s si ya la aprobaron
+    clearInterval(_eqTimer);
+    _eqTimer = setInterval(async () => {
+      const e = await ADORNO_EQUIPO.refrescar();
+      if (e && e.estado === 'pendiente') return;
+      clearInterval(_eqTimer);
+      const { data: { session } } = await sb.auth.getSession();
+      if (session && document.getElementById('notif-overlay').classList.contains('open')) renderNotifPanel(session);
+    }, 8000);
+  }
+  async function equipoRevisar() {
+    if (!window.ADORNO_EQUIPO) return;
+    await ADORNO_EQUIPO.refrescar();
+    const { data: { session } } = await sb.auth.getSession(); if (session) renderNotifPanel(session);
+  }
+  const _eqAgente = ua => { ua = ua || ''; const so = /iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'Mac' : '';
+    const nav = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /Firefox\//.test(ua) ? 'Firefox' : ''; return [so, nav].filter(Boolean).join(' · '); };
+  const _eqHace = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts)) / 60000);
+    return m < 2 ? 'recién' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} días`; };
+  async function _permEquipos() {
+    const c = document.getElementById('perm-cuerpo');
+    const { data, error } = await sb.rpc('hub_equipos_listar');
+    if (_permTab !== 'equipos') return;
+    if (error) { c.innerHTML = `<div class="hint" style="color:var(--mal);">No pude cargar los equipos: ${_tbEsc(error.message)}</div>`; return; }
+    const eqs = data || [], pend = eqs.filter(e => e.estado === 'pendiente'), trab = eqs.filter(e => e.estado === 'trabado'),
+      otros = eqs.filter(e => !['pendiente', 'trabado'].includes(e.estado));
+    const fila = (e, botones) => `<div class="perm-persona"><div class="quien"><b>${_tbEsc(e.nombre)}</b>` +
+      `<small>${_tbEsc([_tbLocal(e.local || ''), e.usuario, _eqAgente(e.agente), e.ultimo_uso_at ? 'usado ' + _eqHace(e.ultimo_uso_at) : ''].filter(Boolean).join(' · '))}</small></div>` +
+      `<div class="eq-acc">${botones}</div></div>`;
+    c.innerHTML = `<p class="perm-nota">Computadoras y celulares de los locales que solo se pueden usar con el usuario del local. Se piden desde el equipo (el ícono de la persona → Trabar este equipo) y se aprueban acá.</p>` +
+      (pend.length ? '<div class="perm-grupo">Esperando aprobación</div>' + pend.map(e => fila(e,
+        `<button type="button" class="eq-btn" onclick="permEquipo('${e.id}','aprobar',this)">Aprobar</button><button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','rechazar',this)">Rechazar</button>`)).join('') : '') +
+      '<div class="perm-grupo">Trabados</div>' + (trab.length ? trab.map(e => fila(e,
+        `<button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','destrabar',this)">Destrabar</button>`)).join('')
+        : '<div class="hint" style="margin-top:8px;">Todavía no hay equipos trabados.</div>') +
+      (otros.length ? '<div class="perm-grupo">Anteriores</div>' + otros.map(e => fila(e, `<span class="perm-fijo">${e.estado === 'rechazado' ? 'Rechazado' : 'Destrabado'}</span>`)).join('') : '');
+  }
+  async function permEquipo(id, accion, btn) {
+    btn.disabled = true;
+    const { error } = await sb.rpc('hub_equipo_resolver', { p_id: id, p_accion: accion });
+    if (error) { btn.disabled = false; _permEstado('No se pudo: ' + error.message, 'mal'); return; }
+    _permEstado({ aprobar: 'Listo: el equipo quedó trabado.', rechazar: 'Pedido rechazado.', destrabar: 'Equipo destrabado: la próxima vez que abra una página queda libre.' }[accion], 'ok');
+    _permEquipos();
   }
   aplicarVisibilidad();
 
@@ -1520,7 +1600,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
 
     // (hub v68, 3-nov-2026, hardening) código del celular: lo ven admin y directora
     let filaMfa = '';
-    if (window.ADORNO_MFA && !HUB_ROL) { try { const { data } = await sb.rpc('hub_modulos'); HUB_ROL = (data && data.rol) || null; } catch (_) {} }
+    if (!HUB_ROL) { try { const { data } = await sb.rpc('hub_modulos'); HUB_ROL = (data && data.rol) || null; HUB_PERFIL = (data && data.perfil) || null; } catch (_) {} }
     if (window.ADORNO_MFA && ['admin', 'directora'].includes(HUB_ROL)) {
       const on = await ADORNO_MFA.activo(sb);
       const cara = window.ADORNO_CARA && ADORNO_CARA.soporta() && ADORNO_CARA.marcadoPara(session.user.email);
@@ -1541,8 +1621,24 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
         <button class="notif-switch ${on ? 'on' : ''}" onclick="toggleDobleFactor(this)"></button>
       </div>`;
     }
+    // (hub v87, 11-nov-2026, JP) traba del equipo al usuario del local: se pide acá y lo aprueba administración
+    let filaEquipo = '';
+    const eqd = window.ADORNO_EQUIPO ? ADORNO_EQUIPO.leer() : null;
+    if (window.ADORNO_EQUIPO && (HUB_PERFIL === 'local' || (eqd && ['trabado', 'pendiente'].includes(eqd.estado)))) {
+      if (eqd && eqd.estado === 'trabado') {
+        filaEquipo = `<div class="eq-fila"><strong>🔒 Equipo trabado: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Solo se usa con ${_tbEsc(eqd.usuario)}. Para destrabarlo: administración, en Permisos → Equipos.</div></div>`;
+      } else if (eqd && eqd.estado === 'pendiente') {
+        filaEquipo = `<div class="eq-fila"><strong>Traba pedida: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Falta que administración la apruebe en Permisos → Equipos.</div>` +
+          `<div class="eq-pedir"><button type="button" class="eq-btn sec" onclick="equipoRevisar()">Ver si ya la aprobaron</button></div></div>`;
+      } else {
+        filaEquipo = `<div class="eq-fila"><strong>Trabar este equipo</strong><div class="estado">Que esta computadora o celular solo se pueda usar con ${_tbEsc(session.user.email)}. Lo aprueba administración.</div>` +
+          `<div class="eq-pedir"><input id="eq-nombre" maxlength="40" placeholder="Nombre (ej. Mostrador 1)"><button type="button" class="eq-btn" onclick="equipoPedir(this)">Pedir traba</button></div>` +
+          `<div class="estado" id="eq-error" style="color:var(--mal);"></div></div>`;
+      }
+    }
     body.innerHTML = `
       <div class="notif-user"><span>${session.user.email}</span><a onclick="notifLogout()">Salir</a></div>
+      ${filaEquipo}
       <div class="notif-row" style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:12px;">
         <div>
           <strong style="font-size:13px;">Confiar en esta computadora</strong>
