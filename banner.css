@@ -5,14 +5,14 @@
    banner toma el color de la moneda del módulo, el mismo del Hub y de la barra de tareas) y la moneda con fondo crema
    y el ícono del color del módulo.
    Cómo se usa en un módulo (ver la regla en C:\CRM_Adorno\CLAUDE.md):
-     <head> … <link rel="stylesheet" href="/hub/banner.css?v=1"> …
+     <head> … <link rel="stylesheet" href="/hub/banner.css?v=2"> …
      <header class="ab-banner" data-modulo="tesoreria">
        <div class="ab-izq"><span class="ab-nombre">Tesorería</span><span class="ab-sub">…local · perfil…</span></div>
        <nav class="ab-tabs" id="tabs"> <button class="active"><svg class="ico">…</svg><span class="lb">Saldos</span></button> … </nav>
        (lo propio del módulo, ej. el mes de Ventas)
        <div class="ab-der"> Manual · Avisos · Actualizar <span class="hsep"></span> Hub · Salir  (todos .hbtn) </div>
      </header>
-     <script src="/hub/banner.js?v=1"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
+     <script src="/hub/banner.js?v=2"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
    Los colores salen de data-modulo (los mismos de las monedas del Hub: HUB_MODULOS / selector.js MODULOS).
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════ */
 .ab-banner { --ab-c: #685B51; }
@@ -122,14 +122,14 @@ body .ab-banner select.ab-chip option { color: #1C1612; background: #fff; }
   body .ab-banner .ab-tabs:not([style*="display: none"]):not([style*="display:none"]) { display: none; }
   body .ab-banner .ab-tabs {
     position: absolute; top: calc(100% + 6px); right: 8px; left: auto; z-index: 200; flex-direction: column; align-items: stretch;
-    gap: 2px; min-width: 230px; max-height: 70vh; overflow: auto; padding: 8px !important; margin: 0;
+    gap: 2px; min-width: 230px; max-width: calc(100vw - 16px); width: max-content; max-height: 70vh; overflow: auto; padding: 8px !important; margin: 0;
     border-radius: 22px !important; background: #fff !important; color: #1C1612;
     box-shadow: 0 24px 50px -16px rgba(28, 22, 18, .45), 0 0 0 1px rgba(28, 22, 18, .06) !important;
   }
   body .ab-banner .ab-tabs.open:not([style*="display: none"]):not([style*="display:none"]) { display: flex; }
   body .ab-banner .ab-tabs > button, body .ab-banner .ab-tabs > a, body .ab-banner .ab-tabs > .ab-tab {
     justify-content: flex-start; height: auto !important; padding: 10px 14px !important; color: #1C1612 !important;
-    opacity: 1; font-weight: 500 !important; border-left: 0 !important;
+    opacity: 1; font-weight: 500 !important; border-left: 0 !important; white-space: normal; text-align: left; line-height: 1.25 !important;
   }
   body .ab-banner .ab-tabs > * .lb { max-width: none; opacity: 1; margin-left: 10px; }
   body .ab-banner .ab-tabs > *:hover { background: rgba(28, 22, 18, .05) !important; }

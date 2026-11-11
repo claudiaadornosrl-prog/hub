@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 //  banner.js — BANNER COMÚN de los módulos (infra, 11-nov-2026). Va con /hub/banner.css (ver ahí cómo se arma).
-//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=1"></script>), sin async: así la moneda aparece
+//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=2"></script>), sin async: así la moneda aparece
 //  junto con el banner, sin saltos.
 //  · Pone la moneda del módulo (fondo crema, ícono del color del módulo, el mismo dibujo que la ficha del Hub).
 //  · Si el banner no trae espacio flexible, lo agrega después de los apartados (los botones quedan a la derecha).
@@ -55,7 +55,9 @@
     var mb = tabs.querySelector(':scope > button[title="Manual"]:not(.ab-espejo)');
     if (!mb) return;
     mb.classList.add('hbtn', 'ab-manual');
-    der.insertBefore(mb, der.querySelector('.hbtn:not(.ab-hamb):not(.kebab-tabs-btn)') || null);
+    // primero de la derecha (después del ☰, que en la compu no se ve)
+    var antes = [].filter.call(der.children, function (x) { return !x.classList.contains('ab-hamb') && !x.classList.contains('kebab-tabs-btn'); })[0];
+    der.insertBefore(mb, antes || null);
   }
 
   // ── en el celular, los botones de la derecha (menos Hub y Salir) van adentro del menú ☰, abajo de los apartados ──
@@ -71,7 +73,7 @@
       var c = document.createElement('button'); c.type = 'button'; c.className = 'ab-espejo';
       var ico = o.querySelector('svg'), lb = o.querySelector('.lb');
       c.innerHTML = (ico ? ico.outerHTML : '') + '<span class="lb"></span>';
-      c.querySelector('.lb').textContent = (lb && lb.textContent.trim()) || o.title || o.getAttribute('aria-label') || '';
+      c.querySelector('.lb').textContent = (lb && lb.textContent.trim()) || o.getAttribute('aria-label') || o.title || '';
       c.addEventListener('click', function (ev) { ev.stopPropagation(); tabs.classList.remove('open'); o.click(); });
       tabs.appendChild(c);
     });
