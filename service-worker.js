@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v99-traba-mail-cliente';
+const CACHE_VERSION = 'hub-v100-icono-moneda';
 const ASSETS = [
   './',
   './index.html',
