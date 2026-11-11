@@ -108,10 +108,15 @@
     try { var u = usos(); u[m.ruta] = (u[m.ruta] || 0) + 1; localStorage.setItem('hub-usos', JSON.stringify(u)); } catch (e) {}
     var url = BASE + m.ruta, enVentana = false;
     try { enVentana = localStorage.getItem('hub-ventana-modulo') === '1'; } catch (e) {}
-    if (enVentana) {   // (11-nov) equipo con "Cada módulo en su ventana" (engranaje del Hub): se abre aparte, en su app si está instalada
+    // (11-nov, JP: "si estoy en un módulo y elijo otro, que esa ventana se transforme en el otro, no que abra otra nueva")
+    //   Normal: la misma ventana pasa al otro módulo. En un equipo con "Cada módulo en su ventana" (engranaje del Hub) el
+    //   ícono de la barra es el de la app que abrió la ventana, así que para que cambie: se abre el otro módulo en su app
+    //   y esta ventana se cierra al mismo tiempo (se ve como si se transformara). En una pestaña común no se cierra nada.
+    if (enVentana && matchMedia('(display-mode: standalone)').matches) {
       cerrar();
       var a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
       document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { window.close(); }, 350);
       return;
     }
     location.href = url;
