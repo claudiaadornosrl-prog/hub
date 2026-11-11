@@ -83,14 +83,22 @@
     if (d && d.set) d.set.call(i, v); else i.value = v;
     i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true }));
   }
+  // (11-nov, arreglo) SOLO el mail de un formulario de ingreso: la contraseña tiene que estar a la vista y el mail tiene
+  //   que estar justo antes que ella en el mismo formulario/caja chica. Antes se buscaba hacia arriba sin mirar si la
+  //   contraseña se veía, y en Clientes trababa el mail del CLIENTE del pedido nuevo (la caja de ingreso estaba escondida).
+  function visible(el) { return !!(el && el.offsetParent !== null && el.getClientRects().length); }
   function trabarCampos() {
     if (!trabado() || !document.body) return;
     var e = leer();
     document.querySelectorAll('input[type=password]').forEach(function (pw) {
+      if (!visible(pw) || pw.autocomplete === 'new-password') return;
       var caja = pw.form || pw.parentElement; var n = 0;
-      while (caja && n < 3 && !caja.querySelector('input[type=email], input[autocomplete=username], input[autocomplete=email]')) { caja = caja.parentElement; n++; }
-      if (!caja) return;
-      var m = caja.querySelector('input[type=email], input[autocomplete=username], input[autocomplete=email]');
+      while (caja && n < 2 && !caja.querySelector('input[type=email], input[autocomplete=username], input[autocomplete=email]')) { caja = caja.parentElement; n++; }
+      if (!caja || caja.querySelectorAll('input:not([type=hidden]):not([type=checkbox])').length > 4) return;   // es un formulario de datos, no de ingreso
+      var ms = [].filter.call(caja.querySelectorAll('input[type=email], input[autocomplete=username], input[autocomplete=email]'), function (x) {
+        return visible(x) && (x.compareDocumentPosition(pw) & Node.DOCUMENT_POSITION_FOLLOWING);
+      });
+      var m = ms[ms.length - 1];
       if (!m || m.type === 'hidden') return;
       if (m.value !== e.usuario) ponerValor(m, e.usuario);
       if (m.dataset.adornoEquipo) return;
