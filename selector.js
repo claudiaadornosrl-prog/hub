@@ -81,6 +81,7 @@
       '.asel-titulo{cursor:pointer;border-radius:999px;padding:3px 10px 3px 8px;margin-left:-8px;transition:background .15s;-webkit-tap-highlight-color:transparent}' +
       '.asel-titulo:hover,.asel-titulo:focus-visible{background:color-mix(in srgb,currentColor 13%,transparent);outline:none}' +
       '.asel-flecha{font-size:.8em;margin-left:4px;opacity:.75;vertical-align:middle;font-style:normal}' +
+      '.asel-nombre{display:inline-flex;align-items:center;font-size:17px;font-weight:500;white-space:nowrap;flex:0 0 auto}' +
       '.asel-moneda{width:28px;height:28px;flex:0 0 28px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#F7F3EC;font-size:15px;' +
         'box-shadow:0 2px 0 color-mix(in srgb,var(--c) 60%,#000)}' +
       '.asel-moneda svg{width:16px;height:16px}' +
@@ -176,7 +177,16 @@
   function poner() {
     if (!esCompu() || !sesion()) return;
     var h = banner(); if (!h) return;
-    var t = h.querySelector(TITULOS[aqui.id] || 'h1, .header-title, .title'); if (!t) return;
+    var t = h.querySelector('.asel-nombre') || h.querySelector(TITULOS[aqui.id] || 'h1, .header-title, .title');
+    // (11-nov, JP: "Clientes no tiene título, no puedo salir a otro módulo") si el banner no muestra el nombre del módulo
+    //   (vacío o escondido), se le pone uno ("Clientes") y ese es el botón
+    var sinTexto = function (el) { return !el || !el.textContent.replace(/\s+/g, '').length || el.offsetWidth < 8; };
+    if (sinTexto(t)) {
+      var dentro = h.querySelector('.topbar-left, .header-left') || h;
+      t = document.createElement('span'); t.className = 'asel-nombre'; t.textContent = aqui.nombre;
+      var antes = t && dentro.querySelector('.hbtn, a[href*="/hub/"]');
+      dentro.insertBefore(t, antes && antes.parentElement === dentro ? antes.nextSibling : dentro.firstChild);
+    }
     estilos();
     if (!t.querySelector('.asel-flecha')) {
       var f = document.createElement('i'); f.className = 'ti ti-chevron-down asel-flecha'; f.setAttribute('aria-hidden', 'true');
