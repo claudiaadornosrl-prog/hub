@@ -6,7 +6,9 @@
 //      Actualizar gira · Notificaciones/avisos se sacude · Buscar late · Borrar/anular se balancea · Descargar/enviar sube
 //      · Editar/firmar saluda · Plata/caja/pagos da vuelta · Calendario/turnos hace tictac · Personas asienten
 //      · Agregar/nuevo gira · el resto rebota. (Los mismos movimientos que Colaboradores: nav-* de rrhh styles.css.)
-//  · Se anima solo el ícono (el primer SVG del botón, o el emoji si el botón es solo un emoji), nunca el texto.
+//  · Todos los botones del módulo, no solo los del banner (y lo que se toca sin ser botón, si es chico).
+//  · Se anima solo el ícono (SVG chico, ícono de letra o imagen chica, o el emoji solo o al principio del texto,
+//    que se envuelve en un span), nunca el texto ni dibujos grandes.
 //  · Respeta "reducir movimiento" del equipo. Colaboradores tiene las suyas (no se carga ahí) y el Hub las monedas.
 //  Lo cargan solos los módulos que usan /hub/seguridad.js o /hub/version.js.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -72,27 +74,48 @@
     return 'aa-bounce .55s ease';
   }
   var EMOJI_SOLO = /^\s*(\p{Extended_Pictographic}|[←-⇿☀-➿])[️‍\p{Extended_Pictographic}]*\s*$/u;
-  // el ícono del botón: su primer SVG; o el botón entero si es solo un emoji (se envuelve en un span)
+  var EMOJI_INI = /^(\s*)((?:\p{Extended_Pictographic}|[←-⇿☀-➿])[️‍\u{1F3FB}-\u{1F3FF}\p{Extended_Pictographic}]*)/u;
+  var ICONO = 'svg, i, img, .ico, .icon, .tab-icon, [class*="-ico"], [class^="ico-"], [class*="icono"]';
+  function chico(el, max) { var r = el.getBoundingClientRect(); return r.width > 0 && r.width <= max && r.height <= max; }
+  // si el texto empieza con un emoji ("📤 Exportar"), el emoji se envuelve en un span para moverlo solo a él
+  function emojiInicial(nodo) {
+    var t = nodo.firstChild;
+    while (t && t.nodeType === 3 && !t.nodeValue.trim()) t = t.nextSibling;
+    if (!t || t.nodeType !== 3) return null;
+    var m = EMOJI_INI.exec(t.nodeValue); if (!m) return null;
+    var s = document.createElement('span'); s.textContent = m[2];
+    t.nodeValue = t.nodeValue.slice(m[0].length);
+    nodo.insertBefore(s, t);
+    if (m[1]) nodo.insertBefore(document.createTextNode(m[1]), s);
+    return s;
+  }
+  // el ícono del botón: un dibujo chico (SVG), un ícono de letra o imagen chica, o el emoji (solo o al principio del texto)
   function iconoDe(btn) {
     var ya = btn.querySelector('.aa-ico'); if (ya) return ya;
-    var svg = btn.querySelector('svg');
-    if (svg && !svg.closest('.ab-moneda')) {
-      var r = svg.getBoundingClientRect();
-      return r.width && r.width <= 40 && r.height <= 40 ? svg : null;   // solo íconos, no dibujos grandes (gráficos, logos)
+    var el = btn.querySelector(ICONO);
+    if (el && !el.closest('.ab-moneda')) {
+      if (el.tagName.toLowerCase() === 'svg' || el.tagName === 'IMG') return chico(el, 40) ? el : null;   // no dibujos grandes (gráficos, logos)
+      if (chico(el, 44)) return el;
     }
     if (btn.children.length === 0 && EMOJI_SOLO.test(btn.textContent || '')) {
       var t = btn.textContent; btn.textContent = '';
       var s = document.createElement('span'); s.textContent = t; btn.appendChild(s); return s;
     }
-    var p = btn.firstElementChild;   // ej. <span class="tab-icon">🛍</span> o <i>📒</i> al principio
+    var p = btn.firstElementChild;   // ej. <span class="tab-icon">🛍</span> o <b>📒</b> al principio
     if (p && p.children.length === 0 && EMOJI_SOLO.test(p.textContent || '')) return p;
-    return null;
+    return emojiInicial(btn) || (p && p.children.length === 0 && btn.firstChild === p ? emojiInicial(p) : null);
   }
-  var SEL = 'button, a[href], [role="button"], .hbtn, .tab-btn, .htab';
-  var NO = '.asist-fab, .asist-panel, .ab-moneda, .asel-menu, input, select, textarea';
+  // botones de verdad, y también lo que se toca sin ser botón (con onclick, data-tip o role="button") si es chico
+  // (así no se anima una fila o una tarjeta entera)
+  var SEL = 'button, a[href], [role="button"], [onclick], [data-tip], .hbtn, .tab-btn, .htab, .chip, .pill';
+  var NO = '.asist-fab, .asist-panel, .ab-moneda, .asel-menu, input, select, textarea, #manual-overlay';
   function boton(el) {
     var b = el && el.closest && el.closest(SEL);
-    if (!b || b.disabled || b.closest(NO)) return null;
+    if (!b || b.disabled || b === document.body || b.closest(NO)) return null;
+    if (b.tagName !== 'BUTTON' && b.tagName !== 'A') {
+      var r = b.getBoundingClientRect();
+      if (r.width > 280 || (r.height > 64 && r.width > 120)) return null;   // filas y tarjetas enteras no
+    }
     return b;
   }
   function animar(btn) {

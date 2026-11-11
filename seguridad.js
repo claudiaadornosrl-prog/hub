@@ -390,7 +390,7 @@ window.ADORNO_CARA = (function () {
 (function () {
   if (window.ADORNO_ANIM || document.querySelector('script[src*="/hub/animaciones.js"]')) return;
   var s = document.createElement('script');
-  s.src = '/hub/animaciones.js?v=1'; s.async = true;
+  s.src = '/hub/animaciones.js?v=2'; s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
 
