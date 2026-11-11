@@ -930,6 +930,10 @@ window.ADORNO_SSO = (function () {
   /* paneles (módulos visibles, notificaciones, mi cuenta) */
   .config-overlay { background: rgba(28, 22, 18, .42); }
   .config-panel { border-radius: 26px; padding: 26px 24px 22px; box-shadow: 0 24px 60px -20px rgba(28, 22, 18, .45); }
+  /* (hub v94, JP: "los ajustes del hub se desbordan y no se pueden ver") ningún panel pasa el alto de la ventana: si no
+     entra, se desplaza adentro */
+  .config-panel { max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }
+  .config-row { padding: 8px 6px; }
   .config-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 25px; font-weight: 500; margin-bottom: 8px; }
   .config-row .nombre { font-size: 14px; }
   .config-cerrar { border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; padding: 13px; }
