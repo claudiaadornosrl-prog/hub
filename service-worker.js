@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v91-ventana-modulo';
+const CACHE_VERSION = 'hub-v92-selector';
 const ASSETS = [
   './',
   './index.html',

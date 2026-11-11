@@ -378,6 +378,14 @@ window.ADORNO_CARA = (function () {
   (document.head || document.documentElement).appendChild(s);
 })();
 
+// (infra, 11-nov-2026, JP) en la computadora, el nombre del módulo en el banner abre la lista para pasar a otro módulo
+(function () {
+  if (window.ADORNO_SELECTOR || document.querySelector('script[src*="/hub/selector.js"]')) return;
+  var s = document.createElement('script');
+  s.src = '/hub/selector.js?v=1'; s.async = true;
+  (document.head || document.documentElement).appendChild(s);
+})();
+
 // (infra, 11-nov-2026, JP) equipos trabados al usuario del local: /hub/equipo.js (en un equipo común no hace nada)
 (function () {
   if (window.ADORNO_EQUIPO || document.querySelector('script[src*="/hub/equipo.js"]')) return;

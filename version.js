@@ -8,11 +8,14 @@
 //    aparece abajo el cartel "Hay una versión nueva · Actualizar" (en el celular el título no se ve).
 //  La cargan sola los módulos que usan /hub/seguridad.js; los demás con <script src="/hub/version.js" defer></script>.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
-// (11-nov-2026) los módulos que cargan solo este archivo también suman la traba de equipos (/hub/equipo.js)
+// (11-nov-2026) los módulos que cargan solo este archivo también suman la traba de equipos (/hub/equipo.js) y el
+//   selector de módulos del banner (/hub/selector.js)
 (function () {
-  if (window.ADORNO_EQUIPO || document.querySelector('script[src*="/hub/equipo.js"]')) return;
-  var s = document.createElement('script'); s.src = '/hub/equipo.js?v=2'; s.async = true;
-  (document.head || document.documentElement).appendChild(s);
+  [['ADORNO_EQUIPO', '/hub/equipo.js', '?v=2'], ['ADORNO_SELECTOR', '/hub/selector.js', '?v=1']].forEach(function (x) {
+    if (window[x[0]] || document.querySelector('script[src*="' + x[1] + '"]')) return;
+    var s = document.createElement('script'); s.src = x[1] + x[2]; s.async = true;
+    (document.head || document.documentElement).appendChild(s);
+  });
 })();
 (function () {
   if (window.ADORNO_VERSION || !window.fetch) return;
