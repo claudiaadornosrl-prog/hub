@@ -19,11 +19,18 @@
   function guardar(o) { try { if (o) localStorage.setItem(CLAVE, JSON.stringify(o)); else localStorage.removeItem(CLAVE); } catch (e) {} }
   function trabado() { var e = leer(); return !!(e && e.estado === 'trabado' && e.usuario); }
   function lugar(e) { return (e && (LOCALES[e.local] || e.local)) || 'este local'; }
-  function sesion() {
+  function leerSesion(k) {
     try {
-      var j = JSON.parse(localStorage.getItem(SSO) || 'null'); var s = j && (j.currentSession || j);
-      return s && s.user ? { email: String(s.user.email || '').toLowerCase(), token: s.access_token } : null;
+      var j = JSON.parse(localStorage.getItem(k) || 'null'); var s = j && (j.currentSession || j);
+      return s && s.user ? { clave: k, email: String(s.user.email || '').toLowerCase(), token: s.access_token } : null;
     } catch (e) { return null; }
+  }
+  function sesion() { return leerSesion(SSO); }
+  // todas las sesiones guardadas en este navegador: la compartida, la de Clientes ('ca_session') y las sueltas de supabase
+  function sesiones() {
+    var ks = [SSO, 'ca_session'];
+    try { Object.keys(localStorage).forEach(function (k) { if (/^sb-.+-auth-token$/.test(k) && ks.indexOf(k) < 0) ks.push(k); }); } catch (e) {}
+    return ks.map(leerSesion).filter(Boolean);
   }
   function nuevoToken() {
     var a = new Uint8Array(32); crypto.getRandomValues(a);
@@ -60,10 +67,10 @@
   // ── si aparece otra persona en un equipo trabado, se la saca de este equipo ──
   function controlar() {
     if (!trabado()) return;
-    var e = leer(), s = sesion();
-    if (s && s.email && s.email !== e.usuario) {
-      try { localStorage.removeItem(SSO); } catch (x) {}
-      try { sessionStorage.setItem(AVISO, s.email); } catch (x) {}
+    var e = leer(), otras = sesiones().filter(function (s) { return s.email && s.email !== e.usuario; });
+    if (otras.length) {
+      otras.forEach(function (s) { try { localStorage.removeItem(s.clave); } catch (x) {} });
+      try { sessionStorage.setItem(AVISO, otras[0].email); } catch (x) {}
       location.reload();
       return;
     }
@@ -122,7 +129,7 @@
         .observe(document.body, { childList: true, subtree: true });
     }
     setInterval(controlar, 2000);                                     // si alguien entra con otro usuario en esta pestaña
-    window.addEventListener('storage', function (ev) { if (ev.key === SSO || ev.key === CLAVE) controlar(); });
+    window.addEventListener('storage', function (ev) { if (ev.key === SSO || ev.key === CLAVE || ev.key === 'ca_session' || /^sb-.+-auth-token$/.test(ev.key || '')) controlar(); });
     refrescar();
   }
   controlar();   // antes de que el módulo arranque, por si quedó la sesión de otra persona

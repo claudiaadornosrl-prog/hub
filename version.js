@@ -11,7 +11,7 @@
 // (11-nov-2026) los módulos que cargan solo este archivo también suman la traba de equipos (/hub/equipo.js)
 (function () {
   if (window.ADORNO_EQUIPO || document.querySelector('script[src*="/hub/equipo.js"]')) return;
-  var s = document.createElement('script'); s.src = '/hub/equipo.js?v=1'; s.async = true;
+  var s = document.createElement('script'); s.src = '/hub/equipo.js?v=2'; s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
 (function () {
