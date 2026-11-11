@@ -170,7 +170,7 @@
   //    título ya sirve para cambiar de obra); en Clientes el texto de arriba; en Colaboradores el logo.
   var TITULOS = { obra: '.lb-app', crm: '.header-txt', rrhh: '.topbar-logo' };
   function banner() {
-    var cands = document.querySelectorAll('header, .topbar, .header');
+    var cands = document.querySelectorAll('.ab-banner, header, .topbar, .header');   // .ab-banner = banner común (/hub/banner.css)
     for (var i = 0; i < cands.length; i++) {
       var h = cands[i];
       if (h.closest('.asel-menu') || h.closest('#login, .login, #login-screen, .login-screen, #pantalla-login')) continue;
@@ -182,12 +182,12 @@
   function poner() {
     if (!esCompu() || !sesion()) return;
     var h = banner(); if (!h) return;
-    var t = h.querySelector('.asel-nombre') || h.querySelector(TITULOS[aqui.id] || 'h1, .header-title, .title');
+    var t = h.querySelector('.asel-nombre') || h.querySelector('.ab-nombre') || h.querySelector(TITULOS[aqui.id] || 'h1, .header-title, .title');
     // (11-nov, JP: "Clientes no tiene título, no puedo salir a otro módulo") si el banner no muestra el nombre del módulo
     //   (vacío o escondido), se le pone uno ("Clientes") y ese es el botón
     var sinTexto = function (el) { return !el || !el.textContent.replace(/\s+/g, '').length || el.offsetWidth < 8; };
     if (sinTexto(t)) {
-      var dentro = h.querySelector('.topbar-left, .header-left') || h;
+      var dentro = h.querySelector('.ab-izq, .topbar-left, .header-left') || h;
       t = document.createElement('span'); t.className = 'asel-nombre'; t.textContent = aqui.nombre;
       var antes = t && dentro.querySelector('.hbtn, a[href*="/hub/"]');
       dentro.insertBefore(t, antes && antes.parentElement === dentro ? antes.nextSibling : dentro.firstChild);

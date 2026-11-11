@@ -382,7 +382,7 @@ window.ADORNO_CARA = (function () {
 (function () {
   if (window.ADORNO_SELECTOR || document.querySelector('script[src*="/hub/selector.js"]')) return;
   var s = document.createElement('script');
-  s.src = '/hub/selector.js?v=4'; s.async = true;
+  s.src = '/hub/selector.js?v=5'; s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
 
