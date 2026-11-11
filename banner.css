@@ -5,14 +5,16 @@
    banner toma el color de la moneda del módulo, el mismo del Hub y de la barra de tareas) y la moneda con fondo crema
    y el ícono del color del módulo.
    Cómo se usa en un módulo (ver la regla en C:\CRM_Adorno\CLAUDE.md):
-     <head> … <link rel="stylesheet" href="/hub/banner.css?v=2"> …
+     <head> … <link rel="stylesheet" href="/hub/banner.css?v=4"> …
      <header class="ab-banner" data-modulo="tesoreria">
        <div class="ab-izq"><span class="ab-nombre">Tesorería</span><span class="ab-sub">…local · perfil…</span></div>
        <nav class="ab-tabs" id="tabs"> <button class="active"><svg class="ico">…</svg><span class="lb">Saldos</span></button> … </nav>
        (lo propio del módulo, ej. el mes de Ventas)
-       <div class="ab-der"> Manual · Avisos · Actualizar <span class="hsep"></span> Hub · Salir  (todos .hbtn) </div>
+       <div class="ab-der"> Avisos · Actualizar <span class="hsep"></span> Hub (class ab-fijo) · Salir (class ab-fijo)  (todos .hbtn) </div>
+   (11-nov, JP) el botón Manual no se muestra (banner.js lo oculta: le preguntan a Clodi) y el del Hub tampoco en la compu:
+   se vuelve al Hub desde la lista que abre el nombre del módulo. En el celular el Hub queda (no hay lista).
      </header>
-     <script src="/hub/banner.js?v=2"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
+     <script src="/hub/banner.js?v=4"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
    Los colores salen de data-modulo (los mismos de las monedas del Hub: HUB_MODULOS / selector.js MODULOS).
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════ */
 .ab-banner { --ab-c: #685B51; }
@@ -81,7 +83,7 @@ body .ab-banner .ab-tabs > .active, body .ab-banner .ab-tabs > .on {
 }
 body .ab-banner .ab-tabs svg { width: 19px; height: 19px; flex: none; }
 
-/* ── los botones de la derecha: Manual · Avisos · Actualizar | Hub · Salir ── */
+/* ── los botones de la derecha: Avisos · Actualizar | (Hub, solo en el celular) · Salir ── */
 body .ab-banner .ab-der { display: flex; align-items: center; gap: 2px; flex: none; position: relative; margin: 0; }
 body .ab-banner .hbtn {
   align-items: center; height: 36px; padding: 0 9px; border: 0 !important; border-radius: 999px !important;
@@ -94,9 +96,16 @@ body .ab-banner .hbtn svg { width: 20px; height: 20px; flex: none; }
 body .ab-banner .hbtn .lb { max-width: 0; overflow: hidden; opacity: 0; margin-left: 0; transition: max-width .25s ease, opacity .18s, margin-left .25s; }
 body .ab-banner .hbtn:hover .lb { max-width: 140px; opacity: 1; margin-left: 6px; }
 body .ab-banner .hsep { width: 1px; height: 22px; margin: 0 6px; flex: none; background: rgba(255, 255, 255, .3) !important; }
+/* lo propio del módulo que va en el banner y no es un botón (ej. el estado y los totales de Ventas) */
+body .ab-banner .ab-dato { font-size: 12px; color: #FBF6EE; opacity: .9; white-space: nowrap; }
 body .ab-banner .ab-hamb, body .ab-banner .kebab-tabs-btn { display: none !important; }
 /* copias de los botones de la derecha que banner.js pone dentro del menú ☰ (solo se ven en el celular) */
 body .ab-banner .ab-tabs > .ab-espejo, body .ab-banner .ab-tabs > .ab-espejo-sep { display: none !important; }
+
+/* en la compu no va el botón del Hub: se vuelve desde la lista del nombre del módulo (selector.js, "Volver al Hub") */
+@media (min-width: 900px) and (pointer: fine) {
+  body .ab-banner .ab-der > a.hbtn[href*="/hub/"] { display: none !important; }
+}
 
 /* lo propio de cada módulo que va en el banner (ej. el mes de Ventas): pastillas translúcidas */
 body .ab-banner .ab-chip, body .ab-banner select.ab-chip {
@@ -115,8 +124,11 @@ body .ab-banner select.ab-chip option { color: #1C1612; background: #fff; }
   body .ab-banner .ab-espacio { display: none; }
   body .ab-banner .ab-hamb:not([style*="display: none"]), body .ab-banner .kebab-tabs-btn:not([style*="display: none"]) { display: inline-flex !important; }
   body .ab-banner .hbtn .lb { display: none; }
-  /* en el celular, a la derecha quedan solo ☰, Hub y Salir: el resto va adentro del menú ☰ (copias de banner.js) */
-  body .ab-banner .ab-der > .hbtn:not(.ab-fijo):not(.ab-hamb):not(.kebab-tabs-btn), body .ab-banner .ab-der > .hsep { display: none !important; }
+  /* en el celular, a la derecha quedan solo ☰, Hub y Salir: el resto va adentro del menú ☰ (copias de banner.js).
+     Solo si el módulo tiene apartados (si no, no hay ☰ y esos botones se quedan a la vista; ej. Ventas) */
+  body .ab-banner:has(.ab-tabs) .ab-der > .hbtn:not(.ab-fijo):not(.ab-hamb):not(.kebab-tabs-btn), body .ab-banner .ab-der > .hsep { display: none !important; }
+  /* el menú ⋮ propio de un módulo (ej. Ventas) se queda en su lugar, a la derecha */
+  body .ab-banner .ab-der .kebab-wrap { position: relative !important; top: auto !important; right: auto !important; }
   body .ab-banner .ab-tabs > .ab-espejo { display: flex !important; }
   body .ab-banner .ab-tabs > .ab-espejo-sep { display: block !important; height: 1px; margin: 6px 10px; background: #ECE5D9; }
   body .ab-banner .ab-tabs:not([style*="display: none"]):not([style*="display:none"]) { display: none; }

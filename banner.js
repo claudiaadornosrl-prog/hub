@@ -1,10 +1,12 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 //  banner.js — BANNER COMÚN de los módulos (infra, 11-nov-2026). Va con /hub/banner.css (ver ahí cómo se arma).
-//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=2"></script>), sin async: así la moneda aparece
+//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=4"></script>), sin async: así la moneda aparece
 //  junto con el banner, sin saltos.
 //  · Pone la moneda del módulo (fondo crema, ícono del color del módulo, el mismo dibujo que la ficha del Hub).
 //  · Si el banner no trae espacio flexible, lo agrega después de los apartados (los botones quedan a la derecha).
 //  · Si no trae botón ☰ para el celular, agrega uno que abre/cierra los apartados.
+//  · Oculta el botón Manual (JP, 11-nov: le preguntan a Clodi) y acomoda las rayitas de la derecha.
+//  · En el celular copia adentro del ☰ los botones de la derecha (menos Hub y Salir).
 //  Íconos: los de la letra Tabler 2.47 (los mismos códigos que hub/herramientas/iconos_modulos.py), pasados a SVG.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 (function () {
@@ -49,15 +51,31 @@
 
   var der = b.querySelector('.ab-der');
 
-  // ── el botón Manual: varios módulos lo agregan como un apartado más (manual.js); va a la derecha, primero ──
-  function moverManual() {
-    if (!tabs || !der) return;
-    var mb = tabs.querySelector(':scope > button[title="Manual"]:not(.ab-espejo), :scope > button[title^="Manual de"]:not(.ab-espejo), :scope > #btn-manual');
-    if (!mb) return;
-    mb.classList.add('hbtn', 'ab-manual');
-    // primero de la derecha (después del ☰, que en la compu no se ve)
-    var antes = [].filter.call(der.children, function (x) { return !x.classList.contains('ab-hamb') && !x.classList.contains('kebab-tabs-btn'); })[0];
-    der.insertBefore(mb, antes || null);
+  // ── el botón Manual NO se muestra (JP, 11-nov: "nadie va a usar el manual, le preguntan todo a Clodi").
+  //    El manual sigue existiendo (manual.js): Clodi contesta con ese texto. Lo agregan los manual.js de cada módulo
+  //    (como apartado, a la derecha o en el menú ⋮), así que se busca en todo el banner. ──
+  function esManual(x) {
+    var tx = (x.textContent || '').replace(/\s+/g, ' ').trim();
+    return x.id === 'btn-manual' || /^(📖 )?Manual( de uso)?$/.test(tx) || /^Manual/.test(x.title || '') || /abrirManual/.test(x.getAttribute('onclick') || '');
+  }
+  function ocultarManual() {
+    [].forEach.call(b.querySelectorAll('button, a'), function (x) {
+      if (x.classList.contains('ab-manual') || x.classList.contains('ab-espejo') || !esManual(x)) return;
+      x.classList.add('ab-manual'); x.style.display = 'none';
+    });
+  }
+  // ── rayitas de la derecha: nunca al principio, al final ni dos seguidas (según lo que se ve: en la compu el Hub
+  //    no se muestra porque se vuelve desde la lista del nombre) ──
+  function rayitas() {
+    if (!der) return;
+    var hijos = [].slice.call(der.children), visto = false, ultima = null;
+    hijos.forEach(function (x) { if (x.classList.contains('hsep')) x.style.display = ''; });
+    hijos.forEach(function (x) {
+      if (x.classList.contains('hsep')) {
+        if (!visto) x.style.display = 'none'; else { ultima = x; visto = false; }
+      } else if (getComputedStyle(x).display !== 'none') { visto = true; ultima = null; }
+    });
+    if (ultima) ultima.style.display = 'none';   // quedó una rayita al final
   }
 
   // ── en el celular, los botones de la derecha (menos Hub y Salir) van adentro del menú ☰, abajo de los apartados ──
@@ -81,14 +99,15 @@
   var t = null, ocupado = false;
   function revisar() {
     if (ocupado) return; ocupado = true;
-    try { moverManual(); espejar(); } finally { setTimeout(function () { ocupado = false; }, 0); }
+    try { ocultarManual(); espejar(); rayitas(); } finally { setTimeout(function () { ocupado = false; }, 0); }
   }
   revisar();
-  if (window.MutationObserver && tabs && der) {
+  if (window.MutationObserver) {
     var mo = new MutationObserver(function () { if (ocupado || t) return; t = setTimeout(function () { t = null; revisar(); }, 120); });
-    mo.observe(tabs, { childList: true });
-    mo.observe(der, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    mo.observe(b, { childList: true, subtree: true });
+    if (der) mo.observe(der, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
   }
+  try { matchMedia('(min-width: 900px) and (pointer: fine)').addEventListener('change', function () { rayitas(); }); } catch (e) {}
 
   // ── botón ☰ para el celular (si el módulo no tiene el suyo) ──
   if (tabs && !b.querySelector('.kebab-tabs-btn, .ab-hamb')) {
