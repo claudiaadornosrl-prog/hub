@@ -78,14 +78,12 @@
     } else esperar();
     var s = document.createElement('style'); s.id = 'asel-css';
     s.textContent =
-      '.asel-boton{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;margin:0 10px 0 0;padding:4px 9px 4px 4px;border:0;border-radius:999px;cursor:pointer;' +
-        'background:color-mix(in srgb,currentColor 14%,transparent);color:inherit;font:inherit;line-height:1;-webkit-tap-highlight-color:transparent}' +
-      '.asel-boton:hover{background:color-mix(in srgb,currentColor 22%,transparent)}' +
-      '.asel-boton .asel-flecha{font-size:15px;opacity:.85}' +
+      '.asel-titulo{cursor:pointer;border-radius:999px;padding:3px 10px 3px 8px;margin-left:-8px;transition:background .15s;-webkit-tap-highlight-color:transparent}' +
+      '.asel-titulo:hover,.asel-titulo:focus-visible{background:color-mix(in srgb,currentColor 13%,transparent);outline:none}' +
+      '.asel-flecha{font-size:.8em;margin-left:4px;opacity:.75;vertical-align:middle;font-style:normal}' +
       '.asel-moneda{width:28px;height:28px;flex:0 0 28px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#F7F3EC;font-size:15px;' +
         'box-shadow:0 2px 0 color-mix(in srgb,var(--c) 60%,#000)}' +
       '.asel-moneda svg{width:16px;height:16px}' +
-      '.asel-boton .asel-moneda{width:26px;height:26px;flex-basis:26px;font-size:14px;box-shadow:0 0 0 2px rgba(255,255,255,.55)}' +
       '.asel-menu{position:fixed;z-index:99980;width:310px;max-height:min(70vh,560px);overflow:auto;padding:10px;border-radius:22px;background:#fff;color:#1C1612;' +
         'box-shadow:0 24px 50px -16px rgba(28,22,18,.45),0 0 0 1px rgba(28,22,18,.06);font:400 14px/1.35 Jost,system-ui,-apple-system,sans-serif;text-align:left}' +
       '.asel-buscar{display:block;width:100%;box-sizing:border-box;margin:2px 0 8px;padding:9px 16px;border:1px solid #D6CCBA;border-radius:999px;font:inherit;font-size:13px;color:#1C1612;background:#fff;outline:none}' +
@@ -98,8 +96,8 @@
       '.asel-pie{border-top:1px solid #E5DDCF;margin-top:6px;padding-top:6px}' +
       '.asel-pie .asel-casa{width:28px;text-align:center;font-size:18px;color:#685B51}' +
       '.asel-vacio{padding:10px 14px;color:#685B51;font-size:13px}' +
-      '.asel-boton .ti,.asel-menu .ti{visibility:hidden}.asel-fuente .asel-boton .ti,.asel-fuente .asel-menu .ti{visibility:visible}' +
-      '@media (max-width:899px),(pointer:coarse){.asel-boton{display:none!important}}';
+      '.asel-flecha,.asel-menu .ti{visibility:hidden}.asel-fuente .asel-flecha,.asel-fuente .asel-menu .ti{visibility:visible}' +
+      '@media (max-width:899px),(pointer:coarse){.asel-flecha{display:none!important}.asel-titulo{cursor:inherit}.asel-titulo:hover{background:none}}';
     document.head.appendChild(s);
   }
 
@@ -153,7 +151,10 @@
     document.addEventListener('mousedown', fuera, true);
   }
 
-  // ── la pastilla en el banner (si el módulo vuelve a dibujar su banner, se la vuelve a poner) ──
+  // ── el nombre del módulo en el banner es el botón (JP: "que toque sobre Tesorería y abra el desplegable, sin fichita de más")
+  //    Si el módulo vuelve a dibujar su banner, se lo vuelve a preparar. En Obra solo la palabra "Obra" (el resto del
+  //    título ya sirve para cambiar de obra); en Clientes el texto de arriba; en Colaboradores el logo.
+  var TITULOS = { obra: '.lb-app', crm: '.header-txt', rrhh: '.topbar-logo' };
   function banner() {
     var cands = document.querySelectorAll('header, .topbar, .header');
     for (var i = 0; i < cands.length; i++) {
@@ -166,15 +167,20 @@
   }
   function poner() {
     if (!esCompu() || !sesion()) return;
-    var h = banner(); if (!h || h.querySelector('.asel-boton')) return;
+    var h = banner(); if (!h) return;
+    var t = h.querySelector(TITULOS[aqui.id] || 'h1, .header-title, .title'); if (!t) return;
     estilos();
-    boton = document.createElement('button');
-    boton.type = 'button'; boton.className = 'asel-boton';
-    boton.title = 'Cambiar de módulo'; boton.setAttribute('aria-label', 'Cambiar de módulo'); boton.setAttribute('aria-haspopup', 'menu');
-    boton.innerHTML = moneda(aqui) + '<i class="ti ti-chevron-down asel-flecha" aria-hidden="true"></i>';
-    boton.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); abrir(); });
-    var dentro = h.querySelector('.topbar-left, .header-left') || h;
-    dentro.insertBefore(boton, dentro.firstChild);
+    if (!t.querySelector('.asel-flecha')) {
+      var f = document.createElement('i'); f.className = 'ti ti-chevron-down asel-flecha'; f.setAttribute('aria-hidden', 'true');
+      t.appendChild(f);
+    }
+    if (t.dataset.asel) return;
+    t.dataset.asel = '1'; t.classList.add('asel-titulo');
+    t.setAttribute('role', 'button'); t.setAttribute('tabindex', '0'); t.setAttribute('aria-haspopup', 'menu');
+    t.title = 'Cambiar de módulo';
+    var abrirDesde = function (ev) { if (!esCompu()) return; ev.preventDefault(); ev.stopPropagation(); boton = t; abrir(); };
+    t.addEventListener('click', abrirDesde);
+    t.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') abrirDesde(ev); });
   }
   function arrancar() {
     var s = sesion();
