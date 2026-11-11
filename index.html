@@ -372,7 +372,13 @@ window.ADORNO_SSO = (function () {
 <title>Claude Adorno · Hub</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<link rel="manifest" href="./manifest.webmanifest">
+<link rel="manifest" href="./manifest.webmanifest" id="hub-manifest">
+<script>
+  // (hub v98, 11-nov-2026) en una computadora con "Cada módulo en su ventana" la app del Hub abarca solo /hub/: si no,
+  //   Chrome considera que los módulos son parte del Hub y no deja instalarlos como apps propias. En el resto (y en el
+  //   iPhone, donde el Hub y los módulos viven en la misma app) sigue abarcando todo el sistema.
+  try { if (localStorage.getItem('hub-ventana-modulo') === '1' && matchMedia('(pointer: fine)').matches) document.getElementById('hub-manifest').href = './manifest-ventanas.webmanifest'; } catch (_) {}
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1204,6 +1210,8 @@ window.ADORNO_SSO = (function () {
     const on = !btn.classList.contains('on');
     try { on ? localStorage.setItem('hub-ventana-modulo', '1') : localStorage.removeItem('hub-ventana-modulo'); } catch (_) {}
     btn.classList.toggle('on', on);
+    const mf = document.getElementById('hub-manifest');   // (hub v98) la app del Hub abarca solo /hub/ con la opción prendida
+    if (mf) mf.href = on ? './manifest-ventanas.webmanifest' : './manifest.webmanifest';
     _hubMonedas(); aplicarVisibilidad();
   }
   function toggleModulo(id, visible) {
