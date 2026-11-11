@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 //  banner.js — BANNER COMÚN de los módulos (infra, 11-nov-2026). Va con /hub/banner.css (ver ahí cómo se arma).
-//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=4"></script>), sin async: así la moneda aparece
+//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=5"></script>), sin async: así la moneda aparece
 //  junto con el banner, sin saltos.
 //  · Pone la moneda del módulo (fondo crema, ícono del color del módulo, el mismo dibujo que la ficha del Hub).
 //  · Si el banner no trae espacio flexible, lo agrega después de los apartados (los botones quedan a la derecha).
@@ -96,15 +96,22 @@
       tabs.appendChild(c);
     });
   }
+  // ── si un apartado tiene alertas (ej. Pedidos de Clientes, en verde), el ☰ del celular lleva un puntito verde ──
+  function aviso() {
+    if (!tabs) return;
+    var hay = !!tabs.querySelector(':scope > .has-alert:not(.ab-espejo), :scope > .ab-alerta:not(.ab-espejo)');
+    [].forEach.call(b.querySelectorAll('.ab-hamb, .kebab-tabs-btn'), function (x) { x.classList.toggle('ab-con-aviso', hay); });
+  }
   var t = null, ocupado = false;
   function revisar() {
     if (ocupado) return; ocupado = true;
-    try { ocultarManual(); espejar(); rayitas(); } finally { setTimeout(function () { ocupado = false; }, 0); }
+    try { ocultarManual(); espejar(); rayitas(); aviso(); } finally { setTimeout(function () { ocupado = false; }, 0); }
   }
   revisar();
   if (window.MutationObserver) {
     var mo = new MutationObserver(function () { if (ocupado || t) return; t = setTimeout(function () { t = null; revisar(); }, 120); });
     mo.observe(b, { childList: true, subtree: true });
+    if (tabs) mo.observe(tabs, { subtree: true, attributes: true, attributeFilter: ['class'] });
     if (der) mo.observe(der, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
   }
   try { matchMedia('(min-width: 900px) and (pointer: fine)').addEventListener('change', function () { rayitas(); }); } catch (e) {}

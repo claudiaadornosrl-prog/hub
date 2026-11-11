@@ -5,7 +5,7 @@
    banner toma el color de la moneda del módulo, el mismo del Hub y de la barra de tareas) y la moneda con fondo crema
    y el ícono del color del módulo.
    Cómo se usa en un módulo (ver la regla en C:\CRM_Adorno\CLAUDE.md):
-     <head> … <link rel="stylesheet" href="/hub/banner.css?v=4"> …
+     <head> … <link rel="stylesheet" href="/hub/banner.css?v=5"> …
      <header class="ab-banner" data-modulo="tesoreria">
        <div class="ab-izq"><span class="ab-nombre">Tesorería</span><span class="ab-sub">…local · perfil…</span></div>
        <nav class="ab-tabs" id="tabs"> <button class="active"><svg class="ico">…</svg><span class="lb">Saldos</span></button> … </nav>
@@ -14,7 +14,7 @@
    (11-nov, JP) el botón Manual no se muestra (banner.js lo oculta: le preguntan a Clodi) y el del Hub tampoco en la compu:
    se vuelve al Hub desde la lista que abre el nombre del módulo. En el celular el Hub queda (no hay lista).
      </header>
-     <script src="/hub/banner.js?v=4"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
+     <script src="/hub/banner.js?v=5"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
    Los colores salen de data-modulo (los mismos de las monedas del Hub: HUB_MODULOS / selector.js MODULOS).
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════ */
 .ab-banner { --ab-c: #685B51; }
@@ -39,7 +39,7 @@ body .ab-banner {
   background: linear-gradient(180deg, color-mix(in srgb, var(--ab-c) 90%, #fff), var(--ab-c)) !important;
   color: #FBF6EE !important; border: 0 !important; border-radius: 0 !important;
   box-shadow: 0 2px 10px rgba(28, 22, 18, .18) !important;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; justify-content: flex-start;
 }
 body .ab-banner .ab-izq { display: flex; align-items: center; gap: 10px; flex: 0 1 auto; min-width: 0; }
 body .ab-banner .ab-moneda {
@@ -71,6 +71,7 @@ body .ab-banner .ab-tabs > button, body .ab-banner .ab-tabs > a, body .ab-banner
   border: 0 !important; border-radius: 999px !important; background: transparent !important; color: #FBF6EE !important;
   opacity: .88; font: 600 13px/1 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important; white-space: nowrap;
   cursor: pointer; text-decoration: none; box-shadow: none !important; transition: background .15s, opacity .15s;
+  flex: 0 0 auto !important; flex-direction: row !important; gap: 0; position: relative;
 }
 body .ab-banner .ab-tabs > button:not([style*="display: none"]):not([style*="display:none"]),
 body .ab-banner .ab-tabs > a:not([style*="display: none"]):not([style*="display:none"]) { display: inline-flex; }
@@ -82,6 +83,17 @@ body .ab-banner .ab-tabs > .active, body .ab-banner .ab-tabs > .on {
   background: #F7F3EC !important; color: color-mix(in srgb, var(--ab-c) 72%, #000) !important; opacity: 1; font-weight: 700 !important;
 }
 body .ab-banner .ab-tabs svg { width: 19px; height: 19px; flex: none; }
+body .ab-banner .ab-tabs .tab-icon { display: inline-flex; width: auto; height: auto; }
+/* número de avisos de un apartado: al lado del nombre (no flotando arriba) */
+body .ab-banner .ab-tabs .tab-badge { position: static !important; margin-left: 6px; }
+/* apartado con alertas (ej. Pedidos de Clientes): verde, con el nombre siempre a la vista */
+body .ab-banner .ab-tabs > .has-alert, body .ab-banner .ab-tabs > .ab-alerta { background: #16a34a !important; color: #fff !important; opacity: 1; }
+body .ab-banner .ab-tabs > .has-alert:hover, body .ab-banner .ab-tabs > .ab-alerta:hover { background: #15803d !important; }
+body .ab-banner .ab-tabs > .has-alert .lb, body .ab-banner .ab-tabs > .ab-alerta .lb { max-width: 170px; opacity: 1; margin-left: 6px; }
+body .ab-banner .ab-tabs > .has-alert.active, body .ab-banner .ab-tabs > .ab-alerta.active { box-shadow: inset 0 0 0 2px #F7F3EC !important; }
+/* el ☰ del celular avisa con un puntito verde si algún apartado tiene alertas (banner.js) */
+body .ab-banner .ab-con-aviso { position: relative; }
+body .ab-banner .ab-con-aviso::after { content: ''; position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 2px var(--ab-c); }
 
 /* ── los botones de la derecha: Avisos · Actualizar | (Hub, solo en el celular) · Salir ── */
 body .ab-banner .ab-der { display: flex; align-items: center; gap: 2px; flex: none; position: relative; margin: 0; }
