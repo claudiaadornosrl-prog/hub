@@ -105,7 +105,15 @@
   var menu = null, boton = null, foco = 0;
   function ir(m) {
     try { var u = usos(); u[m.ruta] = (u[m.ruta] || 0) + 1; localStorage.setItem('hub-usos', JSON.stringify(u)); } catch (e) {}
-    location.href = BASE + m.ruta;
+    var url = BASE + m.ruta, enVentana = false;
+    try { enVentana = localStorage.getItem('hub-ventana-modulo') === '1'; } catch (e) {}
+    if (enVentana) {   // (11-nov) equipo con "Cada módulo en su ventana" (engranaje del Hub): se abre aparte, en su app si está instalada
+      cerrar();
+      var a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      return;
+    }
+    location.href = url;
   }
   function cerrar() { if (menu) { menu.remove(); menu = null; document.removeEventListener('mousedown', fuera, true); } }
   function fuera(ev) { if (menu && !menu.contains(ev.target) && !(boton && boton.contains(ev.target))) cerrar(); }
