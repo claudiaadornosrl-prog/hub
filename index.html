@@ -1010,6 +1010,7 @@ window.ADORNO_SSO = (function () {
     <h3>Módulos visibles</h3>
     <div class="hint">Elegí qué accesos ver en este dispositivo. Se guarda solo acá.</div>
     <div id="config-rows"></div>
+    <div id="config-ventana"></div>
     <button class="config-cerrar perm-abrir" id="btn-permisos" hidden onclick="abrirPermisos()">Permisos</button>
     <button class="config-cerrar" onclick="cerrarConfig()">Listo</button>
   </div>
@@ -1109,8 +1110,13 @@ window.ADORNO_SSO = (function () {
     return `<span class="moneda">${capas}<span class="cara" style="transform:translateZ(${T / 2}px);">${ic}</span>` +
       `<span class="cara" style="transform:rotateY(180deg) translateZ(${T / 2}px);">${ic}</span></span><span class="piso"></span>`;
   }
+  // (hub v91, 11-nov-2026, JP: "que al abrir Ventas la barra muestre el logo de Ventas, no el del Hub") opción por equipo,
+  //   solo computadora: cada módulo se abre en una ventana aparte (target _blank). Si el módulo está instalado como app y
+  //   Chrome tiene "abrir vínculos compatibles" para esa app, se abre en su propia app, con su ícono en la barra.
+  const _hubVentanaPorModulo = () => { try { return localStorage.getItem('hub-ventana-modulo') === '1' && matchMedia('(pointer: fine)').matches; } catch (_) { return false; } };
   function _hubMonedas() {
     const esc = document.getElementById('escena'); if (!esc) return;
+    const destino = _hubVentanaPorModulo() ? ' target="_blank"' : '';
     const chico = esc.clientWidth > 0 && esc.clientWidth < 620;
     esc.dataset.chico = chico ? '1' : '0'; esc.classList.toggle('chico', chico);
     esc.querySelectorAll('.mod').forEach(m => m.remove());
@@ -1118,7 +1124,7 @@ window.ADORNO_SSO = (function () {
       const ic = m.icono ? `<i class="ti ${m.icono}" aria-hidden="true"></i>` : _HUB_SAFE;
       if (m.pronto) return `<a class="mod pronto" data-m="${m.id}" style="--c:var(--${m.color});" title="${m.nombre} · ${m.desc} · en construcción" draggable="false">` +
         `<span class="bola">${_hubMoneda(ic, chico)}</span><span class="nom">${m.nombre}</span></a>`;
-      return `<a class="mod" href="${m.url}" data-m="${m.id}" style="--c:var(--${m.color});" title="${m.nombre} · ${m.desc}" draggable="false">` +
+      return `<a class="mod" href="${m.url}"${destino} data-m="${m.id}" style="--c:var(--${m.color});" title="${m.nombre} · ${m.desc}" draggable="false">` +
         `<span class="bola">${_hubMoneda(ic, chico)}</span><span class="nom">${m.nombre}</span></a>`;
     }).join(''));
   }
@@ -1180,7 +1186,21 @@ window.ADORNO_SSO = (function () {
                onchange="toggleModulo('${m.id}', this.checked)">
         <span class="nombre">${m.nombre}</span>
       </label>`).join('');
+    // (hub v91) solo en computadora: abrir cada módulo en su propia ventana
+    const cv = document.getElementById('config-ventana');
+    if (cv) cv.innerHTML = matchMedia('(pointer: fine)').matches ? `
+      <div class="notif-row" style="border-top:1px solid var(--border);padding:12px 0 2px;margin-top:6px;">
+        <div><strong style="font-size:13px;">Cada módulo en su ventana</strong>
+          <div class="estado" style="font-size:11px;color:var(--muted);">Al tocar un módulo se abre en una ventana aparte. Si el módulo está instalado como app, aparece con su ícono en la barra.</div></div>
+        <button class="notif-switch ${localStorage.getItem('hub-ventana-modulo') === '1' ? 'on' : ''}" onclick="toggleVentanaModulo(this)"></button>
+      </div>` : '';
     document.getElementById('config-overlay').classList.add('open');
+  }
+  function toggleVentanaModulo(btn) {
+    const on = !btn.classList.contains('on');
+    try { on ? localStorage.setItem('hub-ventana-modulo', '1') : localStorage.removeItem('hub-ventana-modulo'); } catch (_) {}
+    btn.classList.toggle('on', on);
+    _hubMonedas(); aplicarVisibilidad();
   }
   function toggleModulo(id, visible) {
     let ocultos = hubOcultos().filter(x => x !== id);
