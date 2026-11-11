@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v96-selector-transforma';
+const CACHE_VERSION = 'hub-v97-hub-transforma';
 const ASSETS = [
   './',
   './index.html',

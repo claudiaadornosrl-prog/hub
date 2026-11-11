@@ -1195,7 +1195,7 @@ window.ADORNO_SSO = (function () {
     if (cv) cv.innerHTML = matchMedia('(pointer: fine)').matches ? `
       <div class="notif-row" style="border-top:1px solid var(--border);padding:12px 0 2px;margin-top:6px;">
         <div><strong style="font-size:13px;">Cada módulo en su ventana</strong>
-          <div class="estado" style="font-size:11px;color:var(--muted);">Al tocar un módulo se abre en una ventana aparte. Si el módulo está instalado como app, aparece con su ícono en la barra.</div></div>
+          <div class="estado" style="font-size:11px;color:var(--muted);">Al tocar un módulo, esta ventana se convierte en el módulo y en la barra aparece con su propio ícono (hace falta tener el módulo instalado como app).</div></div>
         <button class="notif-switch ${localStorage.getItem('hub-ventana-modulo') === '1' ? 'on' : ''}" onclick="toggleVentanaModulo(this)"></button>
       </div>` : '';
     document.getElementById('config-overlay').classList.add('open');
@@ -2487,6 +2487,9 @@ function _ponerFicha(slot, id) {
     }
     const mod = e.target.closest('.mod[href]');
     if (mod) _contarUso(mod);   // (hub v78) para bajar primero los módulos que más usa
+    // (hub v97, JP: "que el Hub se transforme en el módulo que toco y su ícono quede como cerrado") con "Cada módulo en su
+    //   ventana", el módulo se abre en su app (el link tiene target _blank) y la ventana del Hub se cierra al mismo tiempo
+    if (mod && !toque && mod.target === '_blank' && matchMedia('(display-mode: standalone)').matches) { setTimeout(() => window.close(), 350); return; }
     if (mod && toque) { e.preventDefault(); girarYAbrir(mod); return; }
     const cambiar = e.target.closest('.fz-cambiar'), elegir = e.target.closest('[data-elegir]'), med = e.target.closest('.medallon.salud');
     if (cambiar) {
