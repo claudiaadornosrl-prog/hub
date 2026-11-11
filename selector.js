@@ -68,10 +68,14 @@
   // ── estilos (con el prefijo asel- para no chocar con los del módulo) ──
   function estilos() {
     if (document.getElementById('asel-css')) return;
+    // la letra de los íconos (la misma del Hub); hasta que llega, los íconos no se muestran (si no, se ve un cuadradito)
+    var listo = function () { document.documentElement.classList.add('asel-fuente'); };
+    var esperar = function () { try { document.fonts.load('16px tabler-icons').then(listo, listo); } catch (e) { listo(); } setTimeout(listo, 6000); };
     if (!document.querySelector('link[href*="tabler-icons"]')) {
       var l = document.createElement('link'); l.rel = 'stylesheet';
-      l.href = 'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css'; document.head.appendChild(l);
-    }
+      l.href = 'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css';
+      l.onload = esperar; l.onerror = listo; document.head.appendChild(l);
+    } else esperar();
     var s = document.createElement('style'); s.id = 'asel-css';
     s.textContent =
       '.asel-boton{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;margin:0 10px 0 0;padding:4px 9px 4px 4px;border:0;border-radius:999px;cursor:pointer;' +
@@ -94,6 +98,7 @@
       '.asel-pie{border-top:1px solid #E5DDCF;margin-top:6px;padding-top:6px}' +
       '.asel-pie .asel-casa{width:28px;text-align:center;font-size:18px;color:#685B51}' +
       '.asel-vacio{padding:10px 14px;color:#685B51;font-size:13px}' +
+      '.asel-boton .ti,.asel-menu .ti{visibility:hidden}.asel-fuente .asel-boton .ti,.asel-fuente .asel-menu .ti{visibility:visible}' +
       '@media (max-width:899px),(pointer:coarse){.asel-boton{display:none!important}}';
     document.head.appendChild(s);
   }
