@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 //  banner.js — BANNER COMÚN de los módulos (infra, 11-nov-2026). Va con /hub/banner.css (ver ahí cómo se arma).
-//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=5"></script>), sin async: así la moneda aparece
+//  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=6"></script>), sin async: así la moneda aparece
 //  junto con el banner, sin saltos.
 //  · Pone la moneda del módulo (fondo crema, ícono del color del módulo, el mismo dibujo que la ficha del Hub).
 //  · Si el banner no trae espacio flexible, lo agrega después de los apartados (los botones quedan a la derecha).
@@ -58,10 +58,17 @@
     var tx = (x.textContent || '').replace(/\s+/g, ' ').trim();
     return x.id === 'btn-manual' || /^(📖 )?Manual( de uso)?$/.test(tx) || /^Manual/.test(x.title || '') || /abrirManual/.test(x.getAttribute('onclick') || '');
   }
+  // ── el botón Salir tampoco (JP, 11-nov: "la sesión se cierra solo desde el Hub"): 👤 del Hub → Salir ──
+  function esSalir(x) {
+    var tx = (x.textContent || '').replace(/\s+/g, ' ').trim();
+    return /^Salir/.test(x.title || '') || x.getAttribute('aria-label') === 'Salir' || tx === 'Salir' ||
+      /(^|\W)(logout|doLogout|salir|cerrarSesion)\(\)/.test(x.getAttribute('onclick') || '');
+  }
   function ocultarManual() {
     [].forEach.call(b.querySelectorAll('button, a'), function (x) {
-      if (x.classList.contains('ab-manual') || x.classList.contains('ab-espejo') || !esManual(x)) return;
-      x.classList.add('ab-manual'); x.style.display = 'none';
+      if (x.classList.contains('ab-manual') || x.classList.contains('ab-salir') || x.classList.contains('ab-espejo')) return;
+      if (esManual(x)) { x.classList.add('ab-manual'); x.style.display = 'none'; }
+      else if (esSalir(x)) { x.classList.add('ab-salir'); x.style.display = 'none'; }
     });
   }
   // ── rayitas de la derecha: nunca al principio, al final ni dos seguidas (según lo que se ve: en la compu el Hub

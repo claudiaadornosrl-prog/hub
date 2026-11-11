@@ -86,7 +86,7 @@
         'box-shadow:0 2px 0 color-mix(in srgb,var(--c) 60%,#000)}' +
       '.asel-moneda svg{width:16px;height:16px}' +
       '.asel-menu{position:fixed;z-index:99980;width:310px;max-height:min(70vh,560px);overflow:auto;padding:10px;border-radius:22px;background:#fff;color:#1C1612;' +
-        'box-shadow:0 24px 50px -16px rgba(28,22,18,.45),0 0 0 1px rgba(28,22,18,.06);font:400 14px/1.35 Jost,system-ui,-apple-system,sans-serif;text-align:left}' +
+        'box-shadow:0 24px 50px -16px rgba(28,22,18,.45),0 0 0 1px rgba(28,22,18,.06);font:400 14px/1.35 "URW Gothic",Jost,system-ui,-apple-system,sans-serif;text-align:left}' +
       '.asel-buscar{display:block;width:100%;box-sizing:border-box;margin:2px 0 8px;padding:9px 16px;border:1px solid #D6CCBA;border-radius:999px;font:inherit;font-size:13px;color:#1C1612;background:#fff;outline:none}' +
       '.asel-buscar:focus{border-color:#A08C78}' +
       '.asel-item{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;padding:7px 12px 7px 8px;border:0;border-radius:999px;background:transparent;' +

@@ -5,18 +5,23 @@
    banner toma el color de la moneda del módulo, el mismo del Hub y de la barra de tareas) y la moneda con fondo crema
    y el ícono del color del módulo.
    Cómo se usa en un módulo (ver la regla en C:\CRM_Adorno\CLAUDE.md):
-     <head> … <link rel="stylesheet" href="/hub/banner.css?v=5"> …
+     <head> … <link rel="stylesheet" href="/hub/banner.css?v=6"> …
      <header class="ab-banner" data-modulo="tesoreria">
        <div class="ab-izq"><span class="ab-nombre">Tesorería</span><span class="ab-sub">…local · perfil…</span></div>
        <nav class="ab-tabs" id="tabs"> <button class="active"><svg class="ico">…</svg><span class="lb">Saldos</span></button> … </nav>
        (lo propio del módulo, ej. el mes de Ventas)
        <div class="ab-der"> Avisos · Actualizar <span class="hsep"></span> Hub (class ab-fijo) · Salir (class ab-fijo)  (todos .hbtn) </div>
+   (11-nov, JP) el botón Salir no se muestra (la sesión se cierra solo desde el Hub: 👤 → Salir; banner.js lo oculta),
    (11-nov, JP) el botón Manual no se muestra (banner.js lo oculta: le preguntan a Clodi) y el del Hub tampoco en la compu:
    se vuelve al Hub desde la lista que abre el nombre del módulo. En el celular el Hub queda (no hay lista).
      </header>
-     <script src="/hub/banner.js?v=5"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
+     <script src="/hub/banner.js?v=6"></script>   ← justo después del banner: pone la moneda y el ☰ si falta
    Los colores salen de data-modulo (los mismos de las monedas del Hub: HUB_MODULOS / selector.js MODULOS).
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* (11-nov, JP) la letra de la marca: URW Gothic Book (clon libre de la ITC Avant Garde), la misma de los módulos y del Hub.
+   Hay una sola versión (Book): la negrita la arma el navegador. */
+@font-face { font-family: 'URW Gothic'; src: url('/hub/fonts/URWGothic-Book.ttf') format('truetype'); font-weight: 300 700; font-display: swap; }
+.ab-banner { --ab-letra: 'URW Gothic', 'Jost', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
 .ab-banner { --ab-c: #685B51; }
 .ab-banner[data-modulo="crm"]        { --ab-c: #6E7D5A; }
 .ab-banner[data-modulo="rrhh"]       { --ab-c: #7A6274; }
@@ -39,7 +44,7 @@ body .ab-banner {
   background: linear-gradient(180deg, color-mix(in srgb, var(--ab-c) 90%, #fff), var(--ab-c)) !important;
   color: #FBF6EE !important; border: 0 !important; border-radius: 0 !important;
   box-shadow: 0 2px 10px rgba(28, 22, 18, .18) !important;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; justify-content: flex-start;
+  font-family: var(--ab-letra); justify-content: flex-start;
 }
 body .ab-banner .ab-izq { display: flex; align-items: center; gap: 10px; flex: 0 1 auto; min-width: 0; }
 body .ab-banner .ab-moneda {
@@ -49,7 +54,7 @@ body .ab-banner .ab-moneda {
 body .ab-banner .ab-moneda svg { width: 19px; height: 19px; fill: currentColor; stroke: none; }
 body .ab-banner .ab-moneda svg.ab-trazo { fill: none; stroke: currentColor; }
 body .ab-banner .ab-nombre {
-  margin: 0; padding: 0; font: 700 17px/1.2 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+  margin: 0; padding: 0; font: 700 17px/1.2 var(--ab-letra) !important;
   color: #FBF6EE !important; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0;
   text-transform: none;
 }
@@ -69,7 +74,7 @@ body .ab-banner .ab-tabs::-webkit-scrollbar { display: none; }
 body .ab-banner .ab-tabs > button, body .ab-banner .ab-tabs > a, body .ab-banner .ab-tabs > .ab-tab {
   align-items: center; height: 36px !important; min-height: 0 !important; padding: 0 10px !important; margin: 0 !important;
   border: 0 !important; border-radius: 999px !important; background: transparent !important; color: #FBF6EE !important;
-  opacity: .88; font: 600 13px/1 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important; white-space: nowrap;
+  opacity: .88; font: 600 13px/1 var(--ab-letra) !important; white-space: nowrap;
   cursor: pointer; text-decoration: none; box-shadow: none !important; transition: background .15s, opacity .15s;
   flex: 0 0 auto !important; flex-direction: row !important; gap: 0; position: relative;
 }
@@ -99,7 +104,7 @@ body .ab-banner .ab-con-aviso::after { content: ''; position: absolute; top: 6px
 body .ab-banner .ab-der { display: flex; align-items: center; gap: 2px; flex: none; position: relative; margin: 0; }
 body .ab-banner .hbtn {
   align-items: center; height: 36px; padding: 0 9px; border: 0 !important; border-radius: 999px !important;
-  background: transparent !important; color: #FBF6EE !important; opacity: .88; cursor: pointer; font: 500 13px/1 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: transparent !important; color: #FBF6EE !important; opacity: .88; cursor: pointer; font: 500 13px/1 var(--ab-letra);
   white-space: nowrap; text-decoration: none; box-shadow: none !important; transition: background .15s, opacity .15s;
 }
 body .ab-banner .hbtn:not([style*="display: none"]):not([style*="display:none"]) { display: inline-flex; }
@@ -114,6 +119,8 @@ body .ab-banner .ab-hamb, body .ab-banner .kebab-tabs-btn { display: none !impor
 /* copias de los botones de la derecha que banner.js pone dentro del menú ☰ (solo se ven en el celular) */
 body .ab-banner .ab-tabs > .ab-espejo, body .ab-banner .ab-tabs > .ab-espejo-sep { display: none !important; }
 
+/* sin botón Salir en los módulos: la sesión se cierra desde el Hub (banner.js además oculta cualquier "Salir") */
+body .ab-banner .ab-der > button.ab-fijo { display: none !important; }
 /* en la compu no va el botón del Hub: se vuelve desde la lista del nombre del módulo (selector.js, "Volver al Hub") */
 @media (min-width: 900px) and (pointer: fine) {
   body .ab-banner .ab-der > a.hbtn[href*="/hub/"] { display: none !important; }
@@ -123,7 +130,7 @@ body .ab-banner .ab-tabs > .ab-espejo, body .ab-banner .ab-tabs > .ab-espejo-sep
 body .ab-banner .ab-chip, body .ab-banner select.ab-chip {
   display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 999px !important;
   border: 0 !important; background: rgba(0, 0, 0, .14) !important; color: #FBF6EE !important;
-  font: 600 13px/1 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; white-space: nowrap;
+  font: 600 13px/1 var(--ab-letra); white-space: nowrap;
 }
 body .ab-banner select.ab-chip { padding-right: 10px; cursor: pointer; }
 body .ab-banner select.ab-chip option { color: #1C1612; background: #fff; }
