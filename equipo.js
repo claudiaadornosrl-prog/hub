@@ -96,11 +96,16 @@
   //   que estar justo antes que ella en el mismo formulario/caja chica. Antes se buscaba hacia arriba sin mirar si la
   //   contraseña se veía, y en Clientes trababa el mail del CLIENTE del pedido nuevo (la caja de ingreso estaba escondida).
   function visible(el) { return !!(el && el.offsetParent !== null && el.getClientRects().length); }
+  // (12-nov, arreglo) con la sesión del local YA abierta, el formulario que aparezca es el de "usuario superior"
+  //   (reporte de Ventas, recibos, banco, caras…): ahí se escribe el usuario PERSONAL, así que no se traba. Esos
+  //   ingresos usan un cliente aparte que no guarda sesión; si alguien entrara de verdad con otro usuario, controlar()
+  //   lo saca igual. También se respeta la marca data-adorno-superior.
   function trabarCampos() {
     if (!trabado() || !document.body) return;
     var e = leer();
+    if (sesiones().some(function (s) { return s.email === e.usuario; })) return;
     document.querySelectorAll('input[type=password]').forEach(function (pw) {
-      if (!visible(pw) || pw.autocomplete === 'new-password') return;
+      if (!visible(pw) || pw.autocomplete === 'new-password' || (pw.closest && pw.closest('[data-adorno-superior]'))) return;
       var caja = pw.form || pw.parentElement; var n = 0;
       while (caja && n < 2 && !caja.querySelector('input[type=email], input[autocomplete=username], input[autocomplete=email]')) { caja = caja.parentElement; n++; }
       if (!caja || caja.querySelectorAll('input:not([type=hidden]):not([type=checkbox])').length > 4) return;   // es un formulario de datos, no de ingreso
