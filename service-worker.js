@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v101-equipos-oficina';
+const CACHE_VERSION = 'hub-v102-caras';
 const ASSETS = [
   './',
   './index.html',

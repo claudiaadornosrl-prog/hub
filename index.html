@@ -385,8 +385,9 @@ window.ADORNO_SSO = (function () {
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Forum&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="/hub/seguridad.js?v=13"></script>
+<script src="/hub/seguridad.js?v=14"></script>
 <script src="/hub/pos-autorizar.js?v=2"></script>
+<script src="/hub/caras.js?v=1" defer></script>   <!-- (hub v102, 12-nov) grabar la cara de cada persona -->
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -557,6 +558,11 @@ window.ADORNO_SSO = (function () {
   .eq-link { border: 0; background: transparent; padding: 0; font: inherit; font-size: 12px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
   .eq-link:hover { color: var(--text); }
   .eq-pedir { display: flex; gap: 8px; margin-top: 10px; }
+  /* (hub v102, 12-nov) caras de cada persona (Permisos → Personas) */
+  .perm-cara { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; background: var(--bg); color: var(--muted); }
+  .perm-cara.si { background: var(--ok-suave); color: var(--ok); }
+  .perm-cara.media { background: var(--aviso-suave); color: var(--aviso); }
+  .perm-cara:hover { filter: brightness(.96); }
   .eq-pedir input { flex: 1; min-width: 0; margin: 0; padding: 9px 16px; border: 1px solid var(--border); border-radius: 999px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text); }
   @media (max-width: 600px) { .eq-pedir input { font-size: 16px; } }
   @media (max-width: 600px) {
@@ -1236,6 +1242,26 @@ window.ADORNO_SSO = (function () {
     const { data, error } = await sb.rpc('hub_permisos_leer');
     if (error || !data) { c.innerHTML = `<div class="hint" style="color:var(--mal);">No pude cargar los permisos${error ? ': ' + _tbEsc(error.message) : ''}.</div>`; return; }
     _perm = data; renderPermisos();
+    _permCarasCargar();
+  }
+  // (hub v102, 12-nov-2026, JP: "que cada persona tenga su usuario grabado en el hub con la cara") la cara va con la
+  //   persona (su legajo), no con las cuentas compartidas. Se graba en /hub/caras.js (tabla pos_caras, la usan todos).
+  let _permCaras = null;
+  async function _permCarasCargar() {
+    const { data, error } = await sb.rpc('hub_caras_listar');
+    _permCaras = {};
+    if (!error && data) (data.personas || []).forEach(p => { if (p.email) _permCaras[p.email] = p; });
+    if (_permTab === 'personas') permBuscar(_permBuscar);
+  }
+  function permCara(email) {
+    const p = _permCaras && _permCaras[email];
+    if (!p || !window.ADORNO_CARAS) { _permEstado('Recargá la página y probá de nuevo.', 'mal'); return; }
+    ADORNO_CARAS.ficha({ cli: sb, persona: p, alCambiar: _permCarasCargar });
+  }
+  function _permCarasResumen() {
+    if (!_permCaras || !window.ADORNO_CARAS) return '';
+    const ps = Object.values(_permCaras), ok = ps.filter(p => ADORNO_CARAS.estado(p).completa).length;
+    return `<p class="perm-nota" style="margin-top:10px;">📷 Caras: <b>${ok} de ${ps.length}</b> personas grabadas. Tocá la pastilla de cada una para grabarla (con la persona frente a la cámara). Las cuentas compartidas de los locales y la oficina no llevan cara: piden la de la persona cuando hace falta autorizar. <a href="#" onclick="ADORNO_CARAS.probar({ cli: sb }); return false;">Probar la cámara</a></p>`;
   }
   function cerrarPermisos() { const o = document.getElementById('permisos-overlay'); if (o) o.classList.remove('open'); }
   function permTab(t) { _permTab = t; renderPermisos(); }
@@ -1267,10 +1293,10 @@ window.ADORNO_SSO = (function () {
   function _permListaHTML() {
     const q = _permBuscar.trim().toLowerCase();
     const lista = (_perm.usuarios || []).filter(u => !q || [_permQuien(u), u.email, u.local || '', _permNombrePerfil(u.perfil)].join(' ').toLowerCase().includes(q));
-    if (!lista.length) return '<div class="hint" style="margin-top:12px;">No encontré a nadie con eso.</div>';
+    if (!lista.length) return _permCarasResumen() + '<div class="hint" style="margin-top:12px;">No encontré a nadie con eso.</div>';
     const opciones = _perm.perfiles.filter(p => !p.fijo);
     let grupo = null;
-    return lista.map(u => {
+    return _permCarasResumen() + lista.map(u => {
       let h = '';
       if (u.perfil !== grupo) { grupo = u.perfil; h = `<div class="perm-grupo">${_tbEsc(_permNombrePerfil(grupo))}</div>`; }
       const sub = [u.nombre ? u.email : '', u.local ? _tbLocal(u.local) : ''].filter(Boolean).join(' · ');
@@ -1278,7 +1304,9 @@ window.ADORNO_SSO = (function () {
         : `<select class="perm-sel" data-email="${_tbEsc(u.email)}" aria-label="Perfil de ${_tbEsc(_permQuien(u))}" onchange="permPersona(this)">` +
           (u.perfil ? '' : '<option value="" selected disabled>Sin perfil</option>') +
           opciones.map(p => `<option value="${p.id}" ${p.id === u.perfil ? 'selected' : ''}>${_tbEsc(p.nombre)}</option>`).join('') + '</select>';
-      return h + `<div class="perm-persona"><div class="quien"><b>${_tbEsc(_permQuien(u))}</b>${sub ? `<small>${_tbEsc(sub)}</small>` : ''}</div>${sel}</div>`;
+      const pc = _permCaras && _permCaras[u.email], ec = pc && window.ADORNO_CARAS ? ADORNO_CARAS.estado(pc) : null;
+      const cara = ec ? `<button type="button" class="perm-cara ${ec.cls}" onclick="permCara('${_tbEsc(u.email)}')" title="Su cara, para autorizar en todo el sistema">${ec.completa ? '📷 ✓' : ec.cls === 'media' ? '📷 Incompleta' : '📷 Grabar'}</button>` : '';
+      return h + `<div class="perm-persona"><div class="quien"><b>${_tbEsc(_permQuien(u))}</b>${sub ? `<small>${_tbEsc(sub)}</small>` : ''}</div>${cara}${sel}</div>`;
     }).join('');
   }
   function _permEstado(t, cls) {
@@ -1702,9 +1730,20 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
           `<div class="estado" id="eq-error" style="color:var(--mal);"></div></div>`;
       }
     }
+    // (hub v102, 12-nov-2026, JP) caras del equipo: administración y la encargada (con su usuario) las graban directo;
+    //   en la cuenta compartida del local o de la oficina se abre con el usuario personal de quien graba
+    let filaCaras = '';
+    if (window.ADORNO_CARAS) {
+      let yo = null; try { yo = (await sb.rpc('hub_caras_yo')).data; } catch (_) {}
+      if (yo) filaCaras = `<div class="eq-fila"><strong>📷 Caras del equipo</strong><div class="estado">${yo.admin ? 'Grabá la cara de cada persona: el sistema la reconoce para autorizar y para saber quién hizo cada cosa.' : 'Grabá la cara de la gente de tu local: el sistema la reconoce para autorizar.'}</div>` +
+        `<div class="eq-pedir"><button type="button" class="eq-btn" onclick="ADORNO_CARAS.equipo({ cli: sb })">Grabar caras</button><button type="button" class="eq-btn sec" onclick="ADORNO_CARAS.probar({ cli: sb })">Probar la cámara</button></div></div>`;
+      else if (['local', 'oficina', 'encargada', 'cajera'].includes(HUB_PERFIL)) filaCaras = `<div class="eq-fila"><strong>📷 Caras del equipo</strong><div class="estado">Para grabar la cara de cada persona en esta computadora. Lo abre la encargada o administración con su usuario personal.</div>` +
+        `<div class="eq-pedir"><button type="button" class="eq-btn" onclick="ADORNO_CARAS.equipo({ superior: true })">Grabar caras</button></div></div>`;
+    }
     body.innerHTML = `
       <div class="notif-user"><span>${session.user.email}</span><a onclick="notifLogout()">Salir</a></div>
       ${filaEquipo}
+      ${filaCaras}
       <div class="notif-row" style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:12px;">
         <div>
           <strong style="font-size:13px;">Confiar en esta computadora</strong>
