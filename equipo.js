@@ -19,10 +19,19 @@
   function guardar(o) { try { if (o) localStorage.setItem(CLAVE, JSON.stringify(o)); else localStorage.removeItem(CLAVE); } catch (e) {} }
   function trabado() { var e = leer(); return !!(e && e.estado === 'trabado' && e.usuario); }
   function lugar(e) { return (e && (LOCALES[e.local] || e.local)) || 'este local'; }
+  // (12-nov) el mail sale del user, o del propio token si la sesión se guardó sin user (Clientes, sesiones viejas)
+  function mailDeToken(t) {
+    try {
+      var p = String(t || '').split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); while (p.length % 4) p += '=';
+      return String(JSON.parse(atob(p)).email || '').toLowerCase();
+    } catch (e) { return ''; }
+  }
   function leerSesion(k) {
     try {
       var j = JSON.parse(localStorage.getItem(k) || 'null'); var s = j && (j.currentSession || j);
-      return s && s.user ? { clave: k, email: String(s.user.email || '').toLowerCase(), token: s.access_token } : null;
+      if (!s || !s.access_token) return null;
+      var mail = String((s.user && s.user.email) || s.email || mailDeToken(s.access_token) || '').toLowerCase();
+      return mail ? { clave: k, email: mail, token: s.access_token } : null;
     } catch (e) { return null; }
   }
   function sesion() { return leerSesion(SSO); }

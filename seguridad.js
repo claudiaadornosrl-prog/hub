@@ -398,6 +398,6 @@ window.ADORNO_CARA = (function () {
 (function () {
   if (window.ADORNO_EQUIPO || document.querySelector('script[src*="/hub/equipo.js"]')) return;
   var s = document.createElement('script');
-  s.src = '/hub/equipo.js?v=3'; s.async = true;
+  s.src = '/hub/equipo.js?v=4'; s.async = true;
   (document.head || document.documentElement).appendChild(s);
 })();
