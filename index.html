@@ -1361,7 +1361,7 @@ window.ADORNO_SSO = (function () {
     const fila = (e, botones) => `<div class="perm-persona"><div class="quien"><b>${_tbEsc(e.nombre)}</b>` +
       `<small>${_tbEsc([_tbLocal(e.local || ''), e.usuario, _eqAgente(e.agente), e.ultimo_uso_at ? 'usado ' + _eqHace(e.ultimo_uso_at) : ''].filter(Boolean).join(' · '))}</small></div>` +
       `<div class="eq-acc">${botones}</div></div>`;
-    c.innerHTML = `<p class="perm-nota">Computadoras y celulares de los locales que solo se pueden usar con el usuario del local. Se piden desde el equipo (el ícono de la persona → Trabar este equipo) y se aprueban acá.</p>` +
+    c.innerHTML = `<p class="perm-nota">Computadoras y celulares de los locales y de la oficina que solo se pueden usar con un usuario. Se piden desde el equipo (el ícono de la persona → Trabar este equipo) y se aprueban acá.</p>` +
       (pend.length ? '<div class="perm-grupo">Esperando aprobación</div>' + pend.map(e => fila(e,
         `<button type="button" class="eq-btn" onclick="permEquipo('${e.id}','aprobar',this)">Aprobar</button><button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','rechazar',this)">Rechazar</button>`)).join('') : '') +
       '<div class="perm-grupo">Trabados</div>' + (trab.length ? trab.map(e => fila(e,
@@ -1518,16 +1518,16 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     if (e && e.estado === 'pendiente') return `<div class="eq-fila eq-login"><strong>Traba pedida: ${_tbEsc(e.nombre)} (${_tbEsc(_tbLocal(e.local || ''))})</strong>` +
       `<div class="estado">Falta que administración la apruebe en Permisos → Equipos.</div>` +
       `<div class="eq-pedir"><button type="button" class="eq-btn sec" onclick="equipoRevisar()">Ver si ya la aprobaron</button></div></div>`;
-    return `<div class="eq-login"><button type="button" class="eq-link" onclick="equipoAbrirPedido(this)">¿Es una computadora o celular de un local? Trabar este equipo</button></div>`;
+    return `<div class="eq-login"><button type="button" class="eq-link" onclick="equipoAbrirPedido(this)">¿Es una computadora de un local o de la oficina? Trabar este equipo</button></div>`;
   }
   async function equipoAbrirPedido(btn) {
     const caja = btn.closest('.eq-login');
     caja.innerHTML = '<div class="hint">Cargando…</div>';
     const { data, error } = await sb.rpc('hub_equipos_cuentas');
-    if (error || !Array.isArray(data) || !data.length) { caja.innerHTML = `<div class="hint" style="color:var(--mal);">No pude traer las cuentas de los locales${error ? ': ' + _tbEsc(error.message) : ''}.</div>`; return; }
+    if (error || !Array.isArray(data) || !data.length) { caja.innerHTML = `<div class="hint" style="color:var(--mal);">No pude traer las cuentas${error ? ': ' + _tbEsc(error.message) : ''}.</div>`; return; }
     caja.classList.add('eq-fila');
-    caja.innerHTML = `<strong>Trabar este equipo</strong><div class="estado">Elegí de qué local es. Después solo se va a poder usar con esa cuenta. Lo aprueba administración.</div>` +
-      `<div class="eq-pedir"><select id="eq-usuario" class="perm-sel" style="max-width:none;flex:1;">${data.map(c => `<option value="${_tbEsc(c.email)}">${_tbEsc(_tbLocal(c.local || '') || c.email)}</option>`).join('')}</select></div>` +
+    caja.innerHTML = `<strong>Trabar este equipo</strong><div class="estado">Elegí la cuenta de este equipo. Después solo se va a poder usar con esa cuenta. Lo aprueba administración.</div>` +
+      `<div class="eq-pedir"><select id="eq-usuario" class="perm-sel" style="max-width:none;flex:1;">${data.map(c => `<option value="${_tbEsc(c.email)}">${_tbEsc((_tbLocal(c.local || '') ? _tbLocal(c.local) + ' · ' : '') + c.email)}</option>`).join('')}</select></div>` +
       `<div class="eq-pedir"><input id="eq-nombre" maxlength="40" placeholder="Nombre (ej. Mostrador 1)"><button type="button" class="eq-btn" onclick="equipoPedir(this)">Pedir traba</button></div>` +
       `<div class="estado" id="eq-error" style="color:var(--mal);"></div>`;
   }
@@ -1688,7 +1688,9 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     // (hub v87, 11-nov-2026, JP) traba del equipo al usuario del local: se pide acá y lo aprueba administración
     let filaEquipo = '';
     const eqd = window.ADORNO_EQUIPO ? ADORNO_EQUIPO.leer() : null;
-    if (window.ADORNO_EQUIPO && (HUB_PERFIL === 'local' || (eqd && ['trabado', 'pendiente'].includes(eqd.estado)))) {
+    // (hub v101, 11-nov, JP) también las compus de la oficina (cuentas de oficina, y en una compu cualquier usuario que no sea admin)
+    const eqPuede = HUB_PERFIL === 'local' || HUB_PERFIL === 'oficina' || (HUB_PERFIL && HUB_PERFIL !== 'admin' && matchMedia('(pointer: fine)').matches);
+    if (window.ADORNO_EQUIPO && (eqPuede || (eqd && ['trabado', 'pendiente'].includes(eqd.estado)))) {
       if (eqd && eqd.estado === 'trabado') {
         filaEquipo = `<div class="eq-fila"><strong>🔒 Equipo trabado: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Solo se usa con ${_tbEsc(eqd.usuario)}. Para destrabarlo: administración, en Permisos → Equipos.</div></div>`;
       } else if (eqd && eqd.estado === 'pendiente') {
