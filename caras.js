@@ -10,6 +10,8 @@
 //  · Tres tomas por pasada (frente, izquierda, derecha); "Con lentes" repite la pasada con los lentes puestos.
 //  API: ADORNO_CARAS.equipo({ cli?, superior? }) · .ficha({ cli, persona, alCambiar }) · .grabar({ cli, persona, lentes })
 //       .probar({ cli }) · .superior() → cliente | null
+//       .quien({ cli, rpc, params, titulo, nota }) → { ok:true, data } | { ok:false, motivo:'cancel'|'lista'|'no'|'camara', error? }
+//         (13-nov-2026) abre la cámara y, sin tocar nada, lee la cara y la busca con la RPC que le pasan (p_descriptor + params).
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 (function () {
   if (window.ADORNO_CARAS) return;
@@ -343,5 +345,53 @@
     };
   }
 
-  window.ADORNO_CARAS = { equipo: equipo, ficha: ficha, grabar: grabar, probar: probar, superior: superior, estado: estado, nombre: nombre };
+  // ── (13-nov-2026, JP) ¿Quién sos? — reconocimiento automático para el WhatsApp del CRM (y lo que venga) ──
+  // Abre la cámara, lee la cara sola (hasta 3 intentos) y la busca con `rpc` (recibe p_descriptor + params).
+  // Devuelve { ok:true, data } con lo que devuelva la RPC; si no reconoce, { ok:false, motivo:'no' }; si la persona
+  // elige la lista, 'lista'; si cierra, 'cancel'; si la cámara no anda, 'camara' (con error). Nunca guarda la foto.
+  function quien(o) {
+    o = o || {};
+    var cli = o.cli;
+    return new Promise(function (listo) {
+      var f = abrir('<div class="acr-cab"><h3>' + esc(o.titulo || '¿Quién sos?') + '</h3><button class="acr-x" aria-label="Cerrar">✕</button></div>' +
+        '<p class="acr-nota">' + esc(o.nota || 'Mirá a la cámara: te reconozco por la cara y seguimos. Si no te reconozco, elegís tu nombre de la lista.') + '</p>' +
+        '<div class="acr-instr" id="acr-instr">Abriendo la cámara…</div>' +
+        '<div class="acr-video"><video id="acr-v" autoplay muted playsinline></video><div class="acr-ovalo" id="acr-ov"></div><div class="acr-msg" id="acr-msg"></div></div>' +
+        '<div class="acr-err" id="acr-err"></div>' +
+        '<div class="acr-pie"><button class="acr-b sec" id="acr-no">Cancelar</button><span class="esp"></span><button class="acr-b sec" id="acr-lista">Elegir de la lista</button><button class="acr-b" id="acr-cap" disabled>Probar de nuevo</button></div>', { arriba: true });
+      var video = f.querySelector('#acr-v'), ov = f.querySelector('#acr-ov'), cap = f.querySelector('#acr-cap'), err = f.querySelector('#acr-err'), ins = f.querySelector('#acr-instr');
+      var msg = function (t) { var m = f.querySelector('#acr-msg'); if (m) m.textContent = t || ''; };
+      var terminado = false;
+      var fin = function (v) { if (terminado) return; terminado = true; apagar(); f.remove(); listo(v); };
+      f.querySelector('.acr-x').onclick = f.querySelector('#acr-no').onclick = function () { fin({ ok: false, motivo: 'cancel' }); };
+      f.querySelector('#acr-lista').onclick = function () { fin({ ok: false, motivo: 'lista' }); };
+      var intentos = 0;
+      async function intentar() {
+        if (terminado || !stream) return;
+        cap.disabled = true; err.textContent = ''; intentos++;
+        var r = await lectura(video, msg); msg('');
+        if (terminado) return;
+        if (r.error) {
+          ins.textContent = r.error === 'poca' ? 'No llegué a ver bien la cara. Acercate y buscá más luz.' : 'Te moviste: quedate quieta un segundo.';
+        } else {
+          var q = await cli.rpc(o.rpc || 'hub_cara_parecida', Object.assign({ p_descriptor: r.descriptor }, o.params || {}));
+          if (terminado) return;
+          if (q.error) { err.textContent = msjError(q.error); cap.disabled = false; return; }
+          if (q.data) { ins.innerHTML = '<span class="acr-ok">✓ ' + esc(nombre(q.data.nombre)) + '</span>'; await esperar(600); fin({ ok: true, data: q.data }); return; }
+          ins.textContent = 'No te reconocí.';
+        }
+        if (intentos < 3) { await esperar(700); return intentar(); }
+        ins.textContent += ' Probá de nuevo o elegí tu nombre de la lista.';
+        cap.disabled = false;
+      }
+      Promise.all([lib(), camara(video)]).then(function () {
+        if (terminado) { apagar(); return; }
+        ins.textContent = 'Mirá de frente…'; mirar(video, ov);
+        setTimeout(intentar, 600);
+      }).catch(function (e) { fin({ ok: false, motivo: 'camara', error: msjError(e) }); });
+      cap.onclick = function () { intentos = 0; intentar(); };
+    });
+  }
+
+  window.ADORNO_CARAS = { equipo: equipo, ficha: ficha, grabar: grabar, probar: probar, superior: superior, estado: estado, nombre: nombre, quien: quien, pila: pila };
 })();
