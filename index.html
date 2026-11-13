@@ -24,9 +24,10 @@
    que la persona elija en el panel; opción de leer siempre las respuestas. */
 window.ADORNO_ASISTENTE_CONTEXTO = `## El Hub
 Es la pantalla de inicio del sistema de Claudia Adorno SRL. Desde acá se entra a cada módulo tocando su tarjeta. Si la persona ya inició sesión y tildó "Confiar en esta computadora", entra a todos los módulos sin volver a escribir la clave.
-1. Iniciar sesión: ícono de persona (arriba a la izquierda). Ahí también se cierra la sesión (se cierra en todos los módulos a la vez).
-2. Notificaciones: ícono de campana (arriba). "Activar notificaciones" para recibir avisos en el celular. En iPhone solo funcionan si la app está agregada a la pantalla de inicio (Compartir → Agregar a pantalla de inicio).
-3. Configuración: ícono de engranaje (arriba): elegir qué módulos ver en este equipo.
+1. Iniciar sesión: sin sesión, el ícono de persona (arriba a la izquierda) sirve para ingresar.
+2. Notificaciones: ícono de campana (arriba). Solo notificaciones: elegir de qué módulos recibir avisos en este dispositivo. En iPhone solo funcionan si la app está agregada a la pantalla de inicio (Compartir → Agregar a pantalla de inicio).
+3. Configuración: ícono de engranaje (arriba): elegir qué módulos ver en este equipo y el botón "Mi cuenta": cerrar la sesión (se cierra en todos los módulos a la vez), confiar en esta computadora, código del celular, grabar caras y trabar este equipo.
+3b. Permisos (solo administración): con sesión, el ícono de persona abre Permisos: perfiles (qué módulos ve cada perfil), personas (perfil de cada usuario y su cara) y equipos trabados. A los demás usuarios ese ícono no les aparece.
 4. Instalar como app: botón "Instalar" o, en iPhone, Compartir → Agregar a pantalla de inicio.
 5. Tablero (solo en computadora, con sesión de administración): resumen de Ventas, Tesorería, Compras, Colaboradores y salud del servidor; cada ficha tiene "abrir →".
 
@@ -637,6 +638,7 @@ window.ADORNO_SSO = (function () {
   .notif-btn.activo { color: var(--activo); }
   .sesion-btn { left: 108px; }
   .sesion-btn.activo { color: var(--activo); }
+  .sesion-btn[hidden] { display: none; }
   .notif-confiar { display: flex; gap: 9px; align-items: flex-start; margin: 2px 0 12px;
     font-size: 13px; cursor: pointer; line-height: 1.35; }
   .notif-confiar input { margin: 2px 0 0; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
@@ -1009,13 +1011,16 @@ window.ADORNO_SSO = (function () {
   <i class="ti ti-bell" aria-hidden="true"></i>
 </button>
 
-<button class="config-btn sesion-btn" id="sesion-btn" type="button" title="Mi cuenta" onclick="abrirNotifs()">
+<!-- (hub v104, 13-nov-2026, JP: "que el de la personita sea para los roles, los perfiles, los usuarios, que solo pueda ver
+     el admin, y que el de notificación sea para las notificaciones") persona = Permisos (solo administración); sin sesión
+     sirve para ingresar. "Mi cuenta" (salir, confiar, código, caras, trabar equipo) pasó al engranaje. -->
+<button class="config-btn sesion-btn" id="sesion-btn" type="button" title="Ingresar" aria-label="Ingresar" onclick="abrirPersona()">
   <i class="ti ti-user" aria-hidden="true"></i>
 </button>
 
 <div class="config-overlay" id="notif-overlay">
   <div class="config-panel">
-    <h3>Notificaciones</h3>
+    <h3 id="notif-titulo">Notificaciones</h3>
     <div id="notif-body"><div class="hint">Cargando…</div></div>
     <button class="config-cerrar" onclick="cerrarNotifs()">Listo</button>
   </div>
@@ -1027,7 +1032,7 @@ window.ADORNO_SSO = (function () {
     <div class="hint">Elegí qué accesos ver en este dispositivo. Se guarda solo acá.</div>
     <div id="config-rows"></div>
     <div id="config-ventana"></div>
-    <button class="config-cerrar perm-abrir" id="btn-permisos" hidden onclick="abrirPermisos()">Permisos</button>
+    <button class="config-cerrar perm-abrir" id="btn-cuenta" onclick="abrirCuenta()">Mi cuenta</button>
     <button class="config-cerrar" onclick="cerrarConfig()">Listo</button>
   </div>
 </div>
@@ -1170,10 +1175,12 @@ window.ADORNO_SSO = (function () {
   async function cargarPerfilModulos() {
     try {
       const { data: { session } } = await sb.auth.getSession();
-      if (!session) { HUB_PERMITIDOS = HUB_SIN_SESION; aplicarVisibilidad(); return; }
+      if (!session) { HUB_PERMITIDOS = HUB_SIN_SESION; HUB_EDITA = false; aplicarVisibilidad(); _pintarBotonSesion(); return; }
       const email = (session.user.email || '').toLowerCase();
       const cache = _hubPermCache(email);
       HUB_PERMITIDOS = cache || HUB_SIN_SESION; aplicarVisibilidad();
+      try { HUB_EDITA = localStorage.getItem('hub_edita') === email; } catch (_) {}   // (hub v104) que el botón no parpadee
+      _pintarBotonSesion();
       let { data, error } = await sb.rpc('hub_modulos');
       if (error || !data || !Array.isArray(data.modulos)) {   // un reintento si la red falló
         await new Promise(r => setTimeout(r, 1500));
@@ -1181,9 +1188,10 @@ window.ADORNO_SSO = (function () {
         if (error || !data || !Array.isArray(data.modulos)) return;
       }
       HUB_PERMITIDOS = data.modulos; _hubPermCache(email, data.modulos); HUB_ROL = data.rol || null;
-      HUB_EDITA = !!data.edita_permisos;   // (hub v86) administración ve el botón de Permisos
+      HUB_EDITA = !!data.edita_permisos;   // (hub v86) administración ve el botón de Permisos (v104: la persona)
       HUB_PERFIL = data.perfil || null;    // (hub v87) la cuenta de local puede pedir trabar el equipo
-      const bp = document.getElementById('btn-permisos'); if (bp) bp.hidden = !HUB_EDITA;
+      try { localStorage.setItem('hub_edita', HUB_EDITA ? email : ''); } catch (_) {}
+      _pintarBotonSesion();
       aplicarVisibilidad();
     } catch (_) {}
   }
@@ -1389,7 +1397,7 @@ window.ADORNO_SSO = (function () {
     const fila = (e, botones) => `<div class="perm-persona"><div class="quien"><b>${_tbEsc(e.nombre)}</b>` +
       `<small>${_tbEsc([_tbLocal(e.local || ''), e.usuario, _eqAgente(e.agente), e.ultimo_uso_at ? 'usado ' + _eqHace(e.ultimo_uso_at) : ''].filter(Boolean).join(' · '))}</small></div>` +
       `<div class="eq-acc">${botones}</div></div>`;
-    c.innerHTML = `<p class="perm-nota">Computadoras y celulares de los locales y de la oficina que solo se pueden usar con un usuario. Se piden desde el equipo (el ícono de la persona → Trabar este equipo) y se aprueban acá.</p>` +
+    c.innerHTML = `<p class="perm-nota">Computadoras y celulares de los locales y de la oficina que solo se pueden usar con un usuario. Se piden desde el equipo (engranaje → Mi cuenta → Trabar este equipo) y se aprueban acá.</p>` +
       (pend.length ? '<div class="perm-grupo">Esperando aprobación</div>' + pend.map(e => fila(e,
         `<button type="button" class="eq-btn" onclick="permEquipo('${e.id}','aprobar',this)">Aprobar</button><button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','rechazar',this)">Rechazar</button>`)).join('') : '') +
       '<div class="perm-grupo">Trabados</div>' + (trab.length ? trab.map(e => fila(e,
@@ -1501,7 +1509,19 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     if (e.target === document.getElementById('notif-overlay')) cerrarNotifs();
   });
 
-  async function abrirNotifs() {
+  // (hub v104, 13-nov-2026, JP) un mismo panel con dos usos: la campana muestra SOLO las notificaciones; "Mi cuenta"
+  //   (engranaje) muestra la sesión, confiar, código, caras y trabar equipo. La persona abre Permisos (admin) o Ingresar.
+  let _panelModo = 'avisos';
+  function abrirNotifs() { _panelModo = 'avisos'; return _abrirPanelCuenta(); }
+  function abrirCuenta() { cerrarConfig(); _panelModo = 'cuenta'; return _abrirPanelCuenta(); }
+  async function abrirPersona() {
+    let session = null;
+    try { ({ data: { session } } = await sb.auth.getSession()); } catch (_) {}
+    if (session && HUB_EDITA) return abrirPermisos();
+    _panelModo = 'cuenta'; return _abrirPanelCuenta();
+  }
+  async function _abrirPanelCuenta() {
+    document.getElementById('notif-titulo').textContent = _panelModo === 'cuenta' ? 'Mi cuenta' : 'Notificaciones';
     document.getElementById('notif-overlay').classList.add('open');
     try {
       const { data: { session } } = await sb.auth.getSession();
@@ -1520,6 +1540,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     const cara = window.ADORNO_CARA && ADORNO_CARA.soporta();
     const caraPrimero = cara && !!localStorage.getItem('adorno-cara');
     const btnCara = (pri) => `<button class="config-cerrar" style="margin-top:${pri ? '0' : '8px'};${pri ? '' : 'background:transparent;color:var(--text);border:1px solid var(--border);'}" onclick="notifEntrarCara()">Entrar con la cara</button>`;
+    document.getElementById('notif-titulo').textContent = _panelModo === 'cuenta' ? 'Ingresar' : 'Notificaciones';
     document.getElementById('notif-body').innerHTML = `
       <div class="hint">Ingresá una sola vez con tu cuenta del sistema para manejar las notificaciones de todos los módulos desde acá.</div>
       ${caraPrimero ? `<div class="notif-login" style="margin-bottom:14px;">${btnCara(true)}<div class="hint" style="margin:8px 0 0;">O con tu email y contraseña:</div></div>` : ''}
@@ -1607,10 +1628,11 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
       const { data: { session } } = await sb.auth.getSession();
       const b = document.getElementById('sesion-btn');
       if (!b) return;
+      // (hub v104) con sesión, la persona es Permisos y solo la ve administración; sin sesión sirve para ingresar
+      b.hidden = !!session && !HUB_EDITA;
       b.classList.toggle('activo', !!session);
-      b.title = session
-        ? (session.user.email + (ADORNO_SSO.confiable() ? ' · esta computadora es de confianza' : ''))
-        : 'Ingresar';
+      b.title = session ? 'Permisos: perfiles, personas y equipos' : 'Ingresar';
+      b.setAttribute('aria-label', b.title);
     } catch (_) {}
   }
   document.addEventListener('DOMContentLoaded', _pintarBotonSesion);
@@ -1693,7 +1715,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     // (hub v68, 3-nov-2026, hardening) código del celular: lo ven admin y directora
     let filaMfa = '';
     if (!HUB_ROL) { try { const { data } = await sb.rpc('hub_modulos'); HUB_ROL = (data && data.rol) || null; HUB_PERFIL = (data && data.perfil) || null; } catch (_) {} }
-    if (window.ADORNO_MFA && ['admin', 'directora'].includes(HUB_ROL)) {
+    if (_panelModo === 'cuenta' && window.ADORNO_MFA && ['admin', 'directora'].includes(HUB_ROL)) {
       const on = await ADORNO_MFA.activo(sb);
       const cara = window.ADORNO_CARA && ADORNO_CARA.soporta() && ADORNO_CARA.marcadoPara(session.user.email);
       filaMfa = (window.ADORNO_CARA && ADORNO_CARA.soporta() ? `<div class="notif-row" style="border-bottom:1px solid var(--border);padding:10px 0;margin:-12px 0 12px;">
@@ -1718,7 +1740,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     const eqd = window.ADORNO_EQUIPO ? ADORNO_EQUIPO.leer() : null;
     // (hub v101, 11-nov, JP) también las compus de la oficina (cuentas de oficina, y en una compu cualquier usuario que no sea admin)
     const eqPuede = HUB_PERFIL === 'local' || HUB_PERFIL === 'oficina' || (HUB_PERFIL && HUB_PERFIL !== 'admin' && matchMedia('(pointer: fine)').matches);
-    if (window.ADORNO_EQUIPO && (eqPuede || (eqd && ['trabado', 'pendiente'].includes(eqd.estado)))) {
+    if (_panelModo === 'cuenta' && window.ADORNO_EQUIPO && (eqPuede || (eqd && ['trabado', 'pendiente'].includes(eqd.estado)))) {
       if (eqd && eqd.estado === 'trabado') {
         filaEquipo = `<div class="eq-fila"><strong>🔒 Equipo trabado: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Solo se usa con ${_tbEsc(eqd.usuario)}. Para destrabarlo: administración, en Permisos → Equipos.</div></div>`;
       } else if (eqd && eqd.estado === 'pendiente') {
@@ -1733,14 +1755,15 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     // (hub v102, 12-nov-2026, JP) caras del equipo: administración y la encargada (con su usuario) las graban directo;
     //   en la cuenta compartida del local o de la oficina se abre con el usuario personal de quien graba
     let filaCaras = '';
-    if (window.ADORNO_CARAS) {
+    if (_panelModo === 'cuenta' && window.ADORNO_CARAS) {
       let yo = null; try { yo = (await sb.rpc('hub_caras_yo')).data; } catch (_) {}
       if (yo) filaCaras = `<div class="eq-fila"><strong>📷 Caras del equipo</strong><div class="estado">${yo.admin ? 'Grabá la cara de cada persona: el sistema la reconoce para autorizar y para saber quién hizo cada cosa.' : 'Grabá la cara de la gente de tu local: el sistema la reconoce para autorizar.'}</div>` +
         `<div class="eq-pedir"><button type="button" class="eq-btn" onclick="ADORNO_CARAS.equipo({ cli: sb })">Grabar caras</button><button type="button" class="eq-btn sec" onclick="ADORNO_CARAS.probar({ cli: sb })">Probar la cámara</button></div></div>`;
       else if (['local', 'oficina', 'encargada', 'cajera'].includes(HUB_PERFIL)) filaCaras = `<div class="eq-fila"><strong>📷 Caras del equipo</strong><div class="estado">Para grabar la cara de cada persona en esta computadora. Lo abre la encargada o administración con su usuario personal.</div>` +
         `<div class="eq-pedir"><button type="button" class="eq-btn" onclick="ADORNO_CARAS.equipo({ superior: true })">Grabar caras</button></div></div>`;
     }
-    body.innerHTML = `
+    document.getElementById('notif-titulo').textContent = _panelModo === 'cuenta' ? 'Mi cuenta' : 'Notificaciones';
+    body.innerHTML = _panelModo === 'cuenta' ? `
       <div class="notif-user"><span>${session.user.email}</span><a onclick="notifLogout()">Salir</a></div>
       ${filaEquipo}
       ${filaCaras}
@@ -1754,6 +1777,8 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
         <button class="notif-switch ${ADORNO_SSO.confiable() ? 'on' : ''}" onclick="toggleConfiarEquipo()"></button>
       </div>
       ${filaMfa}
+      <div class="hint">Las notificaciones se manejan con la campana.</div>` : `
+      <div class="notif-user"><span>${session.user.email}</span></div>
       ${aviso ? `<div class="hint" style="color:var(--aviso);">${aviso}</div>` : ''}
       <div class="hint">Elegí de qué módulos querés recibir avisos en este dispositivo.</div>
       ${NOTIF_APPS.filter(id => _hubPermitido(id) || activas.has(id)).map(id => { const m = _hubMod(id); return `
