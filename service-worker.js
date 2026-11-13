@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v103-caras-llave';
+const CACHE_VERSION = 'hub-v104-persona-permisos';
 const ASSETS = [
   './',
   './index.html',
