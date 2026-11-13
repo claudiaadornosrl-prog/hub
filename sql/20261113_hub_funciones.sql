@@ -329,3 +329,22 @@ grant execute on function public.hub_funcion_guardar(text, text[], text) to auth
 grant execute on function public.hub_usuario_locales_guardar(text, text[]) to authenticated;
 grant execute on function public.hub_puedo(text) to authenticated;
 grant execute on function public.hub_mis_locales() to authenticated;
+
+-- ═══ Aplicado después, el mismo 13-nov ═══
+-- (a) migración hub_puedo_modulo_del_catalogo: el módulo sale de hub_funciones.modulo ('tes.*' = tesoreria, 'doc.*' = documentos)
+create or replace function public.hub_puedo(p_funcion text) returns text
+language plpgsql stable security definer set search_path = public as $f$
+declare v_m jsonb; v_mod text;
+begin
+  if auth.uid() is null then return 'o'; end if;
+  if coalesce(rrhh_is_admin(), false) then return 'h'; end if;
+  select modulo into v_mod from hub_funciones where id = p_funcion;
+  if v_mod is null then return 'o'; end if;
+  v_m := hub_modulos();
+  if not coalesce((v_m -> 'modulos') ? v_mod, false) then return 'o'; end if;
+  return coalesce((select estado from hub_perfil_funciones where perfil = v_m ->> 'perfil' and funcion = p_funcion), 'o');
+end $f$;
+-- (b) datos (execute_sql): orden × 10; POS: 'pos.cobro_efectivo' (945) y 'pos.presupuesto' (955) = local a, encargada h,
+--     cajera h, vendedora a, oficina a, obra o; crm.pedido_borrar: encargada h, local a, oficina a; Compras (oficina):
+--     contabilizar, rechazar, emitir_op, proveedores_editar, retenciones_config, pedidos, mercaderia, conceptos_equiv,
+--     enviar_estudio = a (piden permiso a Marisa con su personal).
