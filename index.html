@@ -27,7 +27,10 @@ Es la pantalla de inicio del sistema de Claudia Adorno SRL. Desde acá se entra 
 1. Iniciar sesión: sin sesión, el ícono de persona (arriba a la izquierda) sirve para ingresar.
 2. Notificaciones: ícono de campana (arriba). Solo notificaciones: elegir de qué módulos recibir avisos en este dispositivo. En iPhone solo funcionan si la app está agregada a la pantalla de inicio (Compartir → Agregar a pantalla de inicio).
 3. Configuración: ícono de engranaje (arriba): elegir qué módulos ver en este equipo y el botón "Mi cuenta": cerrar la sesión (se cierra en todos los módulos a la vez), confiar en esta computadora, código del celular, grabar caras y trabar este equipo.
-3b. Permisos (solo administración): con sesión, el ícono de persona abre Permisos: perfiles (qué módulos ve cada perfil), personas (perfil de cada usuario y su cara) y equipos trabados. A los demás usuarios ese ícono no les aparece.
+3b. Permisos (solo administración): con sesión, el ícono de persona abre Permisos. A los demás usuarios ese ícono no les aparece.
+   - Perfiles: el interruptor de cada módulo dice si el perfil ve ese módulo. Tocando el nombre del módulo se abren todas sus funciones y en cada una se elige Habilitada, Pide permiso (la puede usar pero pide la autorización de alguien de más rango) u Oculta; arriba hay botones para cambiarlas todas juntas. Se guarda al tocar. Cada módulo empieza a respetar sus funciones a medida que se le suma (por ahora lo que cambia en el momento es qué módulos ve cada perfil).
+   - Personas: el perfil de cada usuario, sus locales (uno o varios: Alcorta, Unicenter, Oficina) y su cara.
+   - Equipos: las computadoras y celulares trabados a un usuario.
 4. Instalar como app: botón "Instalar" o, en iPhone, Compartir → Agregar a pantalla de inicio.
 5. Tablero (solo en computadora, con sesión de administración): resumen de Ventas, Tesorería, Compras, Colaboradores y salud del servidor; cada ficha tiene "abrir →".
 
@@ -370,6 +373,7 @@ window.ADORNO_SSO = (function () {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="theme-color" content="#fafaf9">
+<meta name="color-scheme" content="only light">
 <title>Claude Adorno · Hub</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
@@ -413,24 +417,9 @@ window.ADORNO_SSO = (function () {
     --compras: #B07A55; --gastos: #7C7650; --impuestos: #6B4C3B; --productos: #59698A; --marketing: #A3656F; --obra: #8A7B70; --pos: #3D7C88;
     --importaciones: #34557A; --resultados: #8E4A55; --capex: #5B6E3E;   /* (hub v85) azul puerto, vino, musgo */
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #17120E; --surface: #221C17; --text: #EDE6DA; --muted: #B2A597; --border: #3A3129; --accent: #C8B89A;
-      --aster: #D97757; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
-      --ok: #8FB07F; --ok-suave: #2B3326; --mal: #D9826B; --mal-suave: #3A2620; --aviso: #D6A75C; --aviso-claro: #D6A75C; --aviso-suave: #382D1C;
-      --crm: #93A27E; --rrhh: #A88DA0; --ventas: #C98267; --banco: #C4A266; --reportes: #8499AA; --stock: #7C9A96;
-      --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C; --pos: #78ADB6;
-      --importaciones: #7896BC; --resultados: #C2828C; --capex: #94A878;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #17120E; --surface: #221C17; --text: #EDE6DA; --muted: #B2A597; --border: #3A3129; --accent: #C8B89A;
-    --aster: #D97757; --boton: #C8B89A; --boton-txt: #1C1612; --activo: #D08A6E; --ic: #1C1612;
-    --ok: #8FB07F; --ok-suave: #2B3326; --mal: #D9826B; --mal-suave: #3A2620; --aviso: #D6A75C; --aviso-claro: #D6A75C; --aviso-suave: #382D1C;
-    --crm: #93A27E; --rrhh: #A88DA0; --ventas: #C98267; --banco: #C4A266; --reportes: #8499AA; --stock: #7C9A96;
-    --compras: #CC9A75; --gastos: #A6A077; --impuestos: #A98872; --productos: #8597B6; --marketing: #C98E97; --obra: #B5A79C; --pos: #78ADB6;
-    --importaciones: #7896BC; --resultados: #C2828C; --capex: #94A878;
-  }
+  /* (hub v105, 13-nov-2026, JP: "esta opción noche borrarlo, prefiero que quede siempre con el fondito beige") sin modo
+     noche: siempre los colores de arriba, aunque el celular esté en modo oscuro. */
+  :root { color-scheme: only light; }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
@@ -535,6 +524,31 @@ window.ADORNO_SSO = (function () {
   .perm-mod .nombre { flex: 1; min-width: 0; font-size: 14px; }
   .perm-mod .nombre small { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
   .perm-mod .notif-switch:disabled { opacity: .55; cursor: default; }
+  /* (hub v105, 13-nov) tocar un módulo abre sus funciones; cada una Habilitada / Pide permiso / Oculta */
+  .perm-lista-mod { display: flex; flex-direction: column; }
+  .perm-mod.abre { cursor: pointer; }
+  .perm-mod .flecha { flex: 0 0 auto; width: 8px; height: 8px; margin: 0 6px 0 2px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(-45deg); transition: transform .2s; }
+  .perm-mod.abierto .flecha { transform: rotate(45deg); }
+  .perm-mod .nombre small.cuenta-f { letter-spacing: 0; text-transform: none; font-size: 11px; }
+  .perm-funcs { padding: 2px 0 12px 36px; border-bottom: .5px solid var(--border); }
+  .perm-funcs h4 { margin: 12px 0 2px; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .perm-fn { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+  .perm-fn p { flex: 1; min-width: 0; margin: 0; font-size: 13px; line-height: 1.35; }
+  .perm-fn p small { display: block; font-size: 11px; color: var(--muted); }
+  .perm-tri { flex: 0 0 auto; display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+  .perm-tri button { border: 0; background: transparent; border-radius: 999px; padding: 6px 10px; font: inherit; font-size: 11.5px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+  .perm-tri button.on.h { background: var(--ok-suave); color: var(--ok); }
+  .perm-tri button.on.a { background: var(--aviso-suave); color: var(--aviso); }
+  .perm-tri button.on.o { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+  .perm-tri button:disabled { cursor: default; }
+  .perm-mod-acc { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+  .perm-mod-acc button { border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+  .perm-persona { flex-wrap: wrap; }
+  .perm-locs { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 2px; }
+  .perm-locs > span { font-size: 11px; color: var(--muted); margin-right: 4px; }
+  .perm-loc { border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12px; cursor: pointer; }
+  .perm-loc.on { background: var(--boton); color: var(--boton-txt); border-color: transparent; }
+  @media (max-width: 560px) { .perm-fn { flex-direction: column; align-items: flex-start; gap: 6px; } .perm-funcs { padding-left: 0; } }
   .perm-buscar { width: 100%; box-sizing: border-box; margin: 0 0 6px; padding: 11px 20px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
   .perm-grupo { margin: 14px 0 2px; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
   .perm-persona { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: .5px solid var(--border); }
@@ -1041,7 +1055,7 @@ window.ADORNO_SSO = (function () {
 <div class="config-overlay" id="permisos-overlay">
   <div class="config-panel perm-panel" role="dialog" aria-labelledby="perm-titulo">
     <div class="perm-cabeza"><h3 id="perm-titulo">Permisos</h3><button type="button" class="perm-x" onclick="cerrarPermisos()" aria-label="Cerrar">✕</button></div>
-    <p class="perm-nota">Qué módulos aparecen en el Hub de cada persona. Lo que cada una puede hacer adentro de un módulo (por ejemplo, ver los recibos de los demás) se sigue manejando en ese módulo.</p>
+    <p class="perm-nota">Qué módulos ve cada perfil y qué puede hacer adentro de cada uno, el perfil y los locales de cada persona, y los equipos trabados.</p>
     <div class="perm-tabs" role="tablist">
       <button type="button" class="perm-tab on" data-t="perfiles" onclick="permTab('perfiles')">Perfiles</button>
       <button type="button" class="perm-tab" data-t="personas" onclick="permTab('personas')">Personas</button>
@@ -1251,6 +1265,62 @@ window.ADORNO_SSO = (function () {
     if (error || !data) { c.innerHTML = `<div class="hint" style="color:var(--mal);">No pude cargar los permisos${error ? ': ' + _tbEsc(error.message) : ''}.</div>`; return; }
     _perm = data; renderPermisos();
     _permCarasCargar();
+    _permFnCargar();
+  }
+  // (hub v105, 13-nov-2026, JP: "que yo toque el módulo y se abran todas las funciones… habilitado, no lo puede ver, o lo
+  //   puede ver pero tiene que pedir permiso") catálogo hub_funciones + estado por perfil (hub_perfil_funciones). Cada
+  //   módulo lo va a consultar con hub_puedo('modulo.funcion'); hasta que lo haga, esto no cambia lo que se puede hacer adentro.
+  let _permFn = null; const _permAbiertos = new Set();
+  const _PERM_EST = [['h', 'Habilitada'], ['a', 'Pide permiso'], ['o', 'Oculta']];
+  async function _permFnCargar() {
+    const { data, error } = await sb.rpc('hub_funciones_leer');
+    _permFn = (error || !data) ? { error: error ? error.message : 'sin respuesta', funciones: [], estados: {} } : data;
+    if (_permTab === 'perfiles') renderPermisos();
+  }
+  const _permFnsDe = mid => ((_permFn && _permFn.funciones) || []).filter(f => f.modulo === mid);
+  const _permEst = (p, fid) => p.fijo ? 'h' : (((_permFn && _permFn.estados && _permFn.estados[p.id]) || {})[fid] || 'o');
+  function permAbrirMod(mid) { _permAbiertos.has(mid) ? _permAbiertos.delete(mid) : _permAbiertos.add(mid); renderPermisos(); }
+  function _permFuncsHTML(p, m) {
+    const fs = _permFnsDe(m.id);
+    if (!fs.length) return `<div class="perm-funcs"><p class="perm-nota" style="margin:8px 0 0;">${_permFn ? 'Este módulo todavía no tiene funciones cargadas.' : 'Cargando…'}</p></div>`;
+    const ids = fs.map(f => f.id).join(',');
+    let ap = null;
+    return `<div class="perm-funcs">` +
+      (p.fijo ? '<p class="perm-nota" style="margin:8px 0 0;">Administración tiene todo habilitado.</p>' :
+        `<div class="perm-mod-acc">${_PERM_EST.map(([e, t]) => `<button type="button" data-p="${p.id}" data-f="${ids}" data-e="${e}" onclick="permFn(this)">Todas: ${t.toLowerCase()}</button>`).join('')}</div>`) +
+      fs.map(f => {
+        const e = _permEst(p, f.id);
+        const cab = f.apartado !== ap ? `<h4>${_tbEsc(ap = f.apartado)}</h4>` : '';
+        const det = [f.por_local ? 'En su local' : '', f.detalle || ''].filter(Boolean).join(' · ');
+        return cab + `<div class="perm-fn"><p>${_tbEsc(f.nombre)}${det ? `<small>${_tbEsc(det)}</small>` : ''}</p>` +
+          `<span class="perm-tri" role="radiogroup" aria-label="${_tbEsc(f.nombre)}">${_PERM_EST.map(([k, t]) =>
+            `<button type="button" role="radio" class="${k} ${e === k ? 'on' : ''}" aria-checked="${e === k}" ${p.fijo ? 'disabled' : ''} data-p="${p.id}" data-f="${f.id}" data-e="${k}" onclick="permFn(this)">${t}</button>`).join('')}</span></div>`;
+      }).join('') + `</div>`;
+  }
+  async function permFn(btn) {
+    const p = _perm.perfiles.find(x => x.id === btn.dataset.p); if (!p || p.fijo) return;
+    const fids = btn.dataset.f.split(','), estado = btn.dataset.e;
+    const est = (_permFn.estados[p.id] = _permFn.estados[p.id] || {});
+    const antes = fids.map(f => est[f]);
+    fids.forEach(f => est[f] = estado); renderPermisos();
+    const { error } = await sb.rpc('hub_funcion_guardar', { p_perfil: p.id, p_funciones: fids, p_estado: estado });
+    if (error) { fids.forEach((f, i) => est[f] = antes[i]); renderPermisos(); _permEstado('No se guardó: ' + error.message, 'mal'); return; }
+    const nom = (_PERM_EST.find(x => x[0] === estado) || [])[1] || '';
+    const fn = fids.length === 1 ? ((_permFn.funciones.find(f => f.id === fids[0]) || {}).nombre || '') : fids.length + ' funciones';
+    _permEstado(`Guardado: ${p.nombre} · ${fn} → ${nom.toLowerCase()}.`, 'ok');
+  }
+  // (hub v105, 13-nov-2026, JP: "asignar a las personas a cada local, y a una persona a más de un local") hub_usuario_locales
+  const _PERM_LOCS = [['alcorta', 'Alcorta'], ['unicenter', 'Unicenter'], ['oficina', 'Oficina']];
+  async function permLocal(btn) {
+    const u = _perm.usuarios.find(x => x.email === btn.dataset.email); if (!u) return;
+    const antes = (u.locales || []).slice(), l = btn.dataset.loc;
+    const nuevos = antes.includes(l) ? antes.filter(x => x !== l) : antes.concat(l);
+    u.locales = nuevos; permBuscar(_permBuscar);
+    const { data, error } = await sb.rpc('hub_usuario_locales_guardar', { p_email: u.email, p_locales: nuevos });
+    if (error || !data) { u.locales = antes; permBuscar(_permBuscar); _permEstado('No se guardó: ' + (error ? error.message : 'sin respuesta'), 'mal'); return; }
+    u.locales = data.locales || [];
+    const n = u.locales.map(x => (_PERM_LOCS.find(y => y[0] === x) || [x, x])[1]);
+    _permEstado(`Guardado: ${_permQuien(u)} ${n.length ? 'está en ' + (n.length > 1 ? n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1] : n[0]) : 'quedó sin local'}.`, 'ok');
   }
   // (hub v102, 12-nov-2026, JP: "que cada persona tenga su usuario grabado en el hub con la cara") la cara va con la
   //   persona (su legajo), no con las cuentas compartidas. Se graba en /hub/caras.js (tabla pos_caras, la usan todos).
@@ -1284,11 +1354,18 @@ window.ADORNO_SSO = (function () {
     if (_permTab === 'perfiles') {
       const p = _perm.perfiles.find(x => x.id === _permPerfil) || _perm.perfiles[0]; _permPerfil = p.id;
       c.innerHTML = `<div class="perm-chips">${_perm.perfiles.map(x => `<button type="button" class="perm-chip ${x.id === p.id ? 'on' : ''}" onclick="permElegirPerfil('${x.id}')">${_tbEsc(x.nombre)}<small>${_permCuantos(x.id)}</small></button>`).join('')}</div>` +
-        `<p class="perm-nota">${_tbEsc(p.descripcion || '')}. ${p.fijo ? 'Siempre ve todos los módulos y es quien maneja estos permisos.' : 'Prendé los módulos que este perfil ve en el Hub. Se guarda al tocar.'}</p>` +
-        `<div class="perm-grid">${HUB_MODULOS.map(m => { const on = p.modulos.includes(m.id);
-          return `<div class="perm-mod"><span class="notif-ic" style="--c:var(--${m.color});">${_icono(m.id)}</span>` +
-            `<span class="nombre">${_tbEsc(m.nombre)}${m.pronto ? '<small>en construcción</small>' : ''}</span>` +
-            `<button type="button" class="notif-switch ${on ? 'on' : ''}" ${p.fijo ? 'disabled' : ''} aria-pressed="${on}" aria-label="${_tbEsc(m.nombre)}" onclick="permModulo('${p.id}','${m.id}',this)"></button></div>`; }).join('')}</div>`;
+        `<p class="perm-nota">${_tbEsc(p.descripcion || '')}. ${p.fijo ? 'Siempre ve todos los módulos y es quien maneja estos permisos.' : 'El interruptor prende o apaga el módulo entero. Tocá el nombre para ver sus funciones y elegir en cada una: Habilitada, Pide permiso u Oculta. Se guarda al tocar.'}</p>` +
+        (_permFn && _permFn.error ? `<p class="perm-nota" style="color:var(--mal);">No pude cargar las funciones: ${_tbEsc(_permFn.error)}</p>` : '') +
+        `<div class="perm-lista-mod">${HUB_MODULOS.map(m => { const on = p.modulos.includes(m.id);
+          const fs = _permFnsDe(m.id), abierto = _permAbiertos.has(m.id) && (fs.length || !_permFn);
+          const nA = fs.filter(f => _permEst(p, f.id) === 'a').length, nO = fs.filter(f => _permEst(p, f.id) === 'o').length;
+          const cuenta = fs.length ? `<small class="cuenta-f">${fs.length} funciones${nA ? ' · ' + nA + ' piden permiso' : ''}${nO ? ' · ' + nO + ' ocultas' : ''}</small>` : '';
+          return `<div class="perm-mod ${fs.length ? 'abre' : ''} ${abierto ? 'abierto' : ''}" ${fs.length ? `onclick="permAbrirMod('${m.id}')" onkeydown="if (event.target === this && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); permAbrirMod('${m.id}'); }" role="button" tabindex="0" aria-expanded="${!!abierto}"` : ''}>` +
+            `<span class="notif-ic" style="--c:var(--${m.color});">${_icono(m.id)}</span>` +
+            `<span class="nombre">${_tbEsc(m.nombre)}${m.pronto ? '<small>en construcción</small>' : cuenta}</span>` +
+            (fs.length ? '<span class="flecha" aria-hidden="true"></span>' : '') +
+            `<button type="button" class="notif-switch ${on ? 'on' : ''}" ${p.fijo ? 'disabled' : ''} aria-pressed="${on}" aria-label="${_tbEsc(m.nombre)}" onclick="event.stopPropagation(); permModulo('${p.id}','${m.id}',this)"></button></div>` +
+            (abierto ? _permFuncsHTML(p, m) : ''); }).join('')}</div>`;
     } else if (_permTab === 'equipos') {
       c.innerHTML = '<div class="hint">Cargando…</div>';
       _permEquipos();
@@ -1300,21 +1377,24 @@ window.ADORNO_SSO = (function () {
   function permBuscar(v) { _permBuscar = v; const l = document.getElementById('perm-lista'); if (l) l.innerHTML = _permListaHTML(); }
   function _permListaHTML() {
     const q = _permBuscar.trim().toLowerCase();
-    const lista = (_perm.usuarios || []).filter(u => !q || [_permQuien(u), u.email, u.local || '', _permNombrePerfil(u.perfil)].join(' ').toLowerCase().includes(q));
+    const lista = (_perm.usuarios || []).filter(u => !q || [_permQuien(u), u.email, (u.locales || []).join(' '), _permNombrePerfil(u.perfil)].join(' ').toLowerCase().includes(q));
     if (!lista.length) return _permCarasResumen() + '<div class="hint" style="margin-top:12px;">No encontré a nadie con eso.</div>';
     const opciones = _perm.perfiles.filter(p => !p.fijo);
     let grupo = null;
     return _permCarasResumen() + lista.map(u => {
       let h = '';
       if (u.perfil !== grupo) { grupo = u.perfil; h = `<div class="perm-grupo">${_tbEsc(_permNombrePerfil(grupo))}</div>`; }
-      const sub = [u.nombre ? u.email : '', u.local ? _tbLocal(u.local) : ''].filter(Boolean).join(' · ');
+      const sub = u.nombre ? u.email : '';
+      const locs = u.fijo ? '<div class="perm-locs"><span>Locales: todos</span></div>'
+        : `<div class="perm-locs" role="group" aria-label="Locales de ${_tbEsc(_permQuien(u))}"><span>Locales</span>${_PERM_LOCS.map(([id, n]) => { const on = (u.locales || []).includes(id);
+            return `<button type="button" class="perm-loc ${on ? 'on' : ''}" aria-pressed="${on}" data-email="${_tbEsc(u.email)}" data-loc="${id}" onclick="permLocal(this)">${n}</button>`; }).join('')}</div>`;
       const sel = u.fijo ? '<span class="perm-fijo">Administración</span>'
         : `<select class="perm-sel" data-email="${_tbEsc(u.email)}" aria-label="Perfil de ${_tbEsc(_permQuien(u))}" onchange="permPersona(this)">` +
           (u.perfil ? '' : '<option value="" selected disabled>Sin perfil</option>') +
           opciones.map(p => `<option value="${p.id}" ${p.id === u.perfil ? 'selected' : ''}>${_tbEsc(p.nombre)}</option>`).join('') + '</select>';
       const pc = _permCaras && _permCaras[u.email], ec = pc && window.ADORNO_CARAS ? ADORNO_CARAS.estado(pc) : null;
       const cara = ec ? `<button type="button" class="perm-cara ${ec.cls}" onclick="permCara('${_tbEsc(u.email)}')" title="Su cara, para autorizar en todo el sistema">${ec.completa ? '📷 ✓' : ec.cls === 'media' ? '📷 Incompleta' : '📷 Grabar'}</button>` : '';
-      return h + `<div class="perm-persona"><div class="quien"><b>${_tbEsc(_permQuien(u))}</b>${sub ? `<small>${_tbEsc(sub)}</small>` : ''}</div>${cara}${sel}</div>`;
+      return h + `<div class="perm-persona"><div class="quien"><b>${_tbEsc(_permQuien(u))}</b>${sub ? `<small>${_tbEsc(sub)}</small>` : ''}</div>${cara}${sel}${locs}</div>`;
     }).join('');
   }
   function _permEstado(t, cls) {
