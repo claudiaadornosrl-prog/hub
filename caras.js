@@ -349,8 +349,16 @@
   // Abre la cámara, lee la cara sola (hasta 3 intentos) y la busca con `rpc` (recibe p_descriptor + params).
   // Devuelve { ok:true, data } con lo que devuelva la RPC; si no reconoce, { ok:false, motivo:'no' }; si la persona
   // elige la lista, 'lista'; si cierra, 'cancel'; si la cámara no anda, 'camara' (con error). Nunca guarda la foto.
+  // (13-nov, JP: "sí, apagalo") respeta la llave central de caras (hub_parametros.caras_activas): si está apagada, o no
+  //   se puede saber, no abre la cámara y devuelve 'lista' (el módulo pasa directo a elegir el nombre).
   function quien(o) {
     o = o || {};
+    var cli = o.cli;
+    if (!cli || !cli.rpc) return Promise.resolve({ ok: false, motivo: 'lista', apagado: true });
+    return Promise.resolve().then(function () { return cli.rpc('hub_caras_activas', {}); }).catch(function () { return null; })
+      .then(function (a) { return (a && !a.error && a.data === true) ? quienCamara(o) : { ok: false, motivo: 'lista', apagado: true }; });
+  }
+  function quienCamara(o) {
     var cli = o.cli;
     return new Promise(function (listo) {
       var f = abrir('<div class="acr-cab"><h3>' + esc(o.titulo || '¿Quién sos?') + '</h3><button class="acr-x" aria-label="Cerrar">✕</button></div>' +
