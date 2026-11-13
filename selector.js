@@ -29,7 +29,9 @@
     { id: 'obra', nombre: 'Obra', desc: 'Local Martínez', icono: 'ti-hammer', color: '#8A7B70', ruta: '/obra-adorno/' },
     { id: 'pos', nombre: 'POS', desc: 'Facturas · notas de crédito', icono: 'ti-receipt', color: '#3D7C88', ruta: '/pos-adorno/' }
   ];
-  var esCompu = function () { try { return matchMedia('(min-width: 900px) and (pointer: fine)').matches; } catch (e) { return false; } };
+  // (13-nov, JP: "el de impuestos no me deja tocar sobre impuestos y saltar a otro módulo") compu = tiene mouse, sin importar el
+  //   ancho: las ventanas de módulo angostas (menos de 900 px) se tomaban como celular y no abrían la lista.
+  var esCompu = function () { try { return matchMedia('(pointer: fine)').matches; } catch (e) { return false; } };
   var aqui = MODULOS.filter(function (m) { return location.pathname.indexOf(m.ruta) === 0; })[0];
   if (!aqui) return;   // el Hub u otra página: no va
 
@@ -98,7 +100,7 @@
       '.asel-pie .asel-casa{width:28px;text-align:center;font-size:18px;color:#685B51}' +
       '.asel-vacio{padding:10px 14px;color:#685B51;font-size:13px}' +
       '.asel-flecha,.asel-menu .ti{visibility:hidden}.asel-fuente .asel-flecha,.asel-fuente .asel-menu .ti{visibility:visible}' +
-      '@media (max-width:899px),(pointer:coarse){.asel-flecha{display:none!important}.asel-titulo{cursor:inherit}.asel-titulo:hover{background:none}}';
+      '@media (pointer:coarse){.asel-flecha{display:none!important}.asel-titulo{cursor:inherit}.asel-titulo:hover{background:none}}';
     document.head.appendChild(s);
   }
 

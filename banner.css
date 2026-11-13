@@ -122,7 +122,8 @@ body .ab-banner .ab-tabs > .ab-espejo, body .ab-banner .ab-tabs > .ab-espejo-sep
 /* sin botón Salir en los módulos: la sesión se cierra desde el Hub (banner.js además oculta cualquier "Salir") */
 body .ab-banner .ab-der > button.ab-fijo { display: none !important; }
 /* en la compu no va el botón del Hub: se vuelve desde la lista del nombre del módulo (selector.js, "Volver al Hub") */
-@media (min-width: 900px) and (pointer: fine) {
+/* (13-nov, JP) con mouse nunca, aunque la ventana sea angosta: antes, debajo de 900 px volvía la casita y el nombre no abría la lista */
+@media (pointer: fine) {
   body .ab-banner .ab-der > a.hbtn[href*="/hub/"] { display: none !important; }
 }
 
