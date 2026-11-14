@@ -29,8 +29,10 @@ Es la pantalla de inicio del sistema de Claudia Adorno SRL. Desde acá se entra 
 3. Configuración: ícono de engranaje (arriba): elegir qué módulos ver en este equipo y el botón "Mi cuenta": cerrar la sesión (se cierra en todos los módulos a la vez), confiar en esta computadora, código del celular, grabar caras y trabar este equipo.
 3b. Permisos (solo administración): con sesión, el ícono de persona abre Permisos. A los demás usuarios ese ícono no les aparece.
    - Perfiles: el interruptor de cada módulo dice si el perfil ve ese módulo. Tocando el nombre del módulo aparecen sus apartados, y tocando un apartado, sus funciones. En cada función se elige Habilitada, Pide permiso (la puede usar pero pide la autorización de una persona de más rango, nunca una cuenta genérica) u Oculta; en cada apartado hay botones para cambiarlas todas juntas. Se guarda al tocar. Cada módulo empieza a respetar sus funciones a medida que se le suma (por ahora lo que cambia en el momento es qué módulos ve cada perfil).
+   - 📷 Registra quién: al lado de cada función hay una pastilla "📷 Registra quién: Sí / No" (y en cada apartado "📷 Todas registran quién"). En Sí, cada vez que alguien usa esa función queda anotado quién la hizo: con la cuenta compartida del local se abre la cámara y la reconoce (mientras el reconocimiento por cara esté apagado, la persona toca su nombre en una lista); con usuario personal se anota directo. Vale para todos los perfiles. No se guardan fotos, solo quién, cuándo y con qué cuenta. Cada módulo empieza a anotarlo a medida que se le suma.
    - Personas: el perfil de cada usuario, sus locales (uno o varios: Alcorta, Unicenter, Oficina) y su cara.
    - Equipos: las computadoras y celulares trabados a un usuario.
+   - Registro: la lista de quién hizo cada función marcada con 📷 (nombre, cómo se supo —por la cara, eligió su nombre o con su usuario—, módulo, función, local, cuenta, día y hora).
 4. Instalar como app: botón "Instalar" o, en iPhone, Compartir → Agregar a pantalla de inicio.
 5. Tablero (solo en computadora, con sesión de administración): resumen de Ventas, Tesorería, Compras, Colaboradores y salud del servidor; cada ficha tiene "abrir →".
 
@@ -392,7 +394,7 @@ window.ADORNO_SSO = (function () {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
 <script src="/hub/seguridad.js?v=14"></script>
 <script src="/hub/pos-autorizar.js?v=2"></script>
-<script src="/hub/caras.js?v=3" defer></script>   <!-- (hub v102, 12-nov) grabar la cara de cada persona -->
+<script src="/hub/caras.js?v=4" defer></script>   <!-- (hub v102, 12-nov) grabar la cara de cada persona · v4 (14-nov): registrar() -->
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -548,6 +550,16 @@ window.ADORNO_SSO = (function () {
   .perm-tri button:disabled { cursor: default; }
   .perm-mod-acc { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
   .perm-mod-acc button { border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+  /* (hub v107, 14-nov-2026, JP) "📷 Registra quién" por función */
+  .perm-fn-ctl { flex: 0 0 auto; display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .perm-cam { border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 11px; font: inherit; font-size: 11.5px; cursor: pointer; white-space: nowrap; }
+  .perm-cam.on { background: var(--boton); color: var(--boton-txt); border-color: transparent; }
+  .perm-reg { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: .5px solid color-mix(in srgb, var(--border) 60%, transparent); }
+  .perm-reg .q { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; }
+  .perm-reg .q small { display: block; font-size: 11px; color: var(--muted); }
+  .perm-reg .cuando { flex: 0 0 auto; font-size: 11.5px; color: var(--muted); text-align: right; white-space: nowrap; }
+  .perm-reg .modo { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 10.5px; margin-left: 4px; background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--muted); }
+  .perm-reg .modo.cara { background: var(--ok-suave); color: var(--ok); }
   .perm-persona { flex-wrap: wrap; }
   .perm-locs { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 2px; }
   .perm-locs > span { font-size: 11px; color: var(--muted); margin-right: 4px; }
@@ -1065,6 +1077,7 @@ window.ADORNO_SSO = (function () {
       <button type="button" class="perm-tab on" data-t="perfiles" onclick="permTab('perfiles')">Perfiles</button>
       <button type="button" class="perm-tab" data-t="personas" onclick="permTab('personas')">Personas</button>
       <button type="button" class="perm-tab" data-t="equipos" onclick="permTab('equipos')">Equipos</button>
+      <button type="button" class="perm-tab" data-t="registro" onclick="permTab('registro')">Registro</button>
     </div>
     <div class="perm-cuerpo" id="perm-cuerpo"></div>
     <div class="perm-estado" id="perm-estado" role="status"></div>
@@ -1291,8 +1304,24 @@ window.ADORNO_SSO = (function () {
   function permAbrirAp(k) { _permAbiertosAp.has(k) ? _permAbiertosAp.delete(k) : _permAbiertosAp.add(k); renderPermisos(); }
   const _permResumen = (p, fs) => {
     const nA = fs.filter(f => _permEst(p, f.id) === 'a').length, nO = fs.filter(f => _permEst(p, f.id) === 'o').length;
-    return `${fs.length} ${fs.length === 1 ? 'función' : 'funciones'}${nA ? ' · ' + nA + (nA === 1 ? ' pide' : ' piden') + ' permiso' : ''}${nO ? ' · ' + nO + (nO === 1 ? ' oculta' : ' ocultas') : ''}`;
+    const nR = fs.filter(f => f.registra_quien).length;
+    return `${fs.length} ${fs.length === 1 ? 'función' : 'funciones'}${nA ? ' · ' + nA + (nA === 1 ? ' pide' : ' piden') + ' permiso' : ''}${nO ? ' · ' + nO + (nO === 1 ? ' oculta' : ' ocultas') : ''}${nR ? ' · 📷 ' + nR + (nR === 1 ? ' registra' : ' registran') + ' quién' : ''}`;
   };
+  // (hub v107, 14-nov-2026, JP: "poner a cada función si necesita o no grabar quién la hizo. Si te pongo que sí, el
+  //   sistema tiene que abrir la camarita, fijarse quién lo hizo y grabarlo") hub_funciones.registra_quien: una marca por
+  //   función (vale para todos los perfiles). Los módulos la usan con ADORNO_CARAS.registrar() (/hub/caras.js v4).
+  const _PERM_CAM_T = 'Si está en Sí, cada vez que alguien usa esta función el sistema anota quién la hizo: con la cuenta compartida abre la cámara (o la persona toca su nombre mientras las caras estén apagadas); con usuario personal la anota directo. Vale para todos los perfiles.';
+  async function permCam(btn) {
+    const fids = btn.dataset.f.split(','), fs = ((_permFn && _permFn.funciones) || []).filter(f => fids.includes(f.id));
+    if (!fs.length) return;
+    const nuevo = btn.dataset.v === '1' ? true : btn.dataset.v === '0' ? false : !fs[0].registra_quien;
+    const antes = fs.map(f => f.registra_quien);
+    fs.forEach(f => f.registra_quien = nuevo); renderPermisos();
+    const { error } = await sb.rpc('hub_funcion_registro_guardar', { p_funciones: fids, p_registra: nuevo });
+    if (error) { fs.forEach((f, i) => f.registra_quien = antes[i]); renderPermisos(); _permEstado('No se guardó: ' + error.message, 'mal'); return; }
+    const fn = fs.length === 1 ? fs[0].nombre : fs.length + ' funciones';
+    _permEstado(`Guardado: ${fn} → ${nuevo ? 'registra quién la hizo' : 'no registra quién'} (en todos los perfiles).`, 'ok');
+  }
   function _permFuncsHTML(p, m) {
     const fs = _permFnsDe(m.id);
     if (!fs.length) return `<div class="perm-funcs"><p class="perm-nota" style="margin:8px 0 0;">${_permFn ? 'Este módulo todavía no tiene funciones cargadas.' : 'Cargando…'}</p></div>`;
@@ -1304,13 +1333,17 @@ window.ADORNO_SSO = (function () {
         return `<div class="perm-ap ${abierto ? 'abierto' : ''}" role="button" tabindex="0" aria-expanded="${abierto}" data-k="${_tbEsc(k)}" onclick="permAbrirAp(this.dataset.k)" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); permAbrirAp(this.dataset.k); }">` +
           `<span class="nombre">${_tbEsc(a.nombre)}<small>${_permResumen(p, a.fs)}</small></span><span class="flecha" aria-hidden="true"></span></div>` +
           (!abierto ? '' : `<div class="perm-ap-cuerpo">` +
-            (p.fijo ? '' : `<div class="perm-mod-acc">${_PERM_EST.map(([e, t]) => `<button type="button" data-p="${p.id}" data-f="${ids}" data-e="${e}" onclick="permFn(this)">Todas: ${t.toLowerCase()}</button>`).join('')}</div>`) +
+            `<div class="perm-mod-acc">${p.fijo ? '' : _PERM_EST.map(([e, t]) => `<button type="button" data-p="${p.id}" data-f="${ids}" data-e="${e}" onclick="permFn(this)">Todas: ${t.toLowerCase()}</button>`).join('')}` +
+              (a.fs.every(f => f.registra_quien)
+                ? `<button type="button" data-f="${ids}" data-v="0" onclick="permCam(this)" title="${_tbEsc(_PERM_CAM_T)}">📷 Ninguna registra quién</button>`
+                : `<button type="button" data-f="${ids}" data-v="1" onclick="permCam(this)" title="${_tbEsc(_PERM_CAM_T)}">📷 Todas registran quién</button>`) + `</div>` +
             a.fs.map(f => {
-              const e = _permEst(p, f.id);
+              const e = _permEst(p, f.id), r = !!f.registra_quien;
               const det = [f.por_local ? 'En su local' : '', f.detalle || ''].filter(Boolean).join(' · ');
-              return `<div class="perm-fn"><p>${_tbEsc(f.nombre)}${det ? `<small>${_tbEsc(det)}</small>` : ''}</p>` +
+              return `<div class="perm-fn"><p>${_tbEsc(f.nombre)}${det ? `<small>${_tbEsc(det)}</small>` : ''}</p><span class="perm-fn-ctl">` +
                 `<span class="perm-tri" role="radiogroup" aria-label="${_tbEsc(f.nombre)}">${_PERM_EST.map(([kk, t]) =>
-                  `<button type="button" role="radio" class="${kk} ${e === kk ? 'on' : ''}" aria-checked="${e === kk}" ${p.fijo ? 'disabled' : ''} data-p="${p.id}" data-f="${f.id}" data-e="${kk}" onclick="permFn(this)">${t}</button>`).join('')}</span></div>`;
+                  `<button type="button" role="radio" class="${kk} ${e === kk ? 'on' : ''}" aria-checked="${e === kk}" ${p.fijo ? 'disabled' : ''} data-p="${p.id}" data-f="${f.id}" data-e="${kk}" onclick="permFn(this)">${t}</button>`).join('')}</span>` +
+                `<button type="button" class="perm-cam ${r ? 'on' : ''}" aria-pressed="${r}" data-f="${f.id}" onclick="permCam(this)" title="${_tbEsc(_PERM_CAM_T)}">📷 Registra quién: ${r ? 'Sí' : 'No'}</button></span></div>`;
             }).join('') + `</div>`);
       }).join('') + `</div>`;
   }
@@ -1372,11 +1405,11 @@ window.ADORNO_SSO = (function () {
       const p = _perm.perfiles.find(x => x.id === _permPerfil) || _perm.perfiles[0]; _permPerfil = p.id;
       c.innerHTML = `<div class="perm-chips">${_perm.perfiles.map(x => `<button type="button" class="perm-chip ${x.id === p.id ? 'on' : ''}" onclick="permElegirPerfil('${x.id}')">${_tbEsc(x.nombre)}<small>${_permCuantos(x.id)}</small></button>`).join('')}</div>` +
         `<p class="perm-nota">${_tbEsc(p.descripcion || '')}. ${p.fijo ? 'Siempre ve todos los módulos y es quien maneja estos permisos.' : 'El interruptor prende o apaga el módulo entero. Tocá el nombre para ver sus apartados, y un apartado para ver sus funciones y elegir en cada una: Habilitada, Pide permiso u Oculta. Se guarda al tocar.'}</p>` +
+        `<p class="perm-nota">📷 <b>Registra quién</b>: en Sí, cada vez que alguien usa esa función queda anotado quién la hizo (con la cuenta compartida se abre la cámara; ${_permFn && _permFn.caras_activas ? '' : 'mientras las caras estén apagadas, la persona toca su nombre; '}con usuario personal se anota directo). Vale para todos los perfiles. Lo anotado se ve en la pestaña Registro.</p>` +
         (_permFn && _permFn.error ? `<p class="perm-nota" style="color:var(--mal);">No pude cargar las funciones: ${_tbEsc(_permFn.error)}</p>` : '') +
         `<div class="perm-lista-mod">${HUB_MODULOS.map(m => { const on = p.modulos.includes(m.id);
           const fs = _permFnsDe(m.id), abierto = _permAbiertos.has(m.id) && (fs.length || !_permFn);
-          const nA = fs.filter(f => _permEst(p, f.id) === 'a').length, nO = fs.filter(f => _permEst(p, f.id) === 'o').length;
-          const cuenta = fs.length ? `<small class="cuenta-f">${fs.length} funciones${nA ? ' · ' + nA + ' piden permiso' : ''}${nO ? ' · ' + nO + ' ocultas' : ''}</small>` : '';
+          const cuenta = fs.length ? `<small class="cuenta-f">${_permResumen(p, fs)}</small>` : '';
           return `<div class="perm-mod ${fs.length ? 'abre' : ''} ${abierto ? 'abierto' : ''}" ${fs.length ? `onclick="permAbrirMod('${m.id}')" onkeydown="if (event.target === this && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); permAbrirMod('${m.id}'); }" role="button" tabindex="0" aria-expanded="${!!abierto}"` : ''}>` +
             `<span class="notif-ic" style="--c:var(--${m.color});">${_icono(m.id)}</span>` +
             `<span class="nombre">${_tbEsc(m.nombre)}${m.pronto ? '<small>en construcción</small>' : cuenta}</span>` +
@@ -1386,12 +1419,36 @@ window.ADORNO_SSO = (function () {
     } else if (_permTab === 'equipos') {
       c.innerHTML = '<div class="hint">Cargando…</div>';
       _permEquipos();
+    } else if (_permTab === 'registro') {
+      c.innerHTML = '<div class="hint">Cargando…</div>';
+      _permRegistro();
     } else {
       c.innerHTML = `<input class="perm-buscar" type="search" placeholder="Buscar por nombre, mail o local" value="${_tbEsc(_permBuscar)}" oninput="permBuscar(this.value)">` +
         `<div id="perm-lista">${_permListaHTML()}</div>`;
     }
   }
   function permBuscar(v) { _permBuscar = v; const l = document.getElementById('perm-lista'); if (l) l.innerHTML = _permListaHTML(); }
+  // (hub v107, 14-nov-2026) Registro: quién hizo cada función marcada con 📷 (hub_registros, últimos 300)
+  const _PERM_MODO = { cara: '📷 por la cara', lista: 'eligió su nombre', usuario: 'con su usuario' };
+  async function _permRegistro() {
+    const c = document.getElementById('perm-cuerpo');
+    const { data, error } = await sb.rpc('hub_registros_listar', { p_limite: 300 });
+    if (_permTab !== 'registro') return;
+    if (error) { c.innerHTML = `<div class="hint" style="color:var(--mal);">No pude cargar el registro: ${_tbEsc(error.message)}</div>`; return; }
+    const rs = data || [], nM = ((_permFn && _permFn.funciones) || []).filter(f => f.registra_quien).length;
+    const locN = l => (_PERM_LOCS.find(x => x[0] === l) || [l, l])[1];
+    const modN = id => ((HUB_MODULOS.find(m => m.id === id) || {}).nombre) || id || '';
+    c.innerHTML = `<p class="perm-nota">Quién hizo cada función que tiene <b>📷 Registra quién: Sí</b> (se marca en Perfiles → módulo → apartado). ${nM ? `Hoy hay ${nM} ${nM === 1 ? 'función marcada' : 'funciones marcadas'}.` : 'Todavía no hay ninguna función marcada.'} Se anota cuando el módulo ya usa esta marca. No se guardan fotos.</p>` +
+      (rs.length ? rs.map(r => {
+        const quien = r.nombre ? _permQuien({ nombre: r.nombre }) : '—';
+        const d = new Date(r.creado_at);
+        const det = r.detalle && typeof r.detalle === 'object' ? Object.entries(r.detalle).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ') : '';
+        return `<div class="perm-reg"><div class="q"><b>${_tbEsc(quien)}</b> <span class="modo ${r.modo === 'cara' ? 'cara' : ''}">${_tbEsc(_PERM_MODO[r.modo] || r.modo)}</span>` +
+          `<small>${_tbEsc(modN(r.modulo))} · ${_tbEsc(r.funcion_nombre)}${r.local ? ' · ' + _tbEsc(locN(r.local)) : ''}${r.cuenta ? ' · cuenta ' + _tbEsc(r.cuenta) : ''}</small>` +
+          (det ? `<small>${_tbEsc(det)}</small>` : '') + `</div>` +
+          `<span class="cuando">${d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}<br>${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span></div>`;
+      }).join('') : '<div class="hint">Todavía no hay nada anotado.</div>');
+  }
   function _permListaHTML() {
     const q = _permBuscar.trim().toLowerCase();
     const lista = (_perm.usuarios || []).filter(u => !q || [_permQuien(u), u.email, (u.locales || []).join(' '), _permNombrePerfil(u.perfil)].join(' ').toLowerCase().includes(q));

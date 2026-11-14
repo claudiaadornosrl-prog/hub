@@ -12,6 +12,8 @@
 //       .probar({ cli }) · .superior() → cliente | null
 //       .quien({ cli, rpc, params, titulo, nota }) → { ok:true, data } | { ok:false, motivo:'cancel'|'lista'|'no'|'camara', error? }
 //         (13-nov-2026) abre la cámara y, sin tocar nada, lee la cara y la busca con la RPC que le pasan (p_descriptor + params).
+//       .registrar({ cli, funcion, local, detalle, titulo }) → (14-nov-2026) anota quién hizo una función marcada con
+//         "📷 Registra quién" en el Hub (ver más abajo). Llamarlo antes de la operación; si da ok:false, no hacerla.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 (function () {
   if (window.ADORNO_CARAS) return;
@@ -77,6 +79,9 @@
       '.acr-chip.media{background:var(--aviso-suave,#F3E9D6);color:var(--aviso,#A2702C)}',
       '.acr-grupo{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#685B51);margin:14px 0 2px}',
       '.acr-resumen{font-size:13px;margin:0 0 6px}',
+      '.acr-nombres{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px;max-height:46vh;overflow:auto}',
+      '.acr-nombre{border:1px solid var(--border,#D6CCBA);background:transparent;color:var(--text,#1C1612);border-radius:999px;padding:8px 15px;font:inherit;font-size:13.5px;cursor:pointer}',
+      '.acr-nombre:hover,.acr-nombre:focus-visible{background:var(--bg,#E9E2D5)}',
       '@media (max-width:520px){.acr-in{font-size:16px}.acr-fila{flex-wrap:wrap}.acr-fila .acc{width:100%;display:flex;gap:6px;justify-content:flex-end}}'
     ].join('\n');
     document.head.appendChild(s);
@@ -401,5 +406,75 @@
     });
   }
 
-  window.ADORNO_CARAS = { equipo: equipo, ficha: ficha, grabar: grabar, probar: probar, superior: superior, estado: estado, nombre: nombre, quien: quien, pila: pila };
+  // ── (14-nov-2026, JP: "poner a cada función si necesita o no grabar quién la hizo… abrir la camarita, fijarse quién
+  //   lo hizo y grabarlo") ADORNO_CARAS.registrar({ cli, funcion, local, detalle, titulo }) — llamarlo ANTES de la operación.
+  //   → { ok:true, omitido:true }  la función no tiene "📷 Registra quién" en el Hub: seguir normal
+  //   → { ok:true, id, empleado_id, nombre, modo:'usuario'|'cara'|'lista' }  ya quedó anotado en hub_registros
+  //   → { ok:false, motivo:'cancel' }  la persona cerró: NO hacer la operación
+  //   → { ok:false, motivo:'error', error }  no se pudo anotar: NO hacer la operación y mostrar el error
+  //   Con usuario personal anota a esa persona sin preguntar. Con la cuenta compartida abre la cámara solo si la llave de
+  //   caras está prendida; si está apagada, no la reconoce o la cámara no anda, la persona toca su nombre en la lista.
+  //   Nunca guarda la foto: solo quién, cuándo, con qué cuenta y el detalle que mande el módulo.
+  async function registrar(o) {
+    o = o || {};
+    var cli = o.cli;
+    if (!cli || !cli.rpc || !o.funcion) return { ok: false, motivo: 'error', error: 'Falta el cliente o la función' };
+    var c;
+    try { c = await cli.rpc('hub_registra_quien', { p_funcion: o.funcion }); } catch (e) { c = { error: e }; }
+    if (c.error) return { ok: false, motivo: 'error', error: msjError(c.error) };
+    var d = c.data || {};
+    if (!d.registra) return { ok: true, omitido: true };
+    var params = { p_funcion: o.funcion, p_local: o.local || null, p_detalle: o.detalle || null };
+    var anotar = async function (emp, modo) {
+      var r;
+      try { r = await cli.rpc('hub_registrar', Object.assign({}, params, { p_empleado_id: emp })); } catch (e) { r = { error: e }; }
+      if (r.error || !r.data) return { ok: false, motivo: 'error', error: r.error ? msjError(r.error) : 'Sin respuesta' };
+      return { ok: true, id: r.data.id, empleado_id: r.data.empleado_id, nombre: r.data.nombre, modo: r.data.modo || modo };
+    };
+    if (d.yo) return anotar(null, 'usuario');
+    var titulo = o.titulo || (d.nombre ? d.nombre + ': ¿quién lo hace?' : '¿Quién lo está haciendo?');
+    var q = await quien({ cli: cli, rpc: 'hub_registro_cara', params: params, titulo: titulo,
+      nota: 'Mirá a la cámara: queda anotado quién hizo esto (la foto no se guarda). Si no te reconozco, tocás tu nombre en la lista.' });
+    if (q.ok && q.data) return { ok: true, id: q.data.id, empleado_id: q.data.empleado_id, nombre: q.data.nombre, modo: 'cara' };
+    if (q.motivo === 'cancel') return { ok: false, motivo: 'cancel' };
+    var p = await elegir({ cli: cli, local: o.local, titulo: titulo, aviso: q.motivo === 'camara' ? 'No pude usar la cámara.' : '' });
+    if (!p) return { ok: false, motivo: 'cancel' };
+    return anotar(p.empleado_id, 'lista');
+  }
+  // lista de nombres en pastillas (las personas activas del local; "Ver todos los locales" por si viene de otro)
+  function elegir(o) {
+    var cli = o.cli;
+    return new Promise(function (listo) {
+      var f = abrir('<div class="acr-cab"><h3>' + esc(o.titulo) + '</h3><button class="acr-x" aria-label="Cerrar">✕</button></div>' +
+        '<p class="acr-nota">' + esc((o.aviso ? o.aviso + ' ' : '') + 'Tocá tu nombre: queda anotado que lo hiciste vos.') + '</p>' +
+        '<input class="acr-in" id="acr-busca" type="search" placeholder="Buscar nombre" autocomplete="off">' +
+        '<div class="acr-nombres" id="acr-nombres"><span class="acr-nota">Cargando…</span></div>' +
+        '<div class="acr-err" id="acr-err"></div>' +
+        '<div class="acr-pie"><button class="acr-b sec chico" id="acr-todos">Ver todos los locales</button><span class="esp"></span><button class="acr-b sec" id="acr-no">Cancelar</button></div>', { arriba: true });
+      var lista = [], caja = f.querySelector('#acr-nombres'), busca = f.querySelector('#acr-busca'), err = f.querySelector('#acr-err'), todos = f.querySelector('#acr-todos');
+      var fin = function (v) { f.remove(); listo(v); };
+      f.querySelector('.acr-x').onclick = f.querySelector('#acr-no').onclick = function () { fin(null); };
+      function pintar() {
+        var t = busca.value.trim().toLowerCase();
+        var ps = lista.filter(function (p) { return !t || nombre(p.nombre).toLowerCase().indexOf(t) >= 0; });
+        caja.innerHTML = ps.length ? ps.map(function (p) { return '<button type="button" class="acr-nombre" data-e="' + esc(p.empleado_id) + '">' + esc(nombre(p.nombre)) + '</button>'; }).join('')
+          : '<span class="acr-nota">' + (lista.length ? 'No hay nadie con ese nombre.' : 'No encontré personas para este local.') + '</span>';
+        caja.querySelectorAll('[data-e]').forEach(function (b) { b.onclick = function () { fin(lista.find(function (p) { return String(p.empleado_id) === b.dataset.e; })); }; });
+      }
+      async function cargar(local) {
+        var r;
+        try { r = await cli.rpc('hub_registro_personas', { p_local: local || null }); } catch (e) { r = { error: e }; }
+        if (!document.body.contains(f)) return;
+        if (r.error) { err.textContent = msjError(r.error); caja.innerHTML = ''; return; }
+        lista = r.data || []; pintar();
+      }
+      busca.oninput = pintar;
+      if (!o.local) todos.style.display = 'none';
+      todos.onclick = function () { todos.style.display = 'none'; cargar(null); };
+      cargar(o.local);
+      setTimeout(function () { busca.focus(); }, 50);
+    });
+  }
+
+  window.ADORNO_CARAS = { equipo: equipo, ficha: ficha, grabar: grabar, probar: probar, superior: superior, estado: estado, nombre: nombre, quien: quien, pila: pila, registrar: registrar };
 })();
