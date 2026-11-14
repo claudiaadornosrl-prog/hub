@@ -10,7 +10,7 @@
 //  · Tres tomas por pasada (frente, izquierda, derecha); "Con lentes" repite la pasada con los lentes puestos.
 //  API: ADORNO_CARAS.equipo({ cli?, superior? }) · .ficha({ cli, persona, alCambiar }) · .grabar({ cli, persona, lentes })
 //       .probar({ cli }) · .superior() → cliente | null
-//       .quien({ cli, rpc, params, titulo, nota }) → { ok:true, data } | { ok:false, motivo:'cancel'|'lista'|'no'|'camara', error? }
+//       .quien({ cli, rpc, params, titulo, nota }) → { ok:true, data, descriptor } | { ok:false, motivo:'cancel'|'lista'|'no'|'camara', error? }
 //         (13-nov-2026) abre la cámara y, sin tocar nada, lee la cara y la busca con la RPC que le pasan (p_descriptor + params).
 //       .registrar({ cli, funcion, local, detalle, titulo }) → (14-nov-2026) anota quién hizo una función marcada con
 //         "📷 Registra quién" en el Hub (ver más abajo). Llamarlo antes de la operación; si da ok:false, no hacerla.
@@ -390,7 +390,7 @@
           var q = await cli.rpc(o.rpc || 'hub_cara_parecida', Object.assign({ p_descriptor: r.descriptor }, o.params || {}));
           if (terminado) return;
           if (q.error) { err.textContent = msjError(q.error); cap.disabled = false; return; }
-          if (q.data) { ins.innerHTML = '<span class="acr-ok">✓ ' + esc(nombre(q.data.nombre)) + '</span>'; await esperar(600); fin({ ok: true, data: q.data }); return; }
+          if (q.data) { ins.innerHTML = '<span class="acr-ok">✓ ' + esc(nombre(q.data.nombre)) + '</span>'; await esperar(600); fin({ ok: true, data: q.data, descriptor: r.descriptor }); return; }
           ins.textContent = 'No te reconocí.';
         }
         if (intentos < 3) { await esperar(700); return intentar(); }
