@@ -26,12 +26,12 @@ window.ADORNO_ASISTENTE_CONTEXTO = `## El Hub
 Es la pantalla de inicio del sistema de Claudia Adorno SRL. Desde acá se entra a cada módulo tocando su tarjeta. Si la persona ya inició sesión y tildó "Confiar en esta computadora", entra a todos los módulos sin volver a escribir la clave.
 1. Iniciar sesión: sin sesión, el ícono de persona (arriba a la izquierda) sirve para ingresar.
 2. Notificaciones: ícono de campana (arriba). Solo notificaciones: elegir de qué módulos recibir avisos en este dispositivo. En iPhone solo funcionan si la app está agregada a la pantalla de inicio (Compartir → Agregar a pantalla de inicio).
-3. Configuración: ícono de engranaje (arriba): elegir qué módulos ver en este equipo y el botón "Mi cuenta": cerrar la sesión (se cierra en todos los módulos a la vez), confiar en esta computadora, código del celular, grabar caras y trabar este equipo.
+3. Configuración: ícono de engranaje (arriba): elegir qué módulos ver en este equipo y el botón "Mi cuenta": cerrar la sesión (se cierra en todos los módulos a la vez), confiar en esta computadora, código del celular, grabar caras, ponerle nombre a esta computadora (Esta computadora) y trabar este equipo.
 3b. Permisos (solo administración): con sesión, el ícono de persona abre Permisos. A los demás usuarios ese ícono no les aparece.
    - Perfiles: el interruptor de cada módulo dice si el perfil ve ese módulo. Tocando el nombre del módulo aparecen sus apartados, y tocando un apartado, sus funciones. En cada función se elige Habilitada, Pide permiso (la puede usar pero pide la autorización de una persona de más rango, nunca una cuenta genérica) u Oculta; en cada apartado hay botones para cambiarlas todas juntas. Se guarda al tocar. Cada módulo empieza a respetar sus funciones a medida que se le suma (por ahora lo que cambia en el momento es qué módulos ve cada perfil).
    - 📷 Registra quién: al lado de cada función hay una pastilla "📷 Registra quién: Sí / No" (y en cada apartado "📷 Todas registran quién"). En Sí, cada vez que alguien usa esa función queda anotado quién la hizo: con la cuenta compartida del local se abre la cámara y la reconoce (mientras el reconocimiento por cara esté apagado, la persona toca su nombre en una lista); con usuario personal se anota directo. Vale para todos los perfiles. No se guardan fotos, solo quién, cuándo y con qué cuenta. Cada módulo empieza a anotarlo a medida que se le suma.
    - Personas: el perfil de cada usuario, sus locales (uno o varios: Alcorta, Unicenter, Oficina) y su cara.
-   - Equipos: las computadoras y celulares trabados a un usuario.
+   - Computadoras: cada computadora, tablet o celular de los locales y la oficina (las trabadas a un usuario y las que tienen nombre). Arriba, por local: por dónde abren WhatsApp las computadoras de ese local (Ventana del kiosco, WhatsApp de escritorio, WhatsApp Web o Como venga) y qué impresora del local se usa para imprimir desde el celular o la tablet (se elige entre las que ve el programa de impresión del local). Abajo, cada computadora puede tener su propio WhatsApp, distinto del del local («Como el local» usa el del local). Se aplica la próxima vez que esa computadora abra o recargue un módulo. Para sumar una computadora: en esa computadora, engranaje → Mi cuenta → Esta computadora → nombre y local → Guardar. Destrabar deja la computadora en la lista, sin trabar y con sus ajustes; Olvidar la saca de la lista.
    - Registro: la lista de quién hizo cada función marcada con 📷 (nombre, cómo se supo —por la cara, eligió su nombre o con su usuario—, módulo, función, local, cuenta, día y hora).
 4. Instalar como app: botón "Instalar" o, en iPhone, Compartir → Agregar a pantalla de inicio.
 5. Tablero (solo en computadora, con sesión de administración): resumen de Ventas, Tesorería, Compras, Colaboradores y salud del servidor; cada ficha tiene "abrir →".
@@ -392,7 +392,7 @@ window.ADORNO_SSO = (function () {
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Forum&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="/hub/seguridad.js?v=14"></script>
+<script src="/hub/seguridad.js?v=15"></script>
 <script src="/hub/pos-autorizar.js?v=2"></script>
 <script src="/hub/caras.js?v=4" defer></script>   <!-- (hub v102, 12-nov) grabar la cara de cada persona · v4 (14-nov): registrar() -->
 
@@ -590,6 +590,19 @@ window.ADORNO_SSO = (function () {
   .eq-link { border: 0; background: transparent; padding: 0; font: inherit; font-size: 12px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
   .eq-link:hover { color: var(--text); }
   .eq-pedir { display: flex; gap: 8px; margin-top: 10px; }
+  /* (hub v108, 14-nov-2026, JP) Computadoras: ajustes por local y por compu */
+  .cmp-local { border: 1px solid var(--border); border-radius: 22px; padding: 12px 16px 14px; margin: 0 0 12px; }
+  .cmp-local h3 { margin: 0; font-size: 14px; font-weight: 500; }
+  .cmp-local .sub { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .cmp-aj { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 10px; }
+  .cmp-aj > span { flex: 0 0 100%; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+  .cmp-pill { border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .cmp-pill.on { background: var(--boton); color: var(--boton-txt); border-color: transparent; }
+  .cmp-pill:disabled { opacity: .5; cursor: default; }
+  .cmp-punto { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: 1px; }
+  .cmp-punto.on { background: var(--ok); }
+  .perm-persona > .cmp-aj { flex: 1 1 100%; margin-top: 2px; }
+  .eq-pedir .perm-sel { max-width: 40%; }
   /* (hub v102, 12-nov) caras de cada persona (Permisos → Personas) */
   .perm-cara { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; background: var(--bg); color: var(--muted); }
   .perm-cara.si { background: var(--ok-suave); color: var(--ok); }
@@ -1072,11 +1085,11 @@ window.ADORNO_SSO = (function () {
 <div class="config-overlay" id="permisos-overlay">
   <div class="config-panel perm-panel" role="dialog" aria-labelledby="perm-titulo">
     <div class="perm-cabeza"><h3 id="perm-titulo">Permisos</h3><button type="button" class="perm-x" onclick="cerrarPermisos()" aria-label="Cerrar">✕</button></div>
-    <p class="perm-nota">Qué módulos ve cada perfil y qué puede hacer adentro de cada uno, el perfil y los locales de cada persona, y los equipos trabados.</p>
+    <p class="perm-nota">Qué módulos ve cada perfil y qué puede hacer adentro de cada uno, el perfil y los locales de cada persona, y los ajustes de cada computadora.</p>
     <div class="perm-tabs" role="tablist">
       <button type="button" class="perm-tab on" data-t="perfiles" onclick="permTab('perfiles')">Perfiles</button>
       <button type="button" class="perm-tab" data-t="personas" onclick="permTab('personas')">Personas</button>
-      <button type="button" class="perm-tab" data-t="equipos" onclick="permTab('equipos')">Equipos</button>
+      <button type="button" class="perm-tab" data-t="equipos" onclick="permTab('equipos')">Computadoras</button>
       <button type="button" class="perm-tab" data-t="registro" onclick="permTab('registro')">Registro</button>
     </div>
     <div class="perm-cuerpo" id="perm-cuerpo"></div>
@@ -1532,6 +1545,21 @@ window.ADORNO_SSO = (function () {
       _equipoRepintar();
     }, 8000);
   }
+  async function compuNombrar(btn) {   // (hub v108) Mi cuenta → Esta computadora
+    const err = document.getElementById('cmp-error');
+    const n = ((document.getElementById('cmp-nombre') || {}).value || '').trim(), l = (document.getElementById('cmp-local') || {}).value || '';
+    if (!n) { if (err) err.textContent = 'Poné un nombre para reconocerla (ej. Caja Alcorta).'; return; }
+    if (!l) { if (err) err.textContent = 'Elegí de qué local es.'; return; }
+    if (!window.ADORNO_EQUIPO) { if (err) err.textContent = 'Recargá la página y probá de nuevo.'; return; }
+    btn.disabled = true;
+    const tok = ADORNO_EQUIPO.token();
+    const { data, error } = await sb.rpc('hub_equipo_nombrar', { p_token: tok, p_nombre: n, p_local: l, p_agente: navigator.userAgent.slice(0, 200) });
+    btn.disabled = false;
+    if (error || !data) { if (err) err.textContent = error ? error.message : 'No hubo respuesta'; return; }
+    ADORNO_EQUIPO.guardar({ token: tok, estado: data.estado, nombre: data.nombre, local: data.local, id: data.id, ajustes: data.ajustes || {} });
+    if (ADORNO_EQUIPO.aplicar) ADORNO_EQUIPO.aplicar(data.ajustes);
+    await _equipoRepintar();
+  }
   async function equipoRevisar() {
     if (!window.ADORNO_EQUIPO) return;
     await ADORNO_EQUIPO.refrescar();
@@ -1541,29 +1569,93 @@ window.ADORNO_SSO = (function () {
     const nav = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /Firefox\//.test(ua) ? 'Firefox' : ''; return [so, nav].filter(Boolean).join(' · '); };
   const _eqHace = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts)) / 60000);
     return m < 2 ? 'recién' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} días`; };
+  // (hub v108, 14-nov-2026, JP: «que las configuraciones de cada computadora —por dónde manda WhatsApp, impresoras— se
+  //   puedan setear desde el Hub») La pestaña Equipos pasa a ser Computadoras: arriba los ajustes de cada local (WhatsApp de
+  //   sus compus + la impresora para imprimir desde el celu), abajo cada compu (trabada o con nombre) con su propio WhatsApp.
+  //   Lo de la compu pisa lo del local. /hub/equipo.js v6 lo pone en el navegador la próxima vez que abre un módulo.
+  const _CMP_WA = [['kiosco', 'Ventana del kiosco'], ['app', 'WhatsApp de escritorio'], ['web', 'WhatsApp Web'], ['nada', 'Como venga']];
+  const _CMP_VIRTUAL = /^(Microsoft Print to PDF|Microsoft XPS Document Writer|OneNote|Fax|PrinterShare)/i;
+  const _cmpCorto = d => String(d || '').replace(/^\\\\[^\\]+\\/, '');
+  let _cmp = null, _cmpVals = [];
+  const _cmpVal = v => { _cmpVals.push(v); return _cmpVals.length - 1; };
+  function _cmpPills(nivel, id, clave, actual, opciones, heredar) {   // opciones: [[valor, texto, igual?]]
+    const b = (k, on, t) => `<button type="button" class="cmp-pill ${on ? 'on' : ''}" onclick="cmpAjuste('${nivel}','${id}','${clave}',${k},this)">${_tbEsc(t)}</button>`;
+    return (heredar ? b(-1, actual == null, heredar) : '') + opciones.map(([v, t, igual]) => b(_cmpVal(v), igual ? igual(actual) : actual === v, t)).join('');
+  }
   async function _permEquipos() {
     const c = document.getElementById('perm-cuerpo');
-    const { data, error } = await sb.rpc('hub_equipos_listar');
+    const { data, error } = await sb.rpc('hub_computadoras_leer');
     if (_permTab !== 'equipos') return;
-    if (error) { c.innerHTML = `<div class="hint" style="color:var(--mal);">No pude cargar los equipos: ${_tbEsc(error.message)}</div>`; return; }
-    const eqs = data || [], pend = eqs.filter(e => e.estado === 'pendiente'), trab = eqs.filter(e => e.estado === 'trabado'),
-      otros = eqs.filter(e => !['pendiente', 'trabado'].includes(e.estado));
-    const fila = (e, botones) => `<div class="perm-persona"><div class="quien"><b>${_tbEsc(e.nombre)}</b>` +
-      `<small>${_tbEsc([_tbLocal(e.local || ''), e.usuario, _eqAgente(e.agente), e.ultimo_uso_at ? 'usado ' + _eqHace(e.ultimo_uso_at) : ''].filter(Boolean).join(' · '))}</small></div>` +
-      `<div class="eq-acc">${botones}</div></div>`;
-    c.innerHTML = `<p class="perm-nota">Computadoras y celulares de los locales y de la oficina que solo se pueden usar con un usuario. Se piden desde el equipo (engranaje → Mi cuenta → Trabar este equipo) y se aprueban acá.</p>` +
-      (pend.length ? '<div class="perm-grupo">Esperando aprobación</div>' + pend.map(e => fila(e,
-        `<button type="button" class="eq-btn" onclick="permEquipo('${e.id}','aprobar',this)">Aprobar</button><button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','rechazar',this)">Rechazar</button>`)).join('') : '') +
-      '<div class="perm-grupo">Trabados</div>' + (trab.length ? trab.map(e => fila(e,
-        `<button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','destrabar',this)">Destrabar</button>`)).join('')
-        : '<div class="hint" style="margin-top:8px;">Todavía no hay equipos trabados.</div>') +
-      (otros.length ? '<div class="perm-grupo">Anteriores</div>' + otros.map(e => fila(e, `<span class="perm-fijo">${e.estado === 'rechazado' ? 'Rechazado' : 'Destrabado'}</span>`)).join('') : '');
+    if (error) { c.innerHTML = `<div class="hint" style="color:var(--mal);">No pude cargar las computadoras: ${_tbEsc(error.message)}</div>`; return; }
+    _cmp = data || { equipos: [], locales: [] };
+    _cmpPintar();
+  }
+  function _cmpPintar() {
+    const c = document.getElementById('perm-cuerpo');
+    if (!c || _permTab !== 'equipos' || !_cmp) return;
+    _cmpVals = [];
+    const eqs = _cmp.equipos || [], locs = _cmp.locales || [];
+    const waTxt = v => (_CMP_WA.find(x => x[0] === v) || [])[1];
+    const tarjeta = l => {
+      const aj = l.ajustes || {}, ags = l.agentes || [], nom = _tbLocal(l.local);
+      const vivo = ags.find(a => a.conectado);
+      const estadoAg = !ags.length ? `${nom} todavía no tiene el programa de impresión: desde el celular no se puede imprimir acá.`
+        : `<span class="cmp-punto ${vivo ? 'on' : ''}"></span>Programa de impresión: ${vivo ? 'conectado' : 'sin conexión, ' + _eqHace(ags[0].visto_at)} (${_tbEsc(ags.map(a => a.equipo).join(', '))})`;
+      const imps = [];
+      ags.forEach(a => (a.impresoras || []).filter(d => !_CMP_VIRTUAL.test(_cmpCorto(d))).forEach(d =>
+        imps.push([{ agente_id: a.id, destino: d }, _cmpCorto(d) + (ags.length > 1 ? ' · ' + a.equipo : ''), x => !!x && x.agente_id === a.id && x.destino === d])));
+      return `<div class="cmp-local"><h3>${_tbEsc(nom)}</h3><div class="sub">${estadoAg}</div>` +
+        `<div class="cmp-aj"><span>WhatsApp en las computadoras de ${_tbEsc(nom)}</span>${_cmpPills('local', l.local, 'wa', aj.wa == null ? null : aj.wa, _CMP_WA, 'Sin elegir')}</div>` +
+        (imps.length ? `<div class="cmp-aj"><span>Impresora para imprimir desde el celular o la tablet</span>${_cmpPills('local', l.local, 'imp_doc', aj.imp_doc || null, imps, 'Ninguna')}</div>` : '') +
+        `</div>`;
+    };
+    const ajLocal = loc => ((locs.find(x => x.local === loc) || {}).ajustes || {});
+    const fila = (e, botones, conAjustes) => {
+      const sub = [e.estado === 'trabado' ? '🔒 solo con ' + e.usuario : e.estado === 'libre' ? 'sin trabar' : e.estado === 'pendiente' ? 'pide trabarse con ' + e.usuario : '',
+        _eqAgente(e.agente), e.ultimo_uso_at ? 'usada ' + _eqHace(e.ultimo_uso_at) : ''].filter(Boolean).join(' · ');
+      const delLocal = waTxt(ajLocal(e.local).wa);
+      return `<div class="perm-persona"><div class="quien"><b>${_tbEsc(e.nombre || 'Sin nombre')}</b><small>${_tbEsc(sub)}</small></div><div class="eq-acc">${botones}</div>` +
+        (conAjustes ? `<div class="cmp-aj"><span>WhatsApp en esta computadora</span>${_cmpPills('equipo', e.id, 'wa', (e.ajustes || {}).wa == null ? null : e.ajustes.wa, _CMP_WA, 'Como el local' + (delLocal ? ` (${delLocal})` : ''))}</div>` : '') +
+        `</div>`;
+    };
+    const pend = eqs.filter(e => e.estado === 'pendiente'), vivas = eqs.filter(e => e.estado === 'trabado' || e.estado === 'libre'),
+      otras = eqs.filter(e => e.estado === 'rechazado' || e.estado === 'destrabado');
+    const botones = e => e.estado === 'trabado'
+      ? `<button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','destrabar',this)">Destrabar</button>`
+      : `<button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','olvidar',this)">Olvidar</button>`;
+    const grupos = ['alcorta', 'unicenter', 'oficina', ''].map(loc => {
+      const es = vivas.filter(e => (e.local || '') === loc || (loc === '' && !['alcorta', 'unicenter', 'oficina'].includes(e.local)));
+      return es.length ? `<div class="perm-grupo">${loc ? 'Computadoras de ' + _tbEsc(_tbLocal(loc)) : 'Sin local'}</div>` + es.map(e => fila(e, botones(e), true)).join('') : '';
+    }).join('');
+    c.innerHTML = `<p class="perm-nota">Lo que elijas para un local vale para todas sus computadoras; lo que elijas en una computadora pisa lo del local. Cada computadora lo toma la próxima vez que abre o recarga un módulo. Para sumar una: en esa computadora, engranaje → Mi cuenta → Esta computadora. Las trabadas solo se pueden usar con su usuario (se piden desde la computadora, en Mi cuenta → Trabar este equipo).</p>` +
+      locs.map(tarjeta).join('') +
+      (pend.length ? '<div class="perm-grupo">Esperando aprobación para trabarse</div>' + pend.map(e => fila(e,
+        `<button type="button" class="eq-btn" onclick="permEquipo('${e.id}','aprobar',this)">Aprobar</button><button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','rechazar',this)">Rechazar</button>`, false)).join('') : '') +
+      (grupos || '<div class="hint" style="margin-top:8px;">Todavía no hay computadoras con nombre.</div>') +
+      (otras.length ? '<div class="perm-grupo">Anteriores</div>' + otras.map(e => fila(e,
+        `<span class="perm-fijo">${e.estado === 'rechazado' ? 'Rechazada' : 'Destrabada'}</span><button type="button" class="eq-btn sec" onclick="permEquipo('${e.id}','olvidar',this)">Olvidar</button>`, false)).join('') : '');
+  }
+  async function cmpAjuste(nivel, id, clave, k, btn) {
+    const valor = k < 0 ? null : _cmpVals[k];
+    const grupo = btn.parentElement; grupo.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    const { data, error } = await sb.rpc('hub_ajuste_guardar', { p_nivel: nivel, p_id: id, p_clave: clave, p_valor: valor });
+    if (error) { grupo.querySelectorAll('button').forEach(b => { b.disabled = false; }); _permEstado('No se guardó: ' + error.message, 'mal'); return; }
+    if (nivel === 'local') { const l = (_cmp.locales || []).find(x => x.local === id); if (l) l.ajustes = data || {}; }
+    else { const e = (_cmp.equipos || []).find(x => x.id === id); if (e) e.ajustes = data || {}; }
+    _cmpPintar();
+    _permEstado('Guardado. Cada computadora lo toma la próxima vez que abre o recarga un módulo.', 'ok');
   }
   async function permEquipo(id, accion, btn) {
+    if (accion === 'olvidar' && btn.dataset.seguro !== '1') {   // dos toques: sin carteles del navegador
+      btn.dataset.seguro = '1'; btn.textContent = '¿Seguro? Tocá de nuevo';
+      setTimeout(() => { if (btn.isConnected) { btn.dataset.seguro = ''; btn.textContent = 'Olvidar'; } }, 4000);
+      return;
+    }
     btn.disabled = true;
     const { error } = await sb.rpc('hub_equipo_resolver', { p_id: id, p_accion: accion });
     if (error) { btn.disabled = false; _permEstado('No se pudo: ' + error.message, 'mal'); return; }
-    _permEstado({ aprobar: 'Listo: el equipo quedó trabado.', rechazar: 'Pedido rechazado.', destrabar: 'Equipo destrabado: la próxima vez que abra una página queda libre.' }[accion], 'ok');
+    _permEstado({ aprobar: 'Listo: el equipo quedó trabado.', rechazar: 'Pedido rechazado.', olvidar: 'Listo: la computadora salió de la lista.',
+      destrabar: 'Destrabada: queda en la lista, sin trabar y con sus ajustes.' }[accion], 'ok');
     _permEquipos();
   }
   aplicarVisibilidad();
@@ -1719,7 +1811,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     const e = ADORNO_EQUIPO.leer();
     if (e && e.estado === 'trabado') return '';   // el mail ya queda fijo (equipo.js)
     if (e && e.estado === 'pendiente') return `<div class="eq-fila eq-login"><strong>Traba pedida: ${_tbEsc(e.nombre)} (${_tbEsc(_tbLocal(e.local || ''))})</strong>` +
-      `<div class="estado">Falta que administración la apruebe en Permisos → Equipos.</div>` +
+      `<div class="estado">Falta que administración la apruebe en Permisos → Computadoras.</div>` +
       `<div class="eq-pedir"><button type="button" class="eq-btn sec" onclick="equipoRevisar()">Ver si ya la aprobaron</button></div></div>`;
     return `<div class="eq-login"><button type="button" class="eq-link" onclick="equipoAbrirPedido(this)">¿Es una computadora de un local o de la oficina? Trabar este equipo</button></div>`;
   }
@@ -1896,14 +1988,28 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     const eqPuede = HUB_PERFIL === 'local' || HUB_PERFIL === 'oficina' || (HUB_PERFIL && HUB_PERFIL !== 'admin' && matchMedia('(pointer: fine)').matches);
     if (_panelModo === 'cuenta' && window.ADORNO_EQUIPO && (eqPuede || (eqd && ['trabado', 'pendiente'].includes(eqd.estado)))) {
       if (eqd && eqd.estado === 'trabado') {
-        filaEquipo = `<div class="eq-fila"><strong>🔒 Equipo trabado: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Solo se usa con ${_tbEsc(eqd.usuario)}. Para destrabarlo: administración, en Permisos → Equipos.</div></div>`;
+        filaEquipo = `<div class="eq-fila"><strong>🔒 Equipo trabado: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Solo se usa con ${_tbEsc(eqd.usuario)}. Sus ajustes (por dónde abre WhatsApp…) y la traba los maneja administración en Permisos → Computadoras.</div></div>`;
       } else if (eqd && eqd.estado === 'pendiente') {
-        filaEquipo = `<div class="eq-fila"><strong>Traba pedida: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Falta que administración la apruebe en Permisos → Equipos.</div>` +
+        filaEquipo = `<div class="eq-fila"><strong>Traba pedida: ${_tbEsc(eqd.nombre)}</strong><div class="estado">Falta que administración la apruebe en Permisos → Computadoras.</div>` +
           `<div class="eq-pedir"><button type="button" class="eq-btn sec" onclick="equipoRevisar()">Ver si ya la aprobaron</button></div></div>`;
       } else {
         filaEquipo = `<div class="eq-fila"><strong>Trabar este equipo</strong><div class="estado">Que esta computadora o celular solo se pueda usar con ${_tbEsc(session.user.email)}. Lo aprueba administración.</div>` +
           `<div class="eq-pedir"><input id="eq-nombre" maxlength="40" placeholder="Nombre (ej. Mostrador 1)"><button type="button" class="eq-btn" onclick="equipoPedir(this)">Pedir traba</button></div>` +
           `<div class="estado" id="eq-error" style="color:var(--mal);"></div></div>`;
+      }
+    }
+    // (hub v108, 14-nov-2026, JP) Esta computadora: ponerle nombre y local para que administración le elija los ajustes
+    //   desde Permisos → Computadoras (las trabadas ya están en la lista)
+    let filaCompu = '';
+    if (_panelModo === 'cuenta' && window.ADORNO_EQUIPO && !(eqd && ['trabado', 'pendiente'].includes(eqd.estado))) {
+      if (eqd && eqd.estado === 'libre') {
+        filaCompu = `<div class="eq-fila"><strong>💻 Esta computadora: ${_tbEsc(eqd.nombre)}</strong><div class="estado">${_tbEsc(_tbLocal(eqd.local || ''))}. Sus ajustes (por dónde abre WhatsApp…) los elige administración en Permisos → Computadoras.</div></div>`;
+      } else {
+        filaCompu = `<div class="eq-fila"><strong>💻 Esta computadora</strong><div class="estado">Ponele un nombre para que administración le elija los ajustes desde el Hub (por dónde abre WhatsApp, etc.).</div>` +
+          `<div class="eq-pedir"><input id="cmp-nombre" maxlength="40" placeholder="Nombre (ej. Caja Alcorta)"><select id="cmp-local" class="perm-sel"><option value="">¿De qué local?</option>` +
+          ['alcorta', 'unicenter', 'oficina'].map(l => `<option value="${l}">${_tbEsc(_tbLocal(l))}</option>`).join('') + `</select></div>` +
+          `<div class="eq-pedir"><button type="button" class="eq-btn" onclick="compuNombrar(this)">Guardar</button></div>` +
+          `<div class="estado" id="cmp-error" style="color:var(--mal);"></div></div>`;
       }
     }
     // (hub v102, 12-nov-2026, JP) caras del equipo: administración y la encargada (con su usuario) las graban directo;
@@ -1919,6 +2025,7 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
     document.getElementById('notif-titulo').textContent = _panelModo === 'cuenta' ? 'Mi cuenta' : 'Notificaciones';
     body.innerHTML = _panelModo === 'cuenta' ? `
       <div class="notif-user"><span>${session.user.email}</span><a onclick="notifLogout()">Salir</a></div>
+      ${filaCompu}
       ${filaEquipo}
       ${filaCaras}
       <div class="notif-row" style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:12px;">

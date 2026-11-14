@@ -7,6 +7,10 @@
 //  · Si el equipo está TRABADO: en los formularios de ingreso el mail queda fijo en el usuario del local, y si en
 //    cualquier página aparece la sesión de otra persona, se la cierra en este equipo y se recarga.
 //  · Un equipo sin 'adorno-equipo' no hace nada (todos los demás equipos siguen igual).
+//  · (v6, 14-nov-2026, JP: «que las configuraciones de cada computadora se seteen desde el Hub») además es la
+//    lista de COMPUTADORAS: una compu 'libre' tiene nombre y ajustes sin estar trabada (se nombra en Hub → Mi cuenta →
+//    Esta computadora). Los ajustes los elige administración en Permisos → Computadoras (por local y por compu) y
+//    acá se ponen en el navegador: 'wa' → localStorage 'ca_wa_modo' (la clave que ya leen Clientes y el POS).
 //  Lo cargan solos los módulos que usan /hub/seguridad.js o /hub/version.js.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 (function () {
@@ -56,6 +60,17 @@
     return fetch(SB + '/rest/v1/rpc/' + nombre, { method: 'POST', headers: h, body: JSON.stringify(args || {}), cache: 'no-store' })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error((j && j.message) || ('HTTP ' + r.status)); return j; }); });
   }
+  // (v6) los ajustes que eligió administración para esta compu se ponen en el navegador. Sin ajuste no se toca nada.
+  var WA = 'ca_wa_modo';
+  function aplicar(a) {
+    a = a || {};
+    try {
+      if (a.wa === 'nada') localStorage.removeItem(WA);
+      else if (a.wa === 'kiosco' || a.wa === 'app' || a.wa === 'web') { if (localStorage.getItem(WA) !== a.wa) localStorage.setItem(WA, a.wa); }
+    } catch (e) {}
+  }
+  function ajustes() { var e = leer(); return (e && e.ajustes) || {}; }
+
   // lo que dice la base de este equipo; si se cae la red, queda lo último que se supo
   function refrescar() {
     var e = leer(); if (!e || !e.token) return Promise.resolve(null);
@@ -63,8 +78,9 @@
       .catch(function () { return rpc('hub_equipo_estado', { p_token: e.token }, false); })
       .then(function (r) {
         if (!r || !r.estado) return leer();
-        if (r.estado === 'trabado' || r.estado === 'pendiente') {
-          guardar({ token: e.token, estado: r.estado, usuario: r.usuario, nombre: r.nombre, local: r.local, id: r.id });
+        if (r.estado === 'trabado' || r.estado === 'pendiente' || r.estado === 'libre') {
+          guardar({ token: e.token, estado: r.estado, usuario: r.usuario, nombre: r.nombre, local: r.local, id: r.id, ajustes: r.ajustes || {} });
+          aplicar(r.ajustes);
         } else if (e.estado !== 'nuevo') {
           guardar(null);   // destrabado, rechazado o borrado: el equipo vuelve a ser uno común
         }
@@ -141,7 +157,9 @@
     setTimeout(function () { d.remove(); }, 7000);
   }
 
-  window.ADORNO_EQUIPO = { leer: leer, guardar: guardar, trabado: trabado, token: token, refrescar: refrescar, controlar: controlar, lugar: lugar };
+  window.ADORNO_EQUIPO = { leer: leer, guardar: guardar, trabado: trabado, token: token, refrescar: refrescar, controlar: controlar, lugar: lugar,
+                           ajustes: ajustes, aplicar: aplicar };
+  aplicar(ajustes());   // lo último que se supo, ya al cargar (la base lo confirma en refrescar)
 
   function arrancar() {
     aviso(); controlar();
