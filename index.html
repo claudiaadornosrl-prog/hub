@@ -1285,7 +1285,7 @@ window.ADORNO_SSO = (function () {
   // ── (hub v86, 11-nov-2026, JP: "armame en configuración un apartado donde pueda modificar los permisos de cada rol
   //    y los roles de cada usuario más fácil") Perfiles: qué módulos ve cada perfil. Personas: qué perfil tiene cada
   //    una. Se guarda al tocar (hub_perfil_guardar / hub_usuario_perfil). Solo cambia las monedas del Hub: adentro de
-  //    cada módulo siguen sus propios permisos. Administración (rol admin) ve todo siempre y no se edita.
+  //    cada módulo siguen sus propios permisos. Dueños (rol admin) ve todo siempre y no se edita.
   let _perm = null, _permTab = 'perfiles', _permPerfil = 'oficina', _permBuscar = '';
   async function abrirPermisos() {
     cerrarConfig();
@@ -1340,7 +1340,7 @@ window.ADORNO_SSO = (function () {
     if (!fs.length) return `<div class="perm-funcs"><p class="perm-nota" style="margin:8px 0 0;">${_permFn ? 'Este módulo todavía no tiene funciones cargadas.' : 'Cargando…'}</p></div>`;
     const aps = [];
     fs.forEach(f => { const g = aps.find(a => a.nombre === f.apartado); g ? g.fs.push(f) : aps.push({ nombre: f.apartado, fs: [f] }); });
-    return `<div class="perm-funcs">` + (p.fijo ? '<p class="perm-nota" style="margin:8px 0 0;">Administración tiene todo habilitado.</p>' : '') +
+    return `<div class="perm-funcs">` + (p.fijo ? '<p class="perm-nota" style="margin:8px 0 0;">Dueños tiene todo habilitado.</p>' : '') +
       aps.map(a => {
         const k = m.id + '|' + a.nombre, abierto = _permAbiertosAp.has(k), ids = a.fs.map(f => f.id).join(',');
         return `<div class="perm-ap ${abierto ? 'abierto' : ''}" role="button" tabindex="0" aria-expanded="${abierto}" data-k="${_tbEsc(k)}" onclick="permAbrirAp(this.dataset.k)" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); permAbrirAp(this.dataset.k); }">` +
@@ -1475,7 +1475,7 @@ window.ADORNO_SSO = (function () {
       const locs = u.fijo ? '<div class="perm-locs"><span>Locales: todos</span></div>'
         : `<div class="perm-locs" role="group" aria-label="Locales de ${_tbEsc(_permQuien(u))}"><span>Locales</span>${_PERM_LOCS.map(([id, n]) => { const on = (u.locales || []).includes(id);
             return `<button type="button" class="perm-loc ${on ? 'on' : ''}" aria-pressed="${on}" data-email="${_tbEsc(u.email)}" data-loc="${id}" onclick="permLocal(this)">${n}</button>`; }).join('')}</div>`;
-      const sel = u.fijo ? '<span class="perm-fijo">Administración</span>'
+      const sel = u.fijo ? '<span class="perm-fijo">Dueños</span>'
         : `<select class="perm-sel" data-email="${_tbEsc(u.email)}" aria-label="Perfil de ${_tbEsc(_permQuien(u))}" onchange="permPersona(this)">` +
           (u.perfil ? '' : '<option value="" selected disabled>Sin perfil</option>') +
           opciones.map(p => `<option value="${p.id}" ${p.id === u.perfil ? 'selected' : ''}>${_tbEsc(p.nombre)}</option>`).join('') + '</select>';
