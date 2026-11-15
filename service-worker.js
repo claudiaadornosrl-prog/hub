@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v109-duenos';
+const CACHE_VERSION = 'hub-v110-caras-v5-fichar-celular';
 const ASSETS = [
   './',
   './index.html',

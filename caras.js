@@ -360,6 +360,9 @@
     o = o || {};
     var cli = o.cli;
     if (!cli || !cli.rpc) return Promise.resolve({ ok: false, motivo: 'lista', apagado: true });
+    // (15-nov-2026) sinLlave: la fichada desde el celular (Colaboradores → Fichar) no depende de la llave central: la
+    //   persona entra con su usuario y la cara se compara solo contra la suya. sinLista: no ofrece "Elegir de la lista".
+    if (o.sinLlave) return quienCamara(o);
     return Promise.resolve().then(function () { return cli.rpc('hub_caras_activas', {}); }).catch(function () { return null; })
       .then(function (a) { return (a && !a.error && a.data === true) ? quienCamara(o) : { ok: false, motivo: 'lista', apagado: true }; });
   }
@@ -378,6 +381,7 @@
       var fin = function (v) { if (terminado) return; terminado = true; apagar(); f.remove(); listo(v); };
       f.querySelector('.acr-x').onclick = f.querySelector('#acr-no').onclick = function () { fin({ ok: false, motivo: 'cancel' }); };
       f.querySelector('#acr-lista').onclick = function () { fin({ ok: false, motivo: 'lista' }); };
+      if (o.sinLista) f.querySelector('#acr-lista').style.display = 'none';
       var intentos = 0;
       async function intentar() {
         if (terminado || !stream) return;
@@ -394,7 +398,7 @@
           ins.textContent = 'No te reconocí.';
         }
         if (intentos < 3) { await esperar(700); return intentar(); }
-        ins.textContent += ' Probá de nuevo o elegí tu nombre de la lista.';
+        ins.textContent += o.sinLista ? ' Buscá más luz, mirá de frente y probá de nuevo.' : ' Probá de nuevo o elegí tu nombre de la lista.';
         cap.disabled = false;
       }
       Promise.all([lib(), camara(video)]).then(function () {
