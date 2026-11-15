@@ -82,13 +82,25 @@
       '.acr-nombres{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px;max-height:46vh;overflow:auto}',
       '.acr-nombre{border:1px solid var(--border,#D6CCBA);background:transparent;color:var(--text,#1C1612);border-radius:999px;padding:8px 15px;font:inherit;font-size:13.5px;cursor:pointer}',
       '.acr-nombre:hover,.acr-nombre:focus-visible{background:var(--bg,#E9E2D5)}',
+      /* (15-nov-2026, JP: "solo la cosita ovalada, como la de la computadora") modo círculo: sin recuadro, cámara redonda */
+      '.acr-fondo.circ{background:rgba(28,22,18,.9)}',
+      '.acr-fondo.circ .acr-caja{background:transparent;box-shadow:none;padding:0;max-width:320px;text-align:center;overflow:visible}',
+      '.acr-fondo.circ .acr-cab,.acr-fondo.circ .acr-nota,.acr-fondo.circ #acr-lista{display:none}',
+      '.acr-fondo.circ .acr-video{width:min(260px,70vw);height:min(260px,70vw);aspect-ratio:auto;border-radius:50%;margin:0 auto 14px;box-shadow:0 0 0 4px #F2E8DA,0 12px 34px rgba(0,0,0,.5)}',
+      '.acr-fondo.circ .acr-ovalo{width:50%;height:66%}',
+      '.acr-fondo.circ .acr-instr{display:inline-block;color:#F7F3EC;background:rgba(28,22,18,.85);border-radius:999px;padding:9px 18px;font-size:14px;margin:0;max-width:100%;box-sizing:border-box}',
+      '.acr-fondo.circ .acr-err{color:#E9A392;margin:8px 0 0;min-height:0}',
+      '.acr-fondo.circ .acr-pie{justify-content:center;margin-top:16px}',
+      '.acr-fondo.circ .acr-pie .esp{display:none}',
+      '.acr-fondo.circ .acr-b.sec{color:#F7F3EC;box-shadow:inset 0 0 0 1px rgba(247,243,236,.55)}',
+      '.acr-fondo.circ .acr-b{background:#F2E8DA;color:#1C1612}',
       '@media (max-width:520px){.acr-in{font-size:16px}.acr-fila{flex-wrap:wrap}.acr-fila .acc{width:100%;display:flex;gap:6px;justify-content:flex-end}}'
     ].join('\n');
     document.head.appendChild(s);
   }
   function abrir(html, o) {
     css(); o = o || {};
-    var f = document.createElement('div'); f.className = 'acr-fondo' + (o.arriba ? ' arriba' : '') + (o.pregunta ? ' pregunta' : '');
+    var f = document.createElement('div'); f.className = 'acr-fondo' + (o.arriba ? ' arriba' : '') + (o.pregunta ? ' pregunta' : '') + (o.circulo ? ' circ' : '');
     f.setAttribute('data-adorno-superior', '1');   // para /hub/equipo.js: no es el ingreso del equipo
     f.innerHTML = '<div class="acr-caja' + (o.ancha ? ' ancha' : '') + '" role="dialog" aria-modal="true">' + html + '</div>';
     document.body.appendChild(f);
@@ -140,15 +152,18 @@
   function opciones() { return new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }); }
   function leerUna(video) { return faceapi.detectSingleFace(video, opciones()).withFaceLandmarks(true).withFaceDescriptor().then(function (d) { return d ? d.descriptor : null; }); }
   function dist(a, b) { var t = 0; for (var i = 0; i < 128; i++) { var x = a[i] - b[i]; t += x * x; } return Math.sqrt(t); }
-  // 5 lecturas buenas (de 8 intentos), promediadas; null si no se vio la cara o se movió
-  async function lectura(video, msg) {
+  // 5 lecturas buenas (de 8 intentos), promediadas; null si no se vio la cara o se movió.
+  // rapida (15-nov-2026, JP: "aunque saque una está bien"): devuelve la primera lectura buena, sin promediar.
+  async function lectura(video, msg, rapida) {
     var ds = [];
-    for (var i = 0; i < 8 && ds.length < 5 && stream; i++) {
-      msg('Leyendo… ' + ds.length + ' de 5');
+    for (var i = 0; i < (rapida ? 6 : 8) && ds.length < 5 && stream; i++) {
+      msg(rapida ? 'Leyendo…' : 'Leyendo… ' + ds.length + ' de 5');
       var d = null; try { d = await leerUna(video); } catch (x) {}
       if (d) ds.push(d);
-      await esperar(250);
+      if (rapida && ds.length) return { descriptor: Array.prototype.slice.call(ds[0]) };
+      await esperar(rapida ? 120 : 250);
     }
+    if (rapida) return { error: 'poca' };
     if (ds.length < 3) return { error: 'poca' };
     var prom = []; for (var k = 0; k < 128; k++) { var s = 0; for (var j = 0; j < ds.length; j++) s += ds[j][k]; prom.push(s / ds.length); }
     var peor = 0; ds.forEach(function (d) { peor = Math.max(peor, dist(d, prom)); });
@@ -360,7 +375,8 @@
     o = o || {};
     var cli = o.cli;
     if (!cli || !cli.rpc) return Promise.resolve({ ok: false, motivo: 'lista', apagado: true });
-    // (15-nov-2026) sinLlave: la fichada desde el celular (Colaboradores → Fichar) no depende de la llave central: la
+    // (15-nov-2026) rapida: una sola lectura buena (más veloz) · circulo: cámara redonda sin recuadro, como el espejo de la PC.
+  // (15-nov-2026) sinLlave: la fichada desde el celular (Colaboradores → Fichar) no depende de la llave central: la
     //   persona entra con su usuario y la cara se compara solo contra la suya. sinLista: no ofrece "Elegir de la lista".
     if (o.sinLlave) return quienCamara(o);
     return Promise.resolve().then(function () { return cli.rpc('hub_caras_activas', {}); }).catch(function () { return null; })
@@ -374,7 +390,7 @@
         '<div class="acr-instr" id="acr-instr">Abriendo la cámara…</div>' +
         '<div class="acr-video"><video id="acr-v" autoplay muted playsinline></video><div class="acr-ovalo" id="acr-ov"></div><div class="acr-msg" id="acr-msg"></div></div>' +
         '<div class="acr-err" id="acr-err"></div>' +
-        '<div class="acr-pie"><button class="acr-b sec" id="acr-no">Cancelar</button><span class="esp"></span><button class="acr-b sec" id="acr-lista">Elegir de la lista</button><button class="acr-b" id="acr-cap" disabled>Probar de nuevo</button></div>', { arriba: true });
+        '<div class="acr-pie"><button class="acr-b sec" id="acr-no">Cancelar</button><span class="esp"></span><button class="acr-b sec" id="acr-lista">Elegir de la lista</button><button class="acr-b" id="acr-cap" disabled>Probar de nuevo</button></div>', { arriba: true, circulo: !!o.circulo });
       var video = f.querySelector('#acr-v'), ov = f.querySelector('#acr-ov'), cap = f.querySelector('#acr-cap'), err = f.querySelector('#acr-err'), ins = f.querySelector('#acr-instr');
       var msg = function (t) { var m = f.querySelector('#acr-msg'); if (m) m.textContent = t || ''; };
       var terminado = false;
@@ -386,7 +402,7 @@
       async function intentar() {
         if (terminado || !stream) return;
         cap.disabled = true; err.textContent = ''; intentos++;
-        var r = await lectura(video, msg); msg('');
+        var r = await lectura(video, msg, !!o.rapida); msg('');
         if (terminado) return;
         if (r.error) {
           ins.textContent = r.error === 'poca' ? 'No llegué a ver bien la cara. Acercate y buscá más luz.' : 'Te moviste: quedate quieta un segundo.';
