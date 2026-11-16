@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v126-ver-como-entrar';
+const CACHE_VERSION = 'hub-v127-ver-como-autorizar';
 const ASSETS = [
   './',
   './index.html',

@@ -158,6 +158,10 @@
             que: op.que || '', resumen: op.resumen || op.que || '', demo: !!op.demo,
             color: op.color || colorActual(), email: (s && s.email) || '', resolve: resolve, id: null, poll: null, fin: false, lista: [] };
       document.addEventListener('keydown', teclas, true);
+      // (v6, 16-nov-2026, JP) modo «Ver como» (/hub/banner.js): la ventana se abre igual, con la lista real de quién
+      //   puede autorizar a esa cuenta, pero no lee caras, no manda avisos ni acepta claves. JP ve que el pedido de permiso aparece.
+      A.verComo = !!window.ADORNO_VERCOMO && !op.demo;
+      if (A.verComo) op.sinCara = true;
       A.detalle = Object.assign({}, op.detalle || {}, { resumen: A.resumen, que: A.que, pedido_por_email: A.email, pedido_por: A.email });
       arrancar(A);
     });
@@ -219,6 +223,7 @@
   }
   function lista(aviso) {
     var a = A; if (!a) return;
+    if (a.verComo && !aviso) aviso = 'Modo «Ver como»: así le aparece el pedido de permiso a esta cuenta. Es solo para mirar: no se manda ningún aviso ni se autoriza nada.';
     var pres = a.lista.filter(function (p) { return p.presente; }), fuera = a.lista.filter(function (p) { return !p.presente; });
     ventana({ tit: 'Esto necesita autorización', cuerpo:
       '<div class="aut-lista" id="aut-lista">' + (aviso ? '<div class="aut-aviso">' + esc(aviso) + '</div>' : '') +
@@ -236,6 +241,7 @@
   function pedirA(empId) {
     var a = A; if (!a || a.fin) return;
     var p = a.lista.filter(function (x) { return x.empleado_id === empId; })[0]; if (!p) return;
+    if (a.verComo) { toast('Modo «Ver como»: acá le llegaría el aviso al celu a ' + pila(p.nombre) + '. No se manda nada.'); return; }
     var hecho = a.demo ? Promise.resolve({ id: -1 }) : rpc('hub_autorizacion_pedir', { p_funcion: a.funcion, p_local: a.local, p_detalle: a.detalle, p_empleado_id: empId });
     hecho.then(function (r) {
       if (A !== a || a.fin) { cancelarPedido(r && r.id); return; }
@@ -266,6 +272,7 @@
   // usuario y clave: quien autoriza entra en una sesión aparte (sin guardar) y crea la autorización ya aceptada
   function conClave() {
     var a = A; if (!a || a.fin) return;
+    if (a.verComo) { toast('Modo «Ver como»: acá autorizaría con su usuario y clave. No se autoriza nada.'); return; }
     var mail = ((document.getElementById('aut-mail') || {}).value || '').trim(), pass = (document.getElementById('aut-pass') || {}).value || '';
     if (!mail || !pass) { toast('Cargá el usuario y la clave de quien autoriza'); return; }
     if (mail.toLowerCase() === a.email) { toast('Tiene que ser el usuario de quien autoriza, no el de esta sesión'); return; }
