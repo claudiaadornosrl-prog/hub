@@ -1,3 +1,133 @@
+// ═══════════════════════════════════════════════════════
+//  VER COMO (infra, 16-nov-2026, JP: «poder entrar a ver dentro de cada usuario, no para modificarles nada»).
+//  Va primero en este archivo porque banner.js es lo único que TODOS los módulos cargan sin async.
+//  Solo hace algo si el Hub dejó la marca `adorno-ver-como` (la pone JP con «Ver como» → «Entrar al módulo»).
+//  NO se inicia sesión como la otra persona. Con la marca puesta:
+//   · a cada consulta a la base se le agrega el encabezado x-ver-como: la base la responde como esa cuenta y en SOLO
+//     LECTURA (public._hub_ver_como_pre; se lo acepta solo al token de JP, a cualquier otro lo rechaza);
+//   · el módulo cree que la sesión es de esa cuenta (se cambia el `user` al leer la sesión guardada; el token sigue
+//     siendo el de JP);
+//   · no salen llamadas a funciones (/functions/v1) ni se sube o borra nada del almacenamiento;
+//   · arriba queda un cartel «Viendo como … · solo lectura · Salir». La marca vence sola a la hora.
+// ═══════════════════════════════════════════════════════
+(function () {
+  if (window.ADORNO_VERCOMO !== undefined) return;
+  window.ADORNO_VERCOMO = null;
+  try {
+    var MARCA = 'adorno-ver-como', SES = 'adorno-auth';
+    var getReal = Storage.prototype.getItem;
+    var vc = null;
+    try { vc = JSON.parse(getReal.call(localStorage, MARCA) || 'null'); } catch (e) {}
+    if (!vc) return;
+    if (!vc.email || !vc.id || !vc.de || !(vc.hasta > Date.now())) { try { localStorage.removeItem(MARCA); } catch (e) {} return; }
+    if (/^\/hub\//.test(location.pathname)) return;                       // el Hub siempre se ve con la cuenta de JP
+    var real = null;
+    try { real = JSON.parse(getReal.call(localStorage, SES) || 'null'); } catch (e) {}
+    if (!real || !real.user || real.user.id !== vc.de) return;             // la sesión abierta no es la de quien pidió «ver como»
+    window.ADORNO_VERCOMO = { email: vc.email, nombre: vc.nombre || vc.email, salir: salir };
+
+    function salir() { try { localStorage.removeItem(MARCA); } catch (e) {} location.href = '/hub/'; }
+    function vigente() {
+      if (vc.hasta > Date.now()) return true;
+      try { localStorage.removeItem(MARCA); } catch (e) {}
+      return false;
+    }
+    function disfrazar(u) {
+      if (!u || typeof u !== 'object') return u;
+      var c = {}; for (var k in u) c[k] = u[k];
+      c.id = vc.id; c.email = vc.email; c.user_metadata = {}; c.identities = []; delete c.phone;
+      return c;
+    }
+
+    // 1) la sesión guardada se lee con el usuario de la otra cuenta (el token no cambia)
+    Storage.prototype.getItem = function (k) {
+      var v = getReal.apply(this, arguments);
+      try {
+        if (this === localStorage && vigente()) {
+          if (k === SES && v) {
+            var s = JSON.parse(v);
+            if (s && s.user && s.user.id === vc.de) { s.user = disfrazar(s.user); return JSON.stringify(s); }
+          }
+          if (typeof k === 'string' && k.indexOf('adorno-modulo-') === 0) return '1';   // que no pida la clave por cambio de cuenta
+        }
+      } catch (e) {}
+      return v;
+    };
+
+    // 2) las consultas a la base llevan el encabezado; lo que no es lectura de la base no sale
+    var fetchReal = window.fetch;
+    var avisado = 0;
+    function aviso(t) {
+      if (Date.now() - avisado < 2500) return; avisado = Date.now();
+      try {
+        var d = document.createElement('div');
+        d.textContent = t;
+        d.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147483647;background:#1C1612;color:#F7F3EC;border-radius:999px;padding:11px 20px;font:500 13px Jost,system-ui,sans-serif;box-shadow:0 12px 30px -12px rgba(0,0,0,.5);max-width:calc(100vw - 30px);text-align:center;';
+        (document.body || document.documentElement).appendChild(d);
+        setTimeout(function () { d.remove(); }, 3800);
+      } catch (e) {}
+    }
+    function trabada(motivo) {
+      aviso('Modo «Ver como»: es solo para mirar, no se modifica nada.');
+      return Promise.resolve(new Response(JSON.stringify({ code: 'VC00', message: 'Modo «Ver como»: solo lectura (' + motivo + ')' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }));
+    }
+    window.fetch = function (input, init) {
+      try {
+        var url = typeof input === 'string' ? input : (input && input.url) || String(input);
+        if (url.indexOf('.supabase.co/') < 0 || !vigente()) return fetchReal.apply(this, arguments);
+        var metodo = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+        if (url.indexOf('/functions/v1/') >= 0) return trabada('funciones');
+        if (url.indexOf('/storage/v1/') >= 0 && metodo !== 'GET' && metodo !== 'HEAD' && url.indexOf('/object/sign') < 0 && url.indexOf('/object/list') < 0) return trabada('archivos');
+        if (url.indexOf('/auth/v1/') >= 0) {
+          if (metodo !== 'GET' && url.indexOf('/auth/v1/token') < 0) return trabada('cuenta');       // nada de cambiar clave, cerrar sesión, etc.
+          return fetchReal.apply(this, arguments).then(function (r) {
+            if (!r.ok) return r;
+            return r.clone().json().then(function (j) {
+              if (j && j.user && j.access_token) j.user = disfrazar(j.user);                         // respuesta de renovar el token
+              else if (j && j.id && j.aud) j = disfrazar(j);                                         // respuesta de /user
+              return new Response(JSON.stringify(j), { status: r.status, statusText: r.statusText, headers: r.headers });
+            }).catch(function () { return r; });
+          });
+        }
+        if (url.indexOf('/rest/v1/') >= 0) {
+          var h = new Headers((init && init.headers) || (typeof input !== 'string' && input && input.headers) || {});
+          h.set('x-ver-como', vc.email);
+          if (vc.local) h.set('x-ver-como-local', '1');
+          var i2 = {}; if (init) for (var k in init) i2[k] = init[k];
+          i2.headers = h;
+          return fetchReal.call(this, input, i2).then(function (r) {
+            if (r.status >= 400) r.clone().text().then(function (t) {
+              if (/read-only transaction/i.test(t)) aviso('Modo «Ver como»: es solo para mirar, no se modifica nada.');
+              else if (/VC0[12]/.test(t)) aviso('«Ver como» ya no está disponible: volvé al Hub.');
+            }).catch(function () {});
+            return r;
+          });
+        }
+      } catch (e) {}
+      return fetchReal.apply(this, arguments);
+    };
+
+    // 3) cartel fijo
+    function cartel() {
+      if (document.getElementById('vc-cartel')) return;
+      var d = document.createElement('div');
+      d.id = 'vc-cartel';
+      d.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483646;display:flex;align-items:center;gap:10px;background:#F3E9D6;border:1px solid #C99A4B;color:#1C1612;border-radius:999px;padding:6px 8px 6px 16px;font:400 13px Jost,system-ui,sans-serif;box-shadow:0 10px 28px -14px rgba(28,22,18,.5);max-width:calc(100vw - 20px);white-space:nowrap;';
+      var s = document.createElement('span');
+      s.style.cssText = 'overflow:hidden;text-overflow:ellipsis;';
+      s.textContent = 'Viendo como ' + (vc.nombre || vc.email) + ' · solo lectura' + (vc.local ? ' · adentro del local' : ' · afuera del local');
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = 'Salir';
+      b.style.cssText = 'border:0;background:#1C1612;color:#F7F3EC;border-radius:999px;padding:7px 15px;font:inherit;font-size:12px;cursor:pointer;';
+      b.onclick = salir;
+      d.appendChild(s); d.appendChild(b);
+      (document.body || document.documentElement).appendChild(d);
+    }
+    if (document.body) cartel(); else document.addEventListener('DOMContentLoaded', cartel);
+    setInterval(function () { if (!vigente()) location.href = '/hub/'; else cartel(); }, 20000);
+  } catch (e) {}
+})();
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 //  banner.js — BANNER COMÚN de los módulos (infra, 11-nov-2026). Va con /hub/banner.css (ver ahí cómo se arma).
 //  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=6"></script>), sin async: así la moneda aparece
