@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v135-avisos-whatsapp-y-castellano';
+const CACHE_VERSION = 'hub-v136-avisos-token-meta';
 const ASSETS = [
   './',
   './index.html',

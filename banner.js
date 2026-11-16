@@ -173,6 +173,8 @@
   var REGLAS = [
     [/read-only transaction/i, 'Estás en modo «Ver como»: es solo para mirar, así que no se guardó nada.'],
     [/VC0[012]/, 'Esto no está disponible en modo «Ver como».'],
+    // va ANTES que la de «tu sesión venció»: el texto de Meta también dice «session has expired» (aviso de Clientes)
+    [/\(#190\)|error validating access token|oauth|access token.*(expired|invalid|parse)|invalid.*access token/i, 'La conexión del número de WhatsApp con Meta venció. Avisale a JP.'],
     [/failed to fetch|networkerror|load failed|network request failed|err_internet|err_network|fetch failed/i, 'No hay conexión con el sistema. Revisá internet y probá de nuevo.'],
     [/invalid x-api-key|authentication_error/i, 'La clave de un servicio que usa el sistema no es válida. Avisale a JP.'],
     [/claude -p error|claude api|anthropic|overloaded_error/i, 'Claude no pudo terminar el trabajo. Probá de nuevo; si sigue pasando, avisale a JP.'],
@@ -186,7 +188,6 @@
     [/131030|not in allowed list/i, 'Ese número no está habilitado para recibir mensajes desde esta línea.'],
     [/13200[01]|template.*(does not exist|not found|param)/i, 'La plantilla de WhatsApp tiene un problema. Avisale a JP.'],
     [/133010|not registered/i, 'El número de WhatsApp del local no está registrado en Meta. Avisale a JP.'],
-    [/\(#190\)|error validating access token|access token.*(expired|invalid)/i, 'La conexión del número de WhatsApp con Meta venció. Avisale a JP.'],
     [/\(#100\)|invalid parameter/i, 'Hay un dato del mensaje que WhatsApp no acepta (por ejemplo, el número).'],
     [/failed to send a request to the edge function/i, 'No hay conexión con el sistema. Revisá internet y probá de nuevo.'],
     [/non-2xx|edge function returned/i, 'El servicio no respondió bien. Probá de nuevo en un momento.'],
