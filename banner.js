@@ -180,7 +180,18 @@
     [/invalid login credentials|invalid_grant|invalid email or password/i, 'El usuario o la clave no son correctos.'],
     [/email not confirmed/i, 'Ese usuario todavía no está confirmado. Avisale a JP.'],
     [/row-level security|violates row level|permission denied|insufficient.privilege|42501|not allowed|forbidden|unauthorized/i, 'Tu usuario no tiene permiso para hacer esto.'],
-    [/JSON object requested|multiple \(or no\) rows|PGRST116|0 rows/i, 'No se encontró ese dato. Puede que ya no exista o que esté repetido.'],
+    // WhatsApp (Meta), por código — avisos de Clientes
+    [/131047|re-engagement/i, 'Pasaron más de 24 horas desde que escribió la clienta: por WhatsApp ahora solo se le puede mandar una plantilla.'],
+    [/131026|message undeliverable/i, 'Ese número no tiene WhatsApp o no se le pudo entregar el mensaje.'],
+    [/131030|not in allowed list/i, 'Ese número no está habilitado para recibir mensajes desde esta línea.'],
+    [/13200[01]|template.*(does not exist|not found|param)/i, 'La plantilla de WhatsApp tiene un problema. Avisale a JP.'],
+    [/133010|not registered/i, 'El número de WhatsApp del local no está registrado en Meta. Avisale a JP.'],
+    [/\(#190\)|error validating access token|access token.*(expired|invalid)/i, 'La conexión del número de WhatsApp con Meta venció. Avisale a JP.'],
+    [/\(#100\)|invalid parameter/i, 'Hay un dato del mensaje que WhatsApp no acepta (por ejemplo, el número).'],
+    [/failed to send a request to the edge function/i, 'No hay conexión con el sistema. Revisá internet y probá de nuevo.'],
+    [/non-2xx|edge function returned/i, 'El servicio no respondió bien. Probá de nuevo en un momento.'],
+    [/^\s*(error\s*[:：-]?\s*)?(sin permiso|no ten[eé]s permiso)\.?\s*$/i, 'Tu usuario no tiene permiso para hacer esto.'],
+    [/JSON object requested|multiple \(or no\) rows|cannot coerce the result|PGRST116|0 rows/i, 'No se encontró ese dato. Puede que ya no exista o que esté repetido.'],
     [/aborterror|aborted|the operation was aborted|signal is aborted/i, 'Se cortó antes de terminar. Probá de nuevo.'],
     [/duplicate key|already exists|23505|unique constraint/i, 'Eso ya estaba cargado: está repetido.'],
     [/foreign key|23503|is still referenced/i, 'No se puede: hay otros datos del sistema que dependen de esto.'],
@@ -200,7 +211,14 @@
     [/\b404\b|not found/i, 'No se encontró lo que se buscaba. Puede que ya no exista.'],
     [/unexpected token|unexpected end of|is not valid json|syntaxerror|typeerror|referenceerror|rangeerror|cannot read prop|is not a function|is not defined|undefined|\[object object\]|null is not|of null|of undefined/i, 'Algo falló adentro del sistema. Probá de nuevo; si sigue pasando, avisale a JP.']
   ];
-  var CASTELLANO = /[áéíóúñ¿¡]|\b(el|la|los|las|del|que|no|se|un|una|para|con|por|está|falta|ya|tu|te|es|son|hay|esta|este|pudo|pude|puede|tiene|tenés|probá|revisá|avisale)\b/i;
+  var _PAL = /\b(el|la|los|las|del|que|no|se|un|una|para|con|sin|por|falta|ya|tu|te|es|son|hay|esta|este|pudo|pude|puede|tiene|permiso|mes|cerrado|guardar|cargar|importe|local|cuenta|usuario|clave)\b/gi;
+  var _ING = /\b(the|is|are|of|to|returned|failed|invalid|not|cannot|requested|request|response|status|code|function|message|parameter|token|expired|denied|missing|found|rows?|value|key|column|table|unexpected|undefined|null)\b/i;
+  var CASTELLANO = { test: function (t) {
+    t = String(t || '');
+    if (/[áéíóúñ¿¡]/i.test(t)) return true;
+    var m = t.match(_PAL), n = m ? m.length : 0;
+    return n >= 2 || (n === 1 && !_ING.test(t));
+  } };
 
   function traducir(msg) {
     var orig = String(msg == null ? '' : (msg.message || msg)).trim();
@@ -225,7 +243,7 @@
     var corte = orig.search(/[:：]/);
     if (corte > 0 && corte <= 70) {
       var cab = orig.slice(0, corte).replace(/^[\s✗❌⚠️!¡]+/, '').trim(), cola = orig.slice(corte + 1).trim();
-      var colaTecnica = cola && /[{}\[\]<>]|\w+_\w+|[A-Z]{2,}\d{2,}|\b(error|failed|invalid|unexpected|cannot|exception|null|undefined|denied|missing|not found)\b/i.test(cola);
+      var colaTecnica = cola && (/[{}\[\]<>]|\w+_\w+|[A-Z]{2,}\d{2,}|\(#\d+\)/.test(cola) || _ING.test(cola));
       if (cab && CASTELLANO.test(cab) && !/^error$/i.test(cab) && colaTecnica)
         return { texto: cab.replace(/[.\s]+$/, '') + '. Algo falló y el sistema no supo explicarlo. Probá de nuevo; si sigue pasando, avisale a JP.', tecnico: orig };
     }
