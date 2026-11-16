@@ -341,6 +341,58 @@
   document.addEventListener('DOMContentLoaded', enganchar);
   window.addEventListener('load', enganchar);
 })();
+// ═══════════════════════════════════════════════════════
+//  CÁMARA Y FICHADOR (infra, 16-nov-2026, JP en la terminal de Alcorta: «me dice que la cámara está en uso, no sé si
+//  estará chocando contra el fichador»). El fichador por cámara (C:\FichadorCamara, tarea FichadorCamara) tiene la cámara
+//  tomada todo el día. Acá se envuelve getUserMedia para TODO el sistema (caras, autorizar, POS, Colaboradores):
+//   · primero se pide la cámara como siempre;
+//   · si está ocupada (NotReadableError / «Could not start video source» / «in use»), se le pide al fichador que la
+//     suelte (POST http://127.0.0.1:8765/pausa), se espera un momento y se reintenta;
+//   · cuando la página suelta la cámara (o se cierra), se le avisa que siga (/sigue). Si nadie avisa, el fichador
+//     retoma solo a los 3 minutos.
+//  Solo se habla con el fichador cuando la cámara está ocupada: en celulares y compus sin fichador no cambia nada.
+// ═══════════════════════════════════════════════════════
+(function () {
+  try {
+    var md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia || md.__adornoFichador) return;
+    md.__adornoFichador = true;
+    var real = md.getUserMedia.bind(md), FICH = 'http://127.0.0.1:8765', pausado = false, abiertas = 0;
+    function llamar(ruta) {
+      try {
+        var c = new AbortController(); setTimeout(function () { c.abort(); }, 1500);
+        return fetch(FICH + ruta, { method: 'POST', signal: c.signal, cache: 'no-store' }).then(function (r) { return r.ok; }, function () { return false; });
+      } catch (e) { return Promise.resolve(false); }
+    }
+    function seguir() { if (!pausado) return; pausado = false; llamar('/sigue'); }
+    function vigilar(st) {
+      abiertas++;
+      var vivos = st.getVideoTracks().length || 1, listo = false;
+      function fin() { if (listo) return; if (--vivos > 0) return; listo = true; if (--abiertas <= 0) { abiertas = 0; seguir(); } }
+      st.getVideoTracks().forEach(function (t) {
+        var parar = t.stop.bind(t), hecho = false;
+        t.stop = function () { parar(); if (!hecho) { hecho = true; fin(); } };
+        t.addEventListener('ended', function () { if (!hecho) { hecho = true; fin(); } });
+      });
+      return st;
+    }
+    var OCUPADA = /notreadable|could not start video|in use|device.*busy|trackstart|aborterror/i;
+    md.getUserMedia = function (c) {
+      if (!c || !c.video) return real(c);
+      return real(c).then(function (st) { return pausado ? vigilar(st) : st; }, function (e) {
+        if (!OCUPADA.test(String((e && e.name) || '') + ' ' + String((e && e.message) || ''))) throw e;
+        return llamar('/pausa').then(function (ok) {
+          if (!ok) throw e;                                   // no hay fichador en esta compu: el error original
+          pausado = true;
+          return new Promise(function (r) { setTimeout(r, 900); }).then(function () { return real(c); })
+            .catch(function () { return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return real(c); }); })
+            .then(vigilar, function (e2) { if (abiertas <= 0) seguir(); throw e2; });
+        });
+      });
+    };
+    window.addEventListener('pagehide', function () { if (pausado) { try { navigator.sendBeacon(FICH + '/sigue'); } catch (e) {} pausado = false; } });
+  } catch (e) {}
+})();
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 //  banner.js — BANNER COMÚN de los módulos (infra, 11-nov-2026). Va con /hub/banner.css (ver ahí cómo se arma).
 //  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=6"></script>), sin async: así la moneda aparece
