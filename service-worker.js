@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v119-clodi-mantener-apretado';
+const CACHE_VERSION = 'hub-v120-perfil-base';
 const ASSETS = [
   './',
   './index.html',
