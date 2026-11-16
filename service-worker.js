@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v112-autorizar';
+const CACHE_VERSION = 'hub-v113-jp-y-clau';
 const ASSETS = [
   './',
   './index.html',
