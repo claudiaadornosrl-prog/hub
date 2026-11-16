@@ -206,6 +206,7 @@
     [/payload too large|entity too large|413|file size|exceeded the maximum/i, 'El archivo es demasiado pesado.'],
     [/too many requests|rate limit|429/i, 'Se hicieron demasiados intentos seguidos. Esperá un minuto y probá de nuevo.'],
     [/mime type|not supported|unsupported/i, 'Ese tipo de archivo no se acepta.'],
+    [/device in use|notreadableerror|could not start video source/i, 'La cámara está ocupada por otro programa (por ejemplo el fichador). Pausalo desde su ícono al lado del reloj y probá de nuevo.'],
     [/notallowederror|permission dismissed|permission denied by (user|system)|notfounderror.*(device|camera)|could not start video/i, 'El navegador no dio permiso (cámara, micrófono, ubicación o avisos). Revisá el candado al lado de la dirección.'],
     [/quota.*exceeded|storage.*full/i, 'Este equipo se quedó sin espacio para guardar datos del sistema.'],
     [/internal server error|bad gateway|service unavailable|gateway timeout|\b50[0234]\b/i, 'El sistema no está respondiendo bien. Probá de nuevo en un momento.'],
@@ -361,7 +362,9 @@
     function llamar(ruta) {
       try {
         var c = new AbortController(); setTimeout(function () { c.abort(); }, 1500);
-        return fetch(FICH + ruta, { method: 'POST', signal: c.signal, cache: 'no-store' }).then(function (r) { return r.ok; }, function () { return false; });
+        // GET «simple» y sin leer la respuesta (no-cors): así no depende de los encabezados CORS del fichador ni dispara
+        // una consulta previa; si el fichador no corre, la conexión falla enseguida y devuelve false
+        return fetch(FICH + ruta, { method: 'GET', mode: 'no-cors', signal: c.signal, cache: 'no-store' }).then(function () { return true; }, function () { return false; });
       } catch (e) { return Promise.resolve(false); }
     }
     function seguir() { if (!pausado) return; pausado = false; llamar('/sigue'); }

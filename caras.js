@@ -35,7 +35,12 @@
   function nombre(n) { var t = String(n || '').trim(); if (!t.includes(',')) return tit(t); var p = t.split(','); return tit(p[1].trim() + ' ' + p[0].trim()); }
   function pila(n) { return nombre(n).split(' ')[0] || ''; }
   function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function msjError(e) { return String((e && e.message) || e || 'Error'); }
+  // (16-nov-2026) en castellano simple si está ADORNO_AVISO (banner.js): «Device in use» → «La cámara está ocupada…»
+  function msjError(e) {
+    var m = String((e && e.message) || e || 'Error');
+    try { if (window.ADORNO_AVISO) return window.ADORNO_AVISO.traducir(((e && e.name) ? e.name + ': ' : '') + m).texto; } catch (_) {}
+    return m;
+  }
   function fecha(ts) { if (!ts) return ''; var d = new Date(ts); return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }); }
 
   function css() {
