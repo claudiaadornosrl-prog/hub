@@ -2350,7 +2350,34 @@ function acomodarHub() {
   svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   mods.forEach(m => { m.draggable = fichas && FICHAS_CON_DATOS.includes(m.dataset.m); });
   esc.classList.add('lista');
+  _hubAjustarAlto();
 }
+// (hub v144, 16-nov-2026, JP: «que el Hub con los módulos siempre se ajuste a la ventana, para no tener que estarme
+//   desplazando para abajo») En computadora, si todo no entra en el alto de la ventana, se achica entero (zoom) hasta que
+//   entre. En el celular no se toca: ahí se desplaza con el dedo. Nunca baja de 0,55 para que se siga leyendo.
+let _hubAjustando = false;
+function _hubAjustarAlto() {
+  if (_hubAjustando) return;
+  const c = document.querySelector('main.container'); if (!c) return;
+  const compu = matchMedia('(pointer: fine)').matches && window.innerWidth >= 900;
+  _hubAjustando = true;
+  try {
+    const zAntes = parseFloat(c.style.zoom) || 1;
+    if (!compu) { if (zAntes !== 1) { c.style.zoom = ''; acomodarHub(); } return; }
+    const alto = window.innerHeight, raiz = document.documentElement;
+    c.style.zoom = 1; acomodarHub();                       // medida natural
+    let z = 1;
+    for (let i = 0; i < 3; i++) {
+      const natural = raiz.scrollHeight;
+      if (natural <= alto + 2) break;
+      z = Math.max(0.55, z * alto / natural * 0.995);
+      c.style.zoom = z; acomodarHub();                      // al achicar hay más ancho útil: se reacomoda
+      if (z === 0.55) break;
+    }
+    if (z === 1) c.style.zoom = '';
+  } finally { _hubAjustando = false; }
+}
+window.addEventListener('resize', () => { clearTimeout(window._hubAjT); window._hubAjT = setTimeout(_hubAjustarAlto, 120); });
 
 // ── La moneda gira mientras el mouse está encima; al salir frena hasta quedar de frente o de dorso en ~1 s ──
 const _TILT = 20, _VUELTA = 1500;
