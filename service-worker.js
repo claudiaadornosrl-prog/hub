@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v138-avisos-falta-fijos';
+const CACHE_VERSION = 'hub-v139-avisos-tildes';
 const ASSETS = [
   './',
   './index.html',

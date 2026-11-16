@@ -287,7 +287,7 @@
     el.appendChild(cuerpo); el.appendChild(x);
     armarCaja().appendChild(el);
     vivos.push(reg);
-    while (vivos.length > 4) { var v = vivos.shift(); v.el.remove(); }   // como mucho 4 a la vez: se van los más viejos
+    while (vivos.length > 8) { var v = vivos.shift(); v.el.remove(); }   // como mucho 8 a la vez (la caja tiene barra de desplazamiento): se van los más viejos
     x.addEventListener('click', botonTodos);
     botonTodos();
     return el;
@@ -314,7 +314,7 @@
     if (typeof tipo === 'string' && tipo) return /err|mal|bad|rojo|danger|fail|fallo|warn|falta|aviso/i.test(tipo);
     if (tipo) return false;
     var m = String(msg || '');
-    if (/^[\s]*(✗|❌|⛔|⚠|🔒|error\b|no se pudo|no pude|no pudimos|fall[oó]\b|ups\b|falta\b|faltan\b|pon[eé]\b|eleg[ií]\b|complet[aá]\b|ingres[aá]\b|carg[aá]\b|escrib[ií]\b|seleccion[aá]\b|ten[eé]s que\b|no ten[eé]s\b|no se puede\b|no pod[eé]s\b)/i.test(m)) return true;
+    if (/^[\s]*(✗|❌|⛔|⚠|🔒|(error|no se pudo|no pude|no pudimos|fall[oó]|ups|faltan?|pon[eé]|eleg[ií]|complet[aá]|ingres[aá]|carg[aá]|escrib[ií]|seleccion[aá]|ten[eé]s que|no ten[eé]s|no se puede|no pod[eé]s|sin permiso)(?![a-záéíóúñ]))/i.test(m)) return true;
     for (var i = 0; i < REGLAS.length - 2; i++) if (REGLAS[i][0].test(m) && !CASTELLANO.test(m.split(/[:：]/)[0] === m ? m : '')) return true;
     return false;
   }
