@@ -60,6 +60,34 @@
         return permitidos;
       }).catch(function () { return null; });
   }
+  // ── (15-nov-2026, JP: «la vendedora, si entra con su usuario, solo puede abrir el de Colaboradores. Y también la cajera»)
+  //    LA PUERTA: si la base dice que esta cuenta no ve este módulo (hub_modulos().modulos), se tapa la pantalla y se
+  //    ofrecen los módulos que sí puede abrir. Siempre pregunta a la base (no usa lo guardado). Si no hay red o la
+  //    consulta falla, no tapa nada. Clientes no entra acá: tiene su propio ingreso, que puede ser otra cuenta.
+  function puerta() {
+    var s = sesion(); if (!s || !s.token || aqui.id === 'crm') return;
+    fetch(SB + '/rest/v1/rpc/hub_modulos', { method: 'POST', cache: 'no-store', headers: { apikey: KEY, Authorization: 'Bearer ' + s.token, 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !Array.isArray(d.modulos)) return;
+        var ahora = sesion(); if (!ahora || ahora.email !== s.email) return;
+        permitidos = d.modulos;
+        try { localStorage.setItem('hub_modulos_perfil', JSON.stringify({ email: s.email, lista: d.modulos })); } catch (e) {}
+        var t = document.getElementById('asel-puerta');
+        if (d.modulos.indexOf(aqui.id) >= 0) { if (t) t.remove(); return; }
+        if (t) return;
+        var otros = MODULOS.filter(function (m) { return d.modulos.indexOf(m.id) >= 0; });
+        t = document.createElement('div'); t.id = 'asel-puerta'; t.setAttribute('role', 'dialog'); t.setAttribute('aria-modal', 'true');
+        t.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#F2ECE2;color:#1C1612;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;font:400 15px/1.45 "URW Gothic",Jost,system-ui,-apple-system,sans-serif;text-align:center';
+        var pill = 'display:inline-block;margin:6px 4px 0;padding:11px 22px;border-radius:999px;text-decoration:none;font-weight:600;';
+        t.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:26px;padding:28px 24px;box-shadow:0 24px 50px -20px rgba(28,22,18,.4)">' +
+          '<div style="font-size:19px;font-weight:600;margin-bottom:8px">' + esc(aqui.nombre) + ' no se abre con tu usuario</div>' +
+          '<div style="color:#685B51;font-size:14px;margin-bottom:14px">Este módulo se usa desde la cuenta del local o de la oficina.' + (otros.length ? ' Con tu usuario podés entrar a:' : '') + '</div>' +
+          otros.map(function (m) { return '<a href="' + BASE + m.ruta + '" style="' + pill + 'background:' + m.color + ';color:#F7F3EC">' + esc(m.nombre) + '</a>'; }).join('') +
+          '<div><a href="' + BASE + '/hub/" style="' + pill + 'background:transparent;color:#1C1612;box-shadow:inset 0 0 0 1px #D6CCBA">Volver al Hub</a></div></div>';
+        document.body.appendChild(t);
+      }).catch(function () {});
+  }
   function usos() { try { return JSON.parse(localStorage.getItem('hub-usos') || '{}') || {}; } catch (e) { return {}; } }
   function lista() {
     var u = usos();
@@ -210,6 +238,7 @@
   function arrancar() {
     var s = sesion();
     if (s) cargarPermitidos(s);
+    puerta(); addEventListener('focus', puerta); addEventListener('storage', function (ev) { if (!ev.key || /auth|session/.test(ev.key)) puerta(); });
     poner();
     var t = null;
     new MutationObserver(function () { if (t) return; t = setTimeout(function () { t = null; if (!permitidos && sesion()) cargarPermitidos(sesion()); poner(); }, 300); })
