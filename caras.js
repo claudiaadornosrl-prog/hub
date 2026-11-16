@@ -464,7 +464,8 @@
             var q;
             try { q = await cli.rpc(o.rpc || 'hub_cara_parecida', Object.assign({ p_descriptor: r.descriptor }, o.params || {})); } catch (e) { q = { error: e }; }
             if (terminado) return;
-            if (!q.error && q.data) { fin({ ok: true, data: q.data, descriptor: r.descriptor, oculta: true }, (o.textoOk || 'Sos') + ' ' + pila(q.data.nombre)); return; }
+            // v8: una RPC que contesta { ok:false, motivo } (no reconocida / sin permiso) NO es un reconocimiento: sigue mirando
+            if (!q.error && q.data && q.data.ok !== false) { fin({ ok: true, data: q.data, descriptor: r.descriptor, oculta: true }, (o.textoOk || 'Sos') + ' ' + pila(q.data.nombre || q.data.autorizadora)); return; }
           }
           await esperar(300);
         }

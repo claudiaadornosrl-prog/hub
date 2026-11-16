@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v116-autorizar-v5';
+const CACHE_VERSION = 'hub-v117-caras-v8';
 const ASSETS = [
   './',
   './index.html',
