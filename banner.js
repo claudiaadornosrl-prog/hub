@@ -310,10 +310,11 @@
   // ¿este toast es de error? por el 2º argumento (true, 'err', 'error', 'mal', 'bad'…) o, si el módulo no lo distingue, por el texto
   function esError(msg, tipo) {
     if (tipo === true) return true;
-    if (typeof tipo === 'string' && tipo) return /err|mal|bad|rojo|danger|fail|fallo/i.test(tipo);
+    // (JP, 16-nov: «Fijos con X») los avisos de «falta un dato» también quedan fijos: 'warning' / 'warn' / 'falta' cuentan
+    if (typeof tipo === 'string' && tipo) return /err|mal|bad|rojo|danger|fail|fallo|warn|falta|aviso/i.test(tipo);
     if (tipo) return false;
     var m = String(msg || '');
-    if (/^[\s]*(✗|❌|⛔|error\b|no se pudo|no pude|no pudimos|fall[oó]\b|ups\b)/i.test(m)) return true;
+    if (/^[\s]*(✗|❌|⛔|⚠|🔒|error\b|no se pudo|no pude|no pudimos|fall[oó]\b|ups\b|falta\b|faltan\b|pon[eé]\b|eleg[ií]\b|complet[aá]\b|ingres[aá]\b|carg[aá]\b|escrib[ií]\b|seleccion[aá]\b|ten[eé]s que\b|no ten[eé]s\b|no se puede\b|no pod[eé]s\b)/i.test(m)) return true;
     for (var i = 0; i < REGLAS.length - 2; i++) if (REGLAS[i][0].test(m) && !CASTELLANO.test(m.split(/[:：]/)[0] === m ? m : '')) return true;
     return false;
   }
