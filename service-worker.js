@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v141-fichador-sin-cors';
+const CACHE_VERSION = 'hub-v142-permiso-camara';
 const ASSETS = [
   './',
   './index.html',

@@ -181,6 +181,8 @@
     [/jwt expired|invalid jwt|jwt.*(invalid|malformed|cryptograph)|PGRST30[123]|refresh token|session.*(expired|missing|not found)|not authenticated/i, 'Tu sesión venció. Salí y volvé a entrar.'],
     [/invalid login credentials|invalid_grant|invalid email or password/i, 'El usuario o la clave no son correctos.'],
     [/email not confirmed/i, 'Ese usuario todavía no está confirmado. Avisale a JP.'],
+    [/device in use|notreadableerror|could not start video source/i, 'La cámara está ocupada por otro programa (por ejemplo el fichador). Pausalo desde su ícono al lado del reloj y probá de nuevo.'],
+    [/notallowederror|permission dismissed|permission denied by (user|system)|notfounderror.*(device|camera)|could not start video/i, 'El navegador no dio permiso (cámara, micrófono, ubicación o avisos). Revisá el candado al lado de la dirección.'],
     [/row-level security|violates row level|permission denied|insufficient.privilege|42501|not allowed|forbidden|unauthorized/i, 'Tu usuario no tiene permiso para hacer esto.'],
     // WhatsApp (Meta), por código — avisos de Clientes
     [/131047|re-engagement/i, 'Pasaron más de 24 horas desde que escribió la clienta: por WhatsApp ahora solo se le puede mandar una plantilla.'],
@@ -206,8 +208,6 @@
     [/payload too large|entity too large|413|file size|exceeded the maximum/i, 'El archivo es demasiado pesado.'],
     [/too many requests|rate limit|429/i, 'Se hicieron demasiados intentos seguidos. Esperá un minuto y probá de nuevo.'],
     [/mime type|not supported|unsupported/i, 'Ese tipo de archivo no se acepta.'],
-    [/device in use|notreadableerror|could not start video source/i, 'La cámara está ocupada por otro programa (por ejemplo el fichador). Pausalo desde su ícono al lado del reloj y probá de nuevo.'],
-    [/notallowederror|permission dismissed|permission denied by (user|system)|notfounderror.*(device|camera)|could not start video/i, 'El navegador no dio permiso (cámara, micrófono, ubicación o avisos). Revisá el candado al lado de la dirección.'],
     [/quota.*exceeded|storage.*full/i, 'Este equipo se quedó sin espacio para guardar datos del sistema.'],
     [/internal server error|bad gateway|service unavailable|gateway timeout|\b50[0234]\b/i, 'El sistema no está respondiendo bien. Probá de nuevo en un momento.'],
     [/\b404\b|not found/i, 'No se encontró lo que se buscaba. Puede que ya no exista.'],
