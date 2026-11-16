@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v133-avisos-traduccion';
+const CACHE_VERSION = 'hub-v134-avisos-reglas';
 const ASSETS = [
   './',
   './index.html',

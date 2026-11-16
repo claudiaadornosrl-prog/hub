@@ -180,6 +180,8 @@
     [/invalid login credentials|invalid_grant|invalid email or password/i, 'El usuario o la clave no son correctos.'],
     [/email not confirmed/i, 'Ese usuario todavía no está confirmado. Avisale a JP.'],
     [/row-level security|violates row level|permission denied|insufficient.privilege|42501|not allowed|forbidden|unauthorized/i, 'Tu usuario no tiene permiso para hacer esto.'],
+    [/JSON object requested|multiple \(or no\) rows|PGRST116|0 rows/i, 'No se encontró ese dato. Puede que ya no exista o que esté repetido.'],
+    [/aborterror|aborted|the operation was aborted|signal is aborted/i, 'Se cortó antes de terminar. Probá de nuevo.'],
     [/duplicate key|already exists|23505|unique constraint/i, 'Eso ya estaba cargado: está repetido.'],
     [/foreign key|23503|is still referenced/i, 'No se puede: hay otros datos del sistema que dependen de esto.'],
     [/not-null|null value in column|23502/i, 'Falta completar un dato obligatorio.'],
