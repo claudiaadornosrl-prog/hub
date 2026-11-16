@@ -83,7 +83,7 @@
       try {
         var d = document.createElement('div');
         d.textContent = t;
-        d.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147483647;background:#1C1612;color:#F7F3EC;border-radius:999px;padding:11px 20px;font:500 13px Jost,system-ui,sans-serif;box-shadow:0 12px 30px -12px rgba(0,0,0,.5);max-width:calc(100vw - 30px);text-align:center;';
+        d.style.cssText = 'position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:2147483647;background:#1C1612;color:#F7F3EC;border-radius:999px;padding:11px 20px;font:500 13px Jost,system-ui,sans-serif;box-shadow:0 12px 30px -12px rgba(0,0,0,.5);max-width:calc(100vw - 30px);text-align:center;';
         (document.body || document.documentElement).appendChild(d);
         setTimeout(function () { d.remove(); }, 3800);
       } catch (e) {}
@@ -143,7 +143,7 @@
       if (document.getElementById('vc-cartel')) return;
       var d = document.createElement('div');
       d.id = 'vc-cartel';
-      d.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483646;display:flex;align-items:center;gap:10px;background:#F3E9D6;border:1px solid #C99A4B;color:#1C1612;border-radius:999px;padding:6px 8px 6px 16px;font:400 13px Jost,system-ui,sans-serif;box-shadow:0 10px 28px -14px rgba(28,22,18,.5);max-width:calc(100vw - 20px);white-space:nowrap;';
+      d.style.cssText = 'position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:2147483646;display:flex;align-items:center;gap:10px;background:#F3E9D6;border:1px solid #C99A4B;color:#1C1612;border-radius:999px;padding:6px 8px 6px 16px;font:400 13px Jost,system-ui,sans-serif;box-shadow:0 10px 28px -14px rgba(28,22,18,.5);max-width:calc(100vw - 20px);white-space:nowrap;';
       var s = document.createElement('span');
       s.style.cssText = 'overflow:hidden;text-overflow:ellipsis;';
       s.textContent = 'Viendo como ' + (vc.nombre || vc.email) + ' · solo lectura' + (vc.local ? ' · adentro del local' : ' · afuera del local');
