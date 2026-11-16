@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v131-ver-como-cartel-abajo';
+const CACHE_VERSION = 'hub-v132-entrar-directo-y-avisos';
 const ASSETS = [
   './',
   './index.html',

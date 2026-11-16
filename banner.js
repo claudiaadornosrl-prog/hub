@@ -158,6 +158,134 @@
     setInterval(function () { if (!vigente()) location.href = '/hub/'; else cartel(); }, 20000);
   } catch (e) {}
 })();
+// ═══════════════════════════════════════════════════════
+//  CARTELES DE ERROR (infra, 16-nov-2026, JP: «los carteles rojos de avisos de sistema, que no se cierren solos, que
+//  tengan una X para cerrarlos a mano, todos en castellano y que se entienda el error, sin tecnicismos»).
+//  window.ADORNO_AVISO = { error(msg), traducir(msg), cerrarTodos() }
+//  · error(msg): cartel rojo fijo arriba, con ✕; NO se cierra solo. El texto pasa por traducir().
+//  · traducir(msg) → { texto, tecnico }: cambia los errores de la base, de la red o del navegador por una frase simple;
+//    el original queda en «Ver detalle técnico» para soporte. Lo que ya está en castellano se deja como está.
+//  · Sin tocar los módulos: si el módulo tiene una función global toast(msg, tipo), los toasts de ERROR pasan por acá
+//    (los demás siguen igual). alert() muestra el texto ya traducido.
+// ═══════════════════════════════════════════════════════
+(function () {
+  if (window.ADORNO_AVISO) return;
+  var REGLAS = [
+    [/read-only transaction/i, 'Estás en modo «Ver como»: es solo para mirar, así que no se guardó nada.'],
+    [/VC0[012]/, 'Esto no está disponible en modo «Ver como».'],
+    [/failed to fetch|networkerror|load failed|network request failed|err_internet|err_network|fetch failed/i, 'No hay conexión con el sistema. Revisá internet y probá de nuevo.'],
+    [/jwt expired|invalid jwt|jwt.*(invalid|malformed|cryptograph)|PGRST30[123]|refresh token|session.*(expired|missing|not found)|not authenticated/i, 'Tu sesión venció. Salí y volvé a entrar.'],
+    [/invalid login credentials|invalid_grant|invalid email or password/i, 'El usuario o la clave no son correctos.'],
+    [/email not confirmed/i, 'Ese usuario todavía no está confirmado. Avisale a JP.'],
+    [/row-level security|violates row level|permission denied|insufficient.privilege|42501|not allowed|forbidden|unauthorized/i, 'Tu usuario no tiene permiso para hacer esto.'],
+    [/duplicate key|already exists|23505|unique constraint/i, 'Eso ya estaba cargado: está repetido.'],
+    [/foreign key|23503|is still referenced/i, 'No se puede: hay otros datos del sistema que dependen de esto.'],
+    [/not-null|null value in column|23502/i, 'Falta completar un dato obligatorio.'],
+    [/check constraint|23514/i, 'Hay un dato con un valor que el sistema no acepta.'],
+    [/invalid input syntax|22P02|invalid input value|date\/time field value out of range|22007|22008/i, 'Hay un dato mal escrito (por ejemplo un número o una fecha).'],
+    [/value too long|22001/i, 'Un texto es demasiado largo.'],
+    [/numeric field overflow|22003|out of range/i, 'Un número es demasiado grande.'],
+    [/statement timeout|canceling statement|57014|timed? ?out|timeout|deadlock|lock timeout|55P03|40P01/i, 'El sistema tardó demasiado en responder. Esperá un momento y probá de nuevo.'],
+    [/could not find the (function|table|relation)|PGRST20[0-5]|schema cache|does not exist|42883|42P01|42703/i, 'Esta parte del sistema todavía no está disponible. Avisale a JP.'],
+    [/payload too large|entity too large|413|file size|exceeded the maximum/i, 'El archivo es demasiado pesado.'],
+    [/too many requests|rate limit|429/i, 'Se hicieron demasiados intentos seguidos. Esperá un minuto y probá de nuevo.'],
+    [/mime type|not supported|unsupported/i, 'Ese tipo de archivo no se acepta.'],
+    [/notallowederror|permission dismissed|permission denied by (user|system)|notfounderror.*(device|camera)|could not start video/i, 'El navegador no dio permiso (cámara, micrófono, ubicación o avisos). Revisá el candado al lado de la dirección.'],
+    [/quota.*exceeded|storage.*full/i, 'Este equipo se quedó sin espacio para guardar datos del sistema.'],
+    [/internal server error|bad gateway|service unavailable|gateway timeout|\b50[0234]\b/i, 'El sistema no está respondiendo bien. Probá de nuevo en un momento.'],
+    [/\b404\b|not found/i, 'No se encontró lo que se buscaba. Puede que ya no exista.'],
+    [/unexpected token|unexpected end of|is not valid json|syntaxerror|typeerror|referenceerror|rangeerror|cannot read prop|is not a function|is not defined|undefined|\[object object\]|null is not|of null|of undefined/i, 'Algo falló adentro del sistema. Probá de nuevo; si sigue pasando, avisale a JP.']
+  ];
+  var CASTELLANO = /[áéíóúñ¿¡]|\b(el|la|los|las|del|que|no|se|un|una|para|con|por|está|falta|ya|tu|te|es|son|hay|esta|este|pudo|pude|puede|tiene|tenés|probá|revisá|avisale)\b/i;
+
+  function traducir(msg) {
+    var orig = String(msg == null ? '' : (msg.message || msg)).trim();
+    if (!orig) return { texto: 'Algo falló. Probá de nuevo.', tecnico: '' };
+    for (var i = 0; i < REGLAS.length; i++) {
+      if (REGLAS[i][0].test(orig)) {
+        // si el módulo ya decía en castellano qué estaba haciendo («No se pudo guardar: …»), eso se conserva
+        var antes = orig.split(/[:：]/)[0].replace(/^[\s✗❌⚠️!¡]+/, '').trim();
+        var sirve = antes && antes.length <= 70 && antes !== orig && CASTELLANO.test(antes) && !REGLAS[i][0].test(antes) && !/^error$/i.test(antes);
+        return { texto: (sirve ? antes.replace(/[.\s]+$/, '') + '. ' : '') + REGLAS[i][1], tecnico: orig };
+      }
+    }
+    if (CASTELLANO.test(orig)) return { texto: orig.replace(/^(error|err)\s*[:：-]\s*/i, ''), tecnico: '' };
+    return { texto: 'Algo falló y el sistema no supo explicarlo. Probá de nuevo; si sigue pasando, avisale a JP.', tecnico: orig };
+  }
+
+  var caja = null, vivos = [];
+  function armarCaja() {
+    if (caja && caja.isConnected) return caja;
+    caja = document.createElement('div');
+    caja.id = 'adorno-avisos';
+    caja.setAttribute('role', 'alert');
+    caja.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483645;display:flex;flex-direction:column;gap:8px;width:min(520px,calc(100vw - 20px));pointer-events:none;font-family:Jost,system-ui,-apple-system,sans-serif;';
+    (document.body || document.documentElement).appendChild(caja);
+    return caja;
+  }
+  function error(msg) {
+    var t = traducir(msg);
+    var ya = vivos.filter(function (v) { return v.texto === t.texto && v.el.isConnected; })[0];
+    if (ya) { ya.n++; ya.cuenta.textContent = '×' + ya.n; ya.cuenta.style.display = ''; return ya.el; }
+    var el = document.createElement('div');
+    el.style.cssText = 'pointer-events:auto;display:flex;align-items:flex-start;gap:10px;background:#F4E1DA;border:1px solid #D9A090;color:#7A2E1F;border-radius:18px;padding:12px 10px 12px 16px;box-shadow:0 14px 34px -16px rgba(28,22,18,.55);font-size:14px;line-height:1.4;';
+    var cuerpo = document.createElement('div'); cuerpo.style.cssText = 'flex:1 1 auto;min-width:0;';
+    var tx = document.createElement('div'); tx.textContent = t.texto; tx.style.cssText = 'font-weight:500;overflow-wrap:anywhere;';
+    var cuenta = document.createElement('span'); cuenta.style.cssText = 'display:none;margin-left:8px;background:#A84B37;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;';
+    tx.appendChild(cuenta); cuerpo.appendChild(tx);
+    if (t.tecnico) {
+      var d = document.createElement('details'); d.style.cssText = 'margin-top:5px;font-size:11px;color:#8C5A4C;';
+      var s = document.createElement('summary'); s.textContent = 'Ver detalle técnico (para soporte)'; s.style.cssText = 'cursor:pointer;';
+      var p = document.createElement('div'); p.textContent = t.tecnico.slice(0, 600); p.style.cssText = 'margin-top:4px;overflow-wrap:anywhere;user-select:text;';
+      d.appendChild(s); d.appendChild(p); cuerpo.appendChild(d);
+    }
+    var x = document.createElement('button');
+    x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', 'Cerrar el aviso'); x.title = 'Cerrar';
+    x.style.cssText = 'flex:0 0 auto;border:0;background:#A84B37;color:#fff;width:28px;height:28px;border-radius:50%;font-size:13px;line-height:1;cursor:pointer;';
+    var reg = { texto: t.texto, el: el, n: 1, cuenta: cuenta };
+    x.onclick = function () { el.remove(); vivos = vivos.filter(function (v) { return v !== reg; }); };
+    el.appendChild(cuerpo); el.appendChild(x);
+    armarCaja().appendChild(el);
+    vivos.push(reg);
+    while (vivos.length > 4) { var v = vivos.shift(); v.el.remove(); }   // como mucho 4 a la vez: se van los más viejos
+    return el;
+  }
+  function cerrarTodos() { vivos.forEach(function (v) { v.el.remove(); }); vivos = []; }
+  window.ADORNO_AVISO = { error: error, traducir: traducir, cerrarTodos: cerrarTodos };
+
+  // ¿este toast es de error? por el 2º argumento (true, 'err', 'error', 'mal', 'bad'…) o, si el módulo no lo distingue, por el texto
+  function esError(msg, tipo) {
+    if (tipo === true) return true;
+    if (typeof tipo === 'string' && tipo) return /err|mal|bad|rojo|danger|fail|fallo/i.test(tipo);
+    if (tipo) return false;
+    var m = String(msg || '');
+    if (/^[\s]*(✗|❌|⛔|error\b|no se pudo|no pude|no pudimos|fall[oó]\b|ups\b)/i.test(m)) return true;
+    for (var i = 0; i < REGLAS.length - 2; i++) if (REGLAS[i][0].test(m) && !CASTELLANO.test(m.split(/[:：]/)[0] === m ? m : '')) return true;
+    return false;
+  }
+  function enganchar() {
+    try {
+      var f = window.toast;
+      if (typeof f === 'function' && !f.__adornoAviso) {
+        var nuevo = function (msg, tipo) {
+          try { if (esError(msg, tipo)) { error(msg); return; } } catch (e) {}
+          return f.apply(this, arguments);
+        };
+        nuevo.__adornoAviso = true;
+        window.toast = nuevo;
+      }
+      var a = window.alert;
+      if (typeof a === 'function' && !a.__adornoAviso) {
+        var na = function (m) { var t; try { t = traducir(m); } catch (e) {} return a.call(window, t && t.tecnico ? t.texto : m); };
+        na.__adornoAviso = true;
+        window.alert = na;
+      }
+    } catch (e) {}
+  }
+  enganchar();
+  document.addEventListener('DOMContentLoaded', enganchar);
+  window.addEventListener('load', enganchar);
+})();
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 //  banner.js — BANNER COMÚN de los módulos (infra, 11-nov-2026). Va con /hub/banner.css (ver ahí cómo se arma).
 //  Se carga justo DESPUÉS del banner (<script src="/hub/banner.js?v=6"></script>), sin async: así la moneda aparece
