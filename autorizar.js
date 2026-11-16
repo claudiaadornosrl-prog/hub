@@ -169,9 +169,10 @@
   // 1) la cámara: true = terminó (autorizado o cancelado); false = seguir con el celu o la clave
   function conCara(a) {
     if (a.op.sinCara || !a.hayCaras || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.resolve(false);
-    ventana({ tit: 'Autorizar · mirá a la cámara', cuerpo:
-      '<div class="aut-video"><video id="aut-video" autoplay muted playsinline></video><div class="aut-msg" id="aut-msg">Abriendo la cámara…</div></div>' +
-      '<div class="aut-sub">Quien puede autorizarlo mira a la cámara y queda registrado con su nombre. Si no está, pedíselo al celu.</div>' +
+    // (15-nov-2026, JP: «en segundo plano, que no se vea») la cámara lee sin mostrarse; solo se ve «Verificando…»
+    ventana({ tit: 'Esto necesita autorización', cuerpo:
+      '<div style="position:fixed;left:-9999px;top:0;width:320px;height:240px;opacity:0;pointer-events:none"><video id="aut-video" autoplay muted playsinline width="320" height="240"></video></div>' +
+      '<div class="aut-sub"><span class="aut-giro"></span><span id="aut-msg">Verificando…</span></div>' +
       '<div class="aut-pie"><button class="aut-btn" data-a="cancelar">Cancelar</button><button class="aut-btn prim" data-a="otro">📱 Pedir al celu o con clave</button></div>' });
     var corte = new Promise(function (r) { a.cortar = r; });
     var video = document.getElementById('aut-video');
@@ -182,11 +183,10 @@
     var carga = Promise.all([a.demo ? espera(400) : caras(), abrirCam]); carga.catch(function () {});
     return Promise.race([carga.then(function () { return true; }), corte.then(function () { return 'corte'; })]).catch(function () { return false; }).then(function (camOk) {
       if (camOk === 'corte' || !sigue()) { camOff(); return A !== a || a.fin; }
-      if (!camOk) { msg('No pude abrir la cámara: pedíselo al celu o con la clave'); return espera(1500).then(function () { camOff(); return A !== a || a.fin; }); }
-      msg('Mirá a la cámara…');
+      if (!camOk) { camOff(); return A !== a || a.fin; }
       var t0 = Date.now();
       var vuelta = function () {
-        if (!sigue() || Date.now() - t0 > 12000) { camOff(); return A !== a || a.fin; }
+        if (!sigue() || Date.now() - t0 > 6000) { camOff(); return A !== a || a.fin; }
         if (a.demo) return espera(1500).then(function () { if (!sigue()) { camOff(); return A !== a || a.fin; } msg('Modo de prueba: no compara caras'); return espera(1500).then(function () { camOff(); return false; }); });
         return faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })).withFaceLandmarks(true).withFaceDescriptor()
           .then(function (d) {
@@ -194,10 +194,10 @@
             return rpc('hub_autorizacion_cara', { p_funcion: a.funcion, p_local: a.local, p_detalle: a.detalle, p_descriptor: Array.from(d.descriptor) })
               .then(function (r) {
                 if (A !== a || a.fin) return true;
-                if (r && r.ok) { msg('✔ Autoriza ' + pila(r.autorizadora), true); return espera(700).then(function () { toast('Lo autorizó ' + pila(r.autorizadora) + ' con la cara'); fin({ id: r.id, nombre: r.autorizadora, modo: 'cara' }); return true; }); }
-                if (r && r.motivo === 'sin_rango') { msg(pila(r.nombre) + ': tu perfil no autoriza esto'); return espera(1800).then(vuelta); }
-                msg('No te reconozco: acercate a la cámara'); return espera(250).then(vuelta);
-              }, function (e) { msg(e.message || 'No se pudo autorizar'); return espera(2000).then(function () { camOff(); return false; }); });
+                if (r && r.ok) { msg('✔ Autorizado por ' + pila(r.autorizadora), true); return espera(700).then(function () { toast('Autorizado por ' + pila(r.autorizadora)); fin({ id: r.id, nombre: r.autorizadora, modo: 'cara' }); return true; }); }
+                if (r && r.motivo === 'sin_rango') { camOff(); return false; }   // la que está adelante no autoriza: directo a celu o clave
+                return espera(250).then(vuelta);
+              }, function () { camOff(); return false; });
           }, function () { return espera(250).then(vuelta); });
       };
       return vuelta();

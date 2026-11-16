@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v113-jp-y-clau';
+const CACHE_VERSION = 'hub-v114-camara-oculta';
 const ASSETS = [
   './',
   './index.html',

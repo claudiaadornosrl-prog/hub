@@ -394,7 +394,7 @@ window.ADORNO_SSO = (function () {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
 <script src="/hub/seguridad.js?v=15"></script>
 <script src="/hub/pos-autorizar.js?v=3"></script>
-<script src="/hub/caras.js?v=6" defer></script>   <!-- (hub v102, 12-nov) grabar la cara de cada persona · v4 (14-nov): registrar() -->
+<script src="/hub/caras.js?v=7" defer></script>   <!-- (hub v102, 12-nov) grabar la cara de cada persona · v4 (14-nov): registrar() -->
 
 <style>
 /* Tipografia institucional: URW Gothic (clon libre de Avant Garde),
@@ -1418,7 +1418,7 @@ window.ADORNO_SSO = (function () {
       const p = _perm.perfiles.find(x => x.id === _permPerfil) || _perm.perfiles[0]; _permPerfil = p.id;
       c.innerHTML = `<div class="perm-chips">${_perm.perfiles.map(x => `<button type="button" class="perm-chip ${x.id === p.id ? 'on' : ''}" onclick="permElegirPerfil('${x.id}')">${_tbEsc(x.nombre)}<small>${_permCuantos(x.id)}</small></button>`).join('')}</div>` +
         `<p class="perm-nota">${_tbEsc(p.descripcion || '')}. ${p.fijo ? 'Siempre ve todos los módulos y es quien maneja estos permisos.' : p.todo ? 'Tiene todas las funciones habilitadas y puede autorizar todo. El interruptor solo decide qué módulos ve al entrar; se guarda al tocar.' : 'El interruptor prende o apaga el módulo entero. Tocá el nombre para ver sus apartados, y un apartado para ver sus funciones y elegir en cada una: Habilitada, Pide permiso u Oculta. Se guarda al tocar.'}</p>` +
-        `<p class="perm-nota">📷 <b>Registra quién</b>: en Sí, cada vez que alguien usa esa función queda anotado quién la hizo (con la cuenta compartida se abre la cámara; ${_permFn && _permFn.caras_activas ? '' : 'mientras las caras estén apagadas, la persona toca su nombre; '}con usuario personal se anota directo). Vale para todos los perfiles. Lo anotado se ve en la pestaña Registro.</p>` +
+        `<p class="perm-nota">📷 <b>Registra quién</b>: en Sí, cada vez que alguien usa esa función queda anotado quién la hizo (con la cuenta compartida la cámara lee la cara sin mostrarse y avisa «Anotado: …»; ${_permFn && _permFn.caras_activas ? '' : 'mientras las caras estén apagadas, la persona toca su nombre; '}con usuario personal se anota directo). Vale para todos los perfiles. Lo anotado se ve en la pestaña Registro.</p>` +
         (_permFn && _permFn.error ? `<p class="perm-nota" style="color:var(--mal);">No pude cargar las funciones: ${_tbEsc(_permFn.error)}</p>` : '') +
         `<div class="perm-lista-mod">${HUB_MODULOS.map(m => { const on = p.modulos.includes(m.id);
           const fs = _permFnsDe(m.id), abierto = _permAbiertos.has(m.id) && (fs.length || !_permFn);

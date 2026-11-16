@@ -12,6 +12,8 @@
 //       .probar({ cli }) · .superior() → cliente | null
 //       .quien({ cli, rpc, params, titulo, nota }) → { ok:true, data, descriptor } | { ok:false, motivo:'cancel'|'lista'|'no'|'camara', error? }
 //         (13-nov-2026) abre la cámara y, sin tocar nada, lee la cara y la busca con la RPC que le pasan (p_descriptor + params).
+//         v7 (15-nov-2026): quien({ oculta:true }) lee la cara sin mostrar la cámara y avisa «✓ Sos …»; registrar() lo usa
+//         siempre (se apaga con oculta:false).
 //       .registrar({ cli, funcion, local, detalle, titulo }) → (14-nov-2026) anota quién hizo una función marcada con
 //         "📷 Registra quién" en el Hub (ver más abajo). Llamarlo antes de la operación; si da ok:false, no hacerla.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -94,6 +96,10 @@
       '.acr-fondo.circ .acr-pie .esp{display:none}',
       '.acr-fondo.circ .acr-b.sec{color:#F7F3EC;box-shadow:inset 0 0 0 1px rgba(247,243,236,.55)}',
       '.acr-fondo.circ .acr-b{background:#F2E8DA;color:#1C1612}',
+      '.acr-pill{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:99995;display:flex;align-items:center;gap:8px;background:#1C1612;color:#F7F3EC;font:500 14px/1.2 "URW Gothic","Jost",system-ui,sans-serif;padding:11px 20px;border-radius:999px;box-shadow:0 8px 26px rgba(28,22,18,.3)}',
+      '.acr-pill.ok{background:#3F6B4F}',
+      '.acr-pgiro{width:13px;height:13px;border-radius:50%;border:2px solid rgba(247,243,236,.35);border-top-color:#F7F3EC;animation:acr-pg .8s linear infinite}',
+      '@keyframes acr-pg{to{transform:rotate(360deg)}}',
       '@media (max-width:520px){.acr-in{font-size:16px}.acr-fila{flex-wrap:wrap}.acr-fila .acc{width:100%;display:flex;gap:6px;justify-content:flex-end}}'
     ].join('\n');
     document.head.appendChild(s);
@@ -378,9 +384,10 @@
     // (15-nov-2026) rapida: una sola lectura buena (más veloz) · circulo: cámara redonda sin recuadro, como el espejo de la PC.
   // (15-nov-2026) sinLlave: la fichada desde el celular (Colaboradores → Fichar) no depende de la llave central: la
     //   persona entra con su usuario y la cara se compara solo contra la suya. sinLista: no ofrece "Elegir de la lista".
-    if (o.sinLlave) return quienCamara(o);
+    var cam = o.oculta ? quienOculta : quienCamara;
+    if (o.sinLlave) return cam(o);
     return Promise.resolve().then(function () { return cli.rpc('hub_caras_activas', {}); }).catch(function () { return null; })
-      .then(function (a) { return (a && !a.error && a.data === true) ? quienCamara(o) : { ok: false, motivo: 'lista', apagado: true }; });
+      .then(function (a) { return (a && !a.error && a.data === true) ? cam(o) : { ok: false, motivo: 'lista', apagado: true }; });
   }
   function quienCamara(o) {
     var cli = o.cli;
@@ -426,6 +433,46 @@
     });
   }
 
+  // ── (15-nov-2026, JP: «que esté en segundo plano, que no se vea… simplemente aparezca "sos tal"») quien({oculta:true})
+  //   No abre ninguna ventana: prende la cámara sin mostrarla, lee la cara y avisa con una pastilla «✓ Sos Soledad».
+  //   Si en unos segundos no reconoce a nadie (o la cámara no anda) devuelve motivo 'lista' y el módulo sigue como
+  //   siempre (elegir el nombre). La luz de la cámara de la compu se prende igual: eso no se puede evitar.
+  function quienOculta(o) {
+    var cli = o.cli;
+    return new Promise(function (listo) {
+      css();
+      var caja = document.createElement('div');
+      caja.style.cssText = 'position:fixed;left:-9999px;top:0;width:320px;height:240px;opacity:0;pointer-events:none';
+      caja.innerHTML = '<video autoplay muted playsinline width="320" height="240"></video>';
+      var pill = document.createElement('div'); pill.className = 'acr-pill';
+      pill.innerHTML = '<span class="acr-pgiro"></span><span class="t">Un momento…</span>';
+      document.body.appendChild(caja); document.body.appendChild(pill);
+      var video = caja.firstChild, terminado = false, tope = null;
+      var fin = function (v, texto) {
+        if (terminado) return; terminado = true; clearTimeout(tope); apagar(); caja.remove();
+        if (texto) { pill.classList.add('ok'); pill.innerHTML = '<span class="t">✓ ' + esc(texto) + '</span>'; setTimeout(function () { pill.remove(); }, 1800); }
+        else pill.remove();
+        listo(v);
+      };
+      var no = function () { fin({ ok: false, motivo: 'lista', oculta: true }); };
+      tope = setTimeout(no, o.espera || 7000);
+      Promise.all([lib(), camara(video)]).then(async function () {
+        for (var i = 0; i < 4 && !terminado; i++) {
+          var r = await lectura(video, function () {}, true);
+          if (terminado) return;
+          if (!r.error) {
+            var q;
+            try { q = await cli.rpc(o.rpc || 'hub_cara_parecida', Object.assign({ p_descriptor: r.descriptor }, o.params || {})); } catch (e) { q = { error: e }; }
+            if (terminado) return;
+            if (!q.error && q.data) { fin({ ok: true, data: q.data, descriptor: r.descriptor, oculta: true }, (o.textoOk || 'Sos') + ' ' + pila(q.data.nombre)); return; }
+          }
+          await esperar(300);
+        }
+        no();
+      }).catch(no);
+    });
+  }
+
   // ── (14-nov-2026, JP: "poner a cada función si necesita o no grabar quién la hizo… abrir la camarita, fijarse quién
   //   lo hizo y grabarlo") ADORNO_CARAS.registrar({ cli, funcion, local, detalle, titulo }) — llamarlo ANTES de la operación.
   //   → { ok:true, omitido:true }  la función no tiene "📷 Registra quién" en el Hub: seguir normal
@@ -453,7 +500,7 @@
     };
     if (d.yo) return anotar(null, 'usuario');
     var titulo = o.titulo || (d.nombre ? d.nombre + ': ¿quién lo hace?' : '¿Quién lo está haciendo?');
-    var q = await quien({ cli: cli, rpc: 'hub_registro_cara', params: params, titulo: titulo,
+    var q = await quien({ cli: cli, rpc: 'hub_registro_cara', params: params, titulo: titulo, oculta: o.oculta !== false, textoOk: 'Anotado:',
       nota: 'Mirá a la cámara: queda anotado quién hizo esto (la foto no se guarda). Si no te reconozco, tocás tu nombre en la lista.' });
     if (q.ok && q.data) return { ok: true, id: q.data.id, empleado_id: q.data.empleado_id, nombre: q.data.nombre, modo: 'cara' };
     if (q.motivo === 'cancel') return { ok: false, motivo: 'cancel' };
