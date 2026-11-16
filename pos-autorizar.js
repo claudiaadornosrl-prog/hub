@@ -1,4 +1,4 @@
-// pos-autorizar.js · v2 (6-nov-2026) · Compartido por el Hub y RRHH (se carga como /hub/pos-autorizar.js).
+// pos-autorizar.js · v3 (15-nov-2026: también los pedidos de la ventana común, accion 'hub' → hub_autorizacion_resolver) · v2 (6-nov-2026) · Compartido por el Hub y RRHH (se carga como /hub/pos-autorizar.js).
 // El POS pide autorización a una encargada/cajera: le llega un push (app rrhh) con el link ?autorizar=ID. En el iPhone la
 // notificación solo puede abrir la PWA que la recibió (el Hub o RRHH), así que el Aceptar / Rechazar vive acá y no en el POS.
 // Usa el cliente `sb` que ya tiene la página (sesión compartida por ADORNO_SSO) y la RPC pos_autorizacion_resolver.
@@ -24,17 +24,18 @@
     const aviso = (t, sub) => { const ov = caja('<b style="font-size:17px">' + esc(t) + '</b><div style="color:#6b7280;font-size:13px;margin-top:6px">' + esc(sub) + '</div><div style="text-align:right;margin-top:14px"><button id="pa-ok" ' + B('#fff', '#0e7490', '#0e7490') + '>Listo</button></div>'); ov.querySelector('#pa-ok').onclick = cerrar; };
     if (!a) { aviso('No encontré ese pedido de autorización', 'Puede que lo hayan cancelado o que sea de otro local.'); return; }
     if (a.estado !== 'pendiente') { aviso(a.estado === 'aceptada' || a.estado === 'usada' ? 'Ese pedido ya estaba aceptado' : a.estado === 'rechazada' ? 'Ese pedido ya estaba rechazado' : 'Ese pedido se canceló o venció', ((a.detalle || {}).resumen || '') + (a.autorizadora_nombre ? ' · lo resolvió ' + pila(a.autorizadora_nombre) : '')); return; }
-    const hora = new Date(a.creado_at).toTimeString().slice(0, 5);
-    const ov = caja('<b style="font-size:17px">' + esc(pila(a.pedido_por_nombre)) + ' pide autorizar ' + esc(NOM[a.accion] || a.accion) + '</b>' +
+    const hora = new Date(a.creado_at).toTimeString().slice(0, 5), esHub = a.accion === 'hub';
+    const ov = caja('<b style="font-size:17px">' + esc(pila(a.pedido_por_nombre)) + ' pide autorizar ' + esc(esHub ? ((a.detalle || {}).que || 'una operación') : (NOM[a.accion] || a.accion)) + '</b>' +
       '<div style="margin:10px 0 4px">' + esc((a.local || '').charAt(0).toUpperCase() + (a.local || '').slice(1)) + ' · ' + esc((a.detalle || {}).resumen || '') + '</div>' +
       '<div style="color:#6b7280;font-size:13px">Pedido a las ' + hora + ' · vence a los 10 minutos</div>' +
       '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="pa-no" ' + B('#1f2937', '#fff', '#e5e7eb') + '>Rechazar</button><button id="pa-si" ' + B('#fff', '#0e7490', '#0e7490') + '>Aceptar</button></div>');
     const r = async acepta => {
       ov.querySelectorAll('button').forEach(b => b.disabled = true);
-      const { data, error } = await cli.rpc('pos_autorizacion_resolver', { p_id: Number(id), p_acepta: acepta });
+      const { data, error } = await cli.rpc(esHub ? 'hub_autorizacion_resolver' : 'pos_autorizacion_resolver', { p_id: Number(id), p_acepta: acepta });
       if (error) { aviso('No se pudo', String(error.message || '').replace(/^.*?: /, '')); return; }
       if (data && data.ya) aviso('Ya lo había resuelto ' + pila(data.autorizadora), '');
       else if (data && data.estado === 'vencida') aviso('El pedido venció', 'Pasaron más de 10 minutos. Que lo pidan de nuevo.');
+      else if (esHub) aviso(acepta ? 'Listo: ya quedó autorizado' : 'Rechazado', acepta ? 'En la compu del local siguen solos.' : 'En la compu del local ven que lo rechazaste.');
       else aviso(acepta ? 'Listo: ' + pila(a.pedido_por_nombre) + ' ya puede emitir' : 'Rechazado', acepta ? 'El comprobante sale solo en la caja.' : 'En la caja ven que lo rechazaste.');
     };
     ov.querySelector('#pa-si').onclick = () => r(true); ov.querySelector('#pa-no').onclick = () => r(false);
