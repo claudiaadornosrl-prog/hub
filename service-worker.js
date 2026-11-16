@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v117-caras-v8';
+const CACHE_VERSION = 'hub-v118-apartados';
 const ASSETS = [
   './',
   './index.html',
