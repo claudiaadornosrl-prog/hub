@@ -174,6 +174,8 @@
     [/read-only transaction/i, 'Estás en modo «Ver como»: es solo para mirar, así que no se guardó nada.'],
     [/VC0[012]/, 'Esto no está disponible en modo «Ver como».'],
     [/failed to fetch|networkerror|load failed|network request failed|err_internet|err_network|fetch failed/i, 'No hay conexión con el sistema. Revisá internet y probá de nuevo.'],
+    [/invalid x-api-key|authentication_error/i, 'La clave de un servicio que usa el sistema no es válida. Avisale a JP.'],
+    [/claude -p error|claude api|anthropic|overloaded_error/i, 'Claude no pudo terminar el trabajo. Probá de nuevo; si sigue pasando, avisale a JP.'],
     [/jwt expired|invalid jwt|jwt.*(invalid|malformed|cryptograph)|PGRST30[123]|refresh token|session.*(expired|missing|not found)|not authenticated/i, 'Tu sesión venció. Salí y volvé a entrar.'],
     [/invalid login credentials|invalid_grant|invalid email or password/i, 'El usuario o la clave no son correctos.'],
     [/email not confirmed/i, 'Ese usuario todavía no está confirmado. Avisale a JP.'],
@@ -206,8 +208,24 @@
         // si el módulo ya decía en castellano qué estaba haciendo («No se pudo guardar: …»), eso se conserva
         var antes = orig.split(/[:：]/)[0].replace(/^[\s✗❌⚠️!¡]+/, '').trim();
         var sirve = antes && antes.length <= 70 && antes !== orig && CASTELLANO.test(antes) && !REGLAS[i][0].test(antes) && !/^error$/i.test(antes);
+        // texto largo en castellano que al final pega el error técnico («…explicación… Detalle técnico: Failed to fetch»):
+        // la explicación se conserva entera y solo se cambia la cola técnica (aviso de Ventas)
+        var ult = orig.lastIndexOf(':');
+        if (!sirve && orig.length > 110 && ult > 70) {
+          var cabeza = orig.slice(0, ult).replace(/[\s\n]*(detalle t[eé]cnico|motivo|error|detalle)\s*$/i, '').trim();
+          if (cabeza && CASTELLANO.test(cabeza) && !REGLAS[i][0].test(cabeza))
+            return { texto: cabeza.replace(/[.\s]+$/, '') + '.\n' + REGLAS[i][1], tecnico: orig };
+        }
         return { texto: (sirve ? antes.replace(/[.\s]+$/, '') + '. ' : '') + REGLAS[i][1], tecnico: orig };
       }
+    }
+    // «No se pudo redactar: <algo técnico que no reconozco>»: se muestra lo de antes en castellano y lo técnico va aparte
+    var corte = orig.search(/[:：]/);
+    if (corte > 0 && corte <= 70) {
+      var cab = orig.slice(0, corte).replace(/^[\s✗❌⚠️!¡]+/, '').trim(), cola = orig.slice(corte + 1).trim();
+      var colaTecnica = cola && /[{}\[\]<>]|\w+_\w+|[A-Z]{2,}\d{2,}|\b(error|failed|invalid|unexpected|cannot|exception|null|undefined|denied|missing|not found)\b/i.test(cola);
+      if (cab && CASTELLANO.test(cab) && !/^error$/i.test(cab) && colaTecnica)
+        return { texto: cab.replace(/[.\s]+$/, '') + '. Algo falló y el sistema no supo explicarlo. Probá de nuevo; si sigue pasando, avisale a JP.', tecnico: orig };
     }
     if (CASTELLANO.test(orig)) return { texto: orig.replace(/^(error|err)\s*[:：-]\s*/i, ''), tecnico: '' };
     return { texto: 'Algo falló y el sistema no supo explicarlo. Probá de nuevo; si sigue pasando, avisale a JP.', tecnico: orig };
@@ -230,7 +248,7 @@
     var el = document.createElement('div');
     el.style.cssText = 'pointer-events:auto;display:flex;align-items:flex-start;gap:10px;background:#F4E1DA;border:1px solid #D9A090;color:#7A2E1F;border-radius:18px;padding:12px 10px 12px 16px;box-shadow:0 14px 34px -16px rgba(28,22,18,.55);font-size:14px;line-height:1.4;';
     var cuerpo = document.createElement('div'); cuerpo.style.cssText = 'flex:1 1 auto;min-width:0;';
-    var tx = document.createElement('div'); tx.textContent = t.texto; tx.style.cssText = 'font-weight:500;overflow-wrap:anywhere;';
+    var tx = document.createElement('div'); tx.textContent = t.texto; tx.style.cssText = 'font-weight:500;overflow-wrap:anywhere;white-space:pre-line;';
     var cuenta = document.createElement('span'); cuenta.style.cssText = 'display:none;margin-left:8px;background:#A84B37;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;';
     tx.appendChild(cuenta); cuerpo.appendChild(tx);
     if (t.tecnico) {
