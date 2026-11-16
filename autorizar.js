@@ -38,7 +38,10 @@
   function leerSesion(k) {
     try { var j = JSON.parse(localStorage.getItem(k) || 'null'); var s = j && (j.currentSession || j); return s && s.user ? { email: String(s.user.email || '').toLowerCase(), token: s.access_token } : null; } catch (e) { return null; }
   }
-  function sesion() { return leerSesion((window.ADORNO_SSO && ADORNO_SSO.KEY) || 'adorno-auth') || leerSesion('ca_session'); }
+  // v4 (15-nov, pedido de Clientes): pedir({ sesion: { email, token } }) usa la sesión DEL MÓDULO en esa ventana (en una
+  //   compu puede haber otra cuenta abierta en el Hub); usar(id, { sesion }) igual. Sin eso, la del Hub o 'ca_session'.
+  var SES = null;
+  function sesion() { return SES || leerSesion((window.ADORNO_SSO && ADORNO_SSO.KEY) || 'adorno-auth') || leerSesion('ca_session'); }
   function rpc(nombre, args, token) {
     var s = sesion(), tk = token || (s && s.token);
     return fetch(SB + '/rest/v1/rpc/' + nombre, { method: 'POST', cache: 'no-store', headers: { apikey: KEY, Authorization: 'Bearer ' + (tk || KEY), 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) })
@@ -149,6 +152,7 @@
     if (!op.local) return Promise.reject(new Error('ADORNO_AUTORIZAR.pedir: falta el local'));
     if (!op.funcion && !op.demo) return Promise.reject(new Error('ADORNO_AUTORIZAR.pedir: falta la función del Hub'));
     return new Promise(function (resolve) {
+      SES = (op.sesion && op.sesion.token) ? { email: String(op.sesion.email || '').toLowerCase(), token: op.sesion.token } : null;
       var s = sesion();
       A = { op: op, modulo: op.modulo || moduloActual(), local: String(op.local).toLowerCase(), funcion: op.funcion || '',
             que: op.que || '', resumen: op.resumen || op.que || '', demo: !!op.demo,
@@ -291,7 +295,7 @@
   // ── la operación "gasta" la autorización (mejor hacerlo dentro de la función de la base que la hace) ──
   function usar(id, op) {
     op = op || {};
-    return rpc('hub_autorizacion_usar', { p_id: id, p_funcion: op.funcion, p_local: String(op.local || '').toLowerCase(), p_usado_en: op.usado_en || null });
+    return rpc('hub_autorizacion_usar', { p_id: id, p_funcion: op.funcion, p_local: String(op.local || '').toLowerCase(), p_usado_en: op.usado_en || null }, op.sesion && op.sesion.token);
   }
 
   var DEMO = [

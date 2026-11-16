@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v114-camara-oculta';
+const CACHE_VERSION = 'hub-v115-autorizar-sesion';
 const ASSETS = [
   './',
   './index.html',
