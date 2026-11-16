@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v136-avisos-token-meta';
+const CACHE_VERSION = 'hub-v137-avisos-a-la-derecha';
 const ASSETS = [
   './',
   './index.html',

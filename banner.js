@@ -217,6 +217,7 @@
   var CASTELLANO = { test: function (t) {
     t = String(t || '');
     if (/[áéíóúñ¿¡]/i.test(t)) return true;
+    if (/^[^a-z]*(error (al|en|de|con)|no se|no pude|no pudimos|falta|fallo)/i.test(t)) return true;
     var m = t.match(_PAL), n = m ? m.length : 0;
     return n >= 2 || (n === 1 && !_ING.test(t));
   } };
@@ -258,7 +259,7 @@
     caja = document.createElement('div');
     caja.id = 'adorno-avisos';
     caja.setAttribute('role', 'alert');
-    caja.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483645;display:flex;flex-direction:column;gap:8px;width:min(520px,calc(100vw - 20px));pointer-events:none;font-family:Jost,system-ui,-apple-system,sans-serif;';
+    caja.style.cssText = 'position:fixed;top:66px;right:12px;z-index:2147483645;display:flex;flex-direction:column;align-items:stretch;gap:8px;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 90px);overflow-y:auto;pointer-events:none;font-family:Jost,system-ui,-apple-system,sans-serif;';
     (document.body || document.documentElement).appendChild(caja);
     return caja;
   }
@@ -287,9 +288,23 @@
     armarCaja().appendChild(el);
     vivos.push(reg);
     while (vivos.length > 4) { var v = vivos.shift(); v.el.remove(); }   // como mucho 4 a la vez: se van los más viejos
+    x.addEventListener('click', botonTodos);
+    botonTodos();
     return el;
   }
-  function cerrarTodos() { vivos.forEach(function (v) { v.el.remove(); }); vivos = []; }
+  var todos = null;
+  function botonTodos() {
+    var n = vivos.filter(function (v) { return v.el.isConnected; }).length;
+    if (n < 2) { if (todos) { todos.remove(); todos = null; } return; }
+    if (!todos || !todos.isConnected) {
+      todos = document.createElement('button');
+      todos.type = 'button'; todos.textContent = 'Cerrar todos';
+      todos.style.cssText = 'pointer-events:auto;align-self:flex-end;order:99;border:0;background:#1C1612;color:#F7F3EC;border-radius:999px;padding:7px 15px;font:inherit;font-size:12px;cursor:pointer;';
+      todos.onclick = cerrarTodos;
+    }
+    armarCaja().appendChild(todos);
+  }
+  function cerrarTodos() { vivos.forEach(function (v) { v.el.remove(); }); vivos = []; if (todos) { todos.remove(); todos = null; } }
   window.ADORNO_AVISO = { error: error, traducir: traducir, cerrarTodos: cerrarTodos };
 
   // ¿este toast es de error? por el 2º argumento (true, 'err', 'error', 'mal', 'bad'…) o, si el módulo no lo distingue, por el texto
