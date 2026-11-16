@@ -460,8 +460,12 @@
         listo(v);
       };
       var no = function () { fin({ ok: false, motivo: 'lista', oculta: true }); };
-      tope = setTimeout(no, o.espera || 7000);
+      // (16-nov-2026, v10) el tiempo para reconocer corre recién con la cámara ABIERTA: si la tiene el fichador, pedírsela
+      //   (banner.js) tarda 1 a 2,5 s y antes se comía la espera. Para abrirla hay 15 s aparte.
+      tope = setTimeout(no, 15000);
       Promise.all([lib(), camara(video)]).then(async function () {
+        clearTimeout(tope); if (terminado) return;
+        tope = setTimeout(no, o.espera || 7000);
         for (var i = 0; i < 4 && !terminado; i++) {
           var r = await lectura(video, function () {}, true);
           if (terminado) return;
