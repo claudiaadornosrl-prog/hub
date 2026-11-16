@@ -303,5 +303,5 @@
     { empleado_id: 2, nombre: 'PÉREZ, LUCÍA', rol: 'cajera', push: false, presente: true, fuente: 'turno', hora: '10:00' },
     { empleado_id: 3, nombre: 'SIMONELLI, JUAN PABLO', rol: 'dueño', push: true, presente: false }
   ];
-  window.ADORNO_AUTORIZAR = { pedir: pedir, usar: usar, MODO: MODO };
+  window.ADORNO_AUTORIZAR = { pedir: pedir, usar: usar, MODO: MODO, SESION: true };   // SESION: acepta sesion:{email,token} (v4+)
 })();
