@@ -69,7 +69,7 @@
     }
     function trabada(motivo) {
       aviso('Modo «Ver como»: es solo para mirar, no se modifica nada.');
-      return Promise.resolve(new Response(JSON.stringify({ code: 'VC00', message: 'Modo «Ver como»: solo lectura (' + motivo + ')' }),
+      return Promise.resolve(new Response(JSON.stringify({ code: 'VC00', message: 'Modo «Ver como»: solo lectura (' + motivo + ')', error: 'En modo «Ver como» esto no está disponible (' + motivo + ')' }),
         { status: 403, headers: { 'Content-Type': 'application/json' } }));
     }
     window.fetch = function (input, init) {
@@ -92,6 +92,10 @@
         }
         if (url.indexOf('/rest/v1/') >= 0) {
           var h = new Headers((init && init.headers) || (typeof input !== 'string' && input && input.headers) || {});
+          // solo si la consulta va con el token de JP: un cliente aparte (quien autoriza con su clave) o la clave pública no se disfrazan
+          var sub = null;
+          try { var tk = (h.get('Authorization') || '').replace(/^Bearer\s+/i, '').split('.')[1]; sub = tk ? JSON.parse(atob(tk.replace(/-/g, '+').replace(/_/g, '/'))).sub : null; } catch (e) {}
+          if (sub !== vc.de) return fetchReal.apply(this, arguments);
           h.set('x-ver-como', vc.email);
           if (vc.local) h.set('x-ver-como-local', '1');
           var i2 = {}; if (init) for (var k in init) i2[k] = init[k];

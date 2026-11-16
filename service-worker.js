@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v127-ver-como-autorizar';
+const CACHE_VERSION = 'hub-v128-ver-como-token';
 const ASSETS = [
   './',
   './index.html',
