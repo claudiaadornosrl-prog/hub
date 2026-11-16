@@ -464,7 +464,8 @@
       //   (banner.js) tarda 1 a 2,5 s y antes se comía la espera. Para abrirla hay 15 s aparte.
       tope = setTimeout(no, 15000);
       Promise.all([lib(), camara(video)]).then(async function () {
-        clearTimeout(tope); if (terminado) return;
+        clearTimeout(tope);
+        if (terminado) { apagar(); return; }   // la cámara llegó tarde (ya se había pasado a la lista): se suelta, si no el fichador queda en pausa (aviso de Ventas)
         tope = setTimeout(no, o.espera || 7000);
         for (var i = 0; i < 4 && !terminado; i++) {
           var r = await lectura(video, function () {}, true);
