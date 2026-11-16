@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v121-solo-colaboradores';
+const CACHE_VERSION = 'hub-v122-en-el-local';
 const ASSETS = [
   './',
   './index.html',
