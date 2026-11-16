@@ -23,7 +23,10 @@
     if (/^\/hub\//.test(location.pathname)) return;                       // el Hub siempre se ve con la cuenta de JP
     var real = null;
     try { real = JSON.parse(getReal.call(localStorage, SES) || 'null'); } catch (e) {}
-    if (!real || !real.user || real.user.id !== vc.de) return;             // la sesión abierta no es la de quien pidió «ver como»
+    // de quién es la sesión se mira en el TOKEN (no en el `user` guardado, que podría haber quedado disfrazado)
+    function subDe(tok) { try { return JSON.parse(atob(String(tok).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub || null; } catch (e) { return null; } }
+    if (!real || !real.access_token || subDe(real.access_token) !== vc.de) return;   // la sesión abierta no es la de quien pidió «ver como»
+    var userReal = (real.user && real.user.id === vc.de) ? real.user : { id: vc.de, aud: 'authenticated', role: 'authenticated', email: vc.de_email || '', app_metadata: {}, user_metadata: {} };
     window.ADORNO_VERCOMO = { email: vc.email, nombre: vc.nombre || vc.email, salir: salir };
 
     function salir() { try { localStorage.removeItem(MARCA); } catch (e) {} location.href = '/hub/'; }
@@ -46,12 +49,30 @@
         if (this === localStorage && vigente()) {
           if (k === SES && v) {
             var s = JSON.parse(v);
-            if (s && s.user && s.user.id === vc.de) { s.user = disfrazar(s.user); return JSON.stringify(s); }
+            if (s && s.user && subDe(s.access_token) === vc.de) { s.user = disfrazar(s.user); return JSON.stringify(s); }
           }
           if (typeof k === 'string' && k.indexOf('adorno-modulo-') === 0) return '1';   // que no pida la clave por cambio de cuenta
         }
       } catch (e) {}
       return v;
+    };
+
+    // 1b) lo que se GUARDA es siempre la sesión real de JP: si el token se renueva en este modo, supabase-js guarda la
+    //     respuesta (que le llegó disfrazada) y sin esto quedaría el `user` de la otra cuenta con el token de JP.
+    //     Tampoco se borra la sesión guardada (un signOut del módulo no desloguea a JP).
+    var setReal = Storage.prototype.setItem, delReal = Storage.prototype.removeItem;
+    Storage.prototype.setItem = function (k, v) {
+      try {
+        if (this === localStorage && k === SES && typeof v === 'string') {
+          var s = JSON.parse(v);
+          if (s && s.user && s.user.id === vc.id && subDe(s.access_token) === vc.de) { s.user = userReal; v = JSON.stringify(s); }
+        }
+      } catch (e) {}
+      return setReal.call(this, k, v);
+    };
+    Storage.prototype.removeItem = function (k) {
+      if (this === localStorage && k === SES && vigente()) return;
+      return delReal.apply(this, arguments);
     };
 
     // 2) las consultas a la base llevan el encabezado; lo que no es lectura de la base no sale

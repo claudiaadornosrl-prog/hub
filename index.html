@@ -3062,7 +3062,7 @@ cargarTablero();
     const { data: { session } } = await sb.auth.getSession();
     if (!session) return;
     try {
-      localStorage.setItem(MARCA, JSON.stringify({ email: VC.email, id: VC.id, nombre: VC.nombre || VC.email, de: session.user.id, local: !!VC_LOCAL, hasta: Date.now() + 60 * 60 * 1000 }));
+      localStorage.setItem(MARCA, JSON.stringify({ email: VC.email, id: VC.id, nombre: VC.nombre || VC.email, de: session.user.id, de_email: session.user.email, local: !!VC_LOCAL, hasta: Date.now() + 60 * 60 * 1000 }));
     } catch (_) { alert('No pude preparar el modo «Ver como» en este navegador.'); return; }
     location.href = u;
   };
