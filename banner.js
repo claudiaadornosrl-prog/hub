@@ -80,7 +80,12 @@
         if (url.indexOf('/functions/v1/') >= 0) return trabada('funciones');
         if (url.indexOf('/storage/v1/') >= 0 && metodo !== 'GET' && metodo !== 'HEAD' && url.indexOf('/object/sign') < 0 && url.indexOf('/object/list') < 0) return trabada('archivos');
         if (url.indexOf('/auth/v1/') >= 0) {
-          if (metodo !== 'GET' && url.indexOf('/auth/v1/token') < 0) return trabada('cuenta');       // nada de cambiar clave, cerrar sesión, etc.
+          // «Salir» del módulo: se sale del modo y se vuelve al Hub SIN cerrar la sesión de JP (la promesa no se resuelve
+          //   a propósito: si devolviera 403, supabase-js borraría igual la sesión guardada)
+          if (url.indexOf('/auth/v1/logout') >= 0) { salir(); return new Promise(function () {}); }
+          // de /token solo pasa la renovación: nadie inicia sesión con su clave en este modo
+          if (url.indexOf('/auth/v1/token') >= 0 && url.indexOf('grant_type=refresh_token') < 0) return trabada('iniciar sesión');
+          if (metodo !== 'GET' && url.indexOf('/auth/v1/token') < 0) return trabada('cuenta');       // nada de cambiar clave, etc.
           return fetchReal.apply(this, arguments).then(function (r) {
             if (!r.ok) return r;
             return r.clone().json().then(function (j) {

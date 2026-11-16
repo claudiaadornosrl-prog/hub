@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v128-ver-como-token';
+const CACHE_VERSION = 'hub-v129-ver-como-salir';
 const ASSETS = [
   './',
   './index.html',
