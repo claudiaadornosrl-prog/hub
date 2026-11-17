@@ -130,7 +130,9 @@
     var t = (p && p.tomas) || [];
     var base = ['frente', 'izq', 'der'].filter(function (v) { return t.indexOf(v) >= 0; }).length;
     var lentes = t.indexOf('lentes') >= 0;
-    if (base === 3) return { cls: 'si', txt: '✓ Grabada' + (lentes ? ' · con lentes' : ''), completa: true, lentes: lentes };
+    // (17-nov) tomas «auto_N»: las que el sistema aprendió solo en el mostrador (POS / fichador)
+    var auto = t.filter(function (v) { return /^auto_/.test(v); }).length;
+    if (base === 3) return { cls: 'si', txt: '✓ Grabada' + (lentes ? ' · con lentes' : '') + (auto ? ' · +' + auto + ' aprendida' + (auto === 1 ? '' : 's') : ''), completa: true, lentes: lentes };
     if (t.length) return { cls: 'media', txt: 'Incompleta · ' + t.length + (t.length === 1 ? ' toma' : ' tomas'), completa: false, lentes: lentes };
     return { cls: 'no', txt: 'Sin grabar', completa: false, lentes: false };
   }
@@ -245,7 +247,8 @@
       if (!d) { var r = await cli.rpc('hub_caras_listar'); if (r.error) { cuerpo.innerHTML = '<div class="acr-err">' + esc(msjError(r.error)) + '</div>'; return; } d = r.data; }
       var ps = d.personas || [], yo = d.yo || {}, listas = ps.filter(function (p) { return estado(p).completa; }).length;
       var h = '<p class="acr-nota">Cada persona graba su cara una sola vez, parada frente a la cámara de esta computadora: tres tomas seguidas (de frente y los dos costados). ' +
-        'Después el sistema la reconoce para autorizar y para saber quién hizo cada cosa. No se guarda ninguna foto. Las cuentas compartidas no llevan cara.</p>' +
+        'Después el sistema la reconoce para autorizar y para saber quién hizo cada cosa. No se guarda ninguna foto. Las cuentas compartidas no llevan cara. ' +
+        'Desde el 17-nov la cara <b>aprende sola</b>: cada reconocimiento confirmado en el POS o en el fichador suma una toma más («aprendidas», hasta 6), con la luz y la cámara de cada mostrador.</p>' +
         '<p class="acr-resumen"><b>' + listas + ' de ' + ps.length + '</b> con la cara grabada' + (yo.admin ? '' : ' en ' + esc(LOCALES[yo.local] || yo.local || 'tu local')) + ' · graba ' + esc(nombre(yo.nombre)) + '</p>';
       var grupo = null;
       ps.forEach(function (p) {

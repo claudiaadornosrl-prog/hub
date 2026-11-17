@@ -348,7 +348,8 @@
 //  tomada todo el día. Acá se envuelve getUserMedia para TODO el sistema (caras, autorizar, POS, Colaboradores):
 //   · primero se pide la cámara como siempre;
 //   · si está ocupada (NotReadableError / «Could not start video source» / «in use»), se le pide al fichador que la
-//     suelte (POST http://127.0.0.1:8765/pausa), se espera un momento y se reintenta;
+//     suelte (http://127.0.0.1:8765/pausa), se espera y se reintenta con paciencia (~6 s); la compu se acuerda de que
+//     tiene fichador y la próxima vez pide la pausa antes de abrir (17-nov);
 //   · cuando la página suelta la cámara (o se cierra), se le avisa que siga (/sigue). Si nadie avisa, el fichador
 //     retoma solo a los 3 minutos.
 //  Solo se habla con el fichador cuando la cámara está ocupada: en celulares y compus sin fichador no cambia nada.
@@ -380,17 +381,34 @@
       return st;
     }
     var OCUPADA = /notreadable|could not start video|in use|device.*busy|trackstart|aborterror/i;
+    function ocupada(e) { return OCUPADA.test(String((e && e.name) || '') + ' ' + String((e && e.message) || '')); }
+    // (17-nov, JP: «en las compus de los locales me dice que la cámara está en uso») La primera vez que esta compu tuvo
+    // que pedirle la cámara al fichador se acuerda (localStorage): de ahí en más le pide la pausa ANTES de abrir la cámara,
+    // sin esperar a que falle. Y después de la pausa reintenta con paciencia (hasta ~6 s): Windows tarda en soltar la cámara.
+    function hayFichador() { try { return localStorage.getItem('adorno_fichador') === '1'; } catch (e) { return false; } }
+    function anotarFichador() { try { localStorage.setItem('adorno_fichador', '1'); } catch (e) {} }
+    var ESPERAS = [700, 1200, 1800, 2500];
+    function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    function conPaciencia(c, i) {
+      return real(c).catch(function (e) {
+        if (!ocupada(e) || i >= ESPERAS.length) throw e;
+        return esperar(ESPERAS[i]).then(function () { return conPaciencia(c, i + 1); });
+      });
+    }
+    function pedirPausaYAbrir(c, eOriginal) {
+      return llamar('/pausa').then(function (ok) {
+        if (!ok) { if (eOriginal) throw eOriginal; return real(c); }   // no hay fichador en esta compu
+        anotarFichador(); pausado = true;
+        return esperar(300).then(function () { return conPaciencia(c, 0); })
+          .then(vigilar, function (e2) { if (abiertas <= 0) seguir(); throw e2; });
+      });
+    }
     md.getUserMedia = function (c) {
       if (!c || !c.video) return real(c);
+      if (hayFichador() && !pausado) return pedirPausaYAbrir(c, null);
       return real(c).then(function (st) { return pausado ? vigilar(st) : st; }, function (e) {
-        if (!OCUPADA.test(String((e && e.name) || '') + ' ' + String((e && e.message) || ''))) throw e;
-        return llamar('/pausa').then(function (ok) {
-          if (!ok) throw e;                                   // no hay fichador en esta compu: el error original
-          pausado = true;
-          return new Promise(function (r) { setTimeout(r, 900); }).then(function () { return real(c); })
-            .catch(function () { return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return real(c); }); })
-            .then(vigilar, function (e2) { if (abiertas <= 0) seguir(); throw e2; });
-        });
+        if (!ocupada(e)) throw e;
+        return pedirPausaYAbrir(c, e);
       });
     };
     window.addEventListener('pagehide', function () { if (pausado) { try { navigator.sendBeacon(FICH + '/sigue'); } catch (e) {} pausado = false; } });

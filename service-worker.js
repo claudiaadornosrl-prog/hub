@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v145-camara-tardia';
+const CACHE_VERSION = 'hub-v146-camara-paciente';
 const ASSETS = [
   './',
   './index.html',
