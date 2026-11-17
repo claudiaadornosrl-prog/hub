@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v147-autorizar-pastillas';
+const CACHE_VERSION = 'hub-v148-pausa-6s';
 const ASSETS = [
   './',
   './index.html',

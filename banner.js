@@ -360,12 +360,14 @@
     if (!md || !md.getUserMedia || md.__adornoFichador) return;
     md.__adornoFichador = true;
     var real = md.getUserMedia.bind(md), FICH = 'http://127.0.0.1:8765', pausado = false, abiertas = 0;
-    function llamar(ruta) {
+    function llamar(ruta, tope) {
       try {
-        var c = new AbortController(); setTimeout(function () { c.abort(); }, 1500);
+        var c = new AbortController(), vencido = false; setTimeout(function () { vencido = true; c.abort(); }, tope || 1500);
         // GET «simple» y sin leer la respuesta (no-cors): así no depende de los encabezados CORS del fichador ni dispara
-        // una consulta previa; si el fichador no corre, la conexión falla enseguida y devuelve false
-        return fetch(FICH + ruta, { method: 'GET', mode: 'no-cors', signal: c.signal, cache: 'no-store' }).then(function () { return true; }, function () { return false; });
+        // una consulta previa; si el fichador no corre, la conexión falla enseguida y devuelve false.
+        // (17-nov, v12) /pausa contesta recién cuando el fichador soltó la cámara (hasta 4 s): se le da 6 s, y si aun así
+        // vence, se asume que el fichador EXISTE y está soltando (un «no hay fichador» real falla al instante, no por tiempo).
+        return fetch(FICH + ruta, { method: 'GET', mode: 'no-cors', signal: c.signal, cache: 'no-store' }).then(function () { return true; }, function () { return vencido; });
       } catch (e) { return Promise.resolve(false); }
     }
     function seguir() { if (!pausado) return; pausado = false; llamar('/sigue'); }
@@ -396,7 +398,7 @@
       });
     }
     function pedirPausaYAbrir(c, eOriginal) {
-      return llamar('/pausa').then(function (ok) {
+      return llamar('/pausa', 6000).then(function (ok) {
         if (!ok) { if (eOriginal) throw eOriginal; return real(c); }   // no hay fichador en esta compu
         anotarFichador(); pausado = true;
         return esperar(300).then(function () { return conPaciencia(c, 0); })
