@@ -370,7 +370,17 @@
         return fetch(FICH + ruta, { method: 'GET', mode: 'no-cors', signal: c.signal, cache: 'no-store' }).then(function () { return true; }, function () { return vencido; });
       } catch (e) { return Promise.resolve(false); }
     }
-    function seguir() { if (!pausado) return; pausado = false; llamar('/sigue'); }
+    // (17-nov, v13, aviso del POS) El «sigue» se demora 2,5 s: al Emitir, el POS usa la cámara dos veces seguidas (quién
+    // emite → autorización) y si avisábamos al instante el fichador la retomaba en el medio y había que volver a pedirla
+    // (a veces el stream siguiente abría sin imagen). Si en ese lapso vuelven a pedir cámara, el aviso se cancela.
+    var sigueTimer = null;
+    function seguir(ya) {
+      if (!pausado) return;
+      if (sigueTimer) { clearTimeout(sigueTimer); sigueTimer = null; }
+      if (ya) { pausado = false; llamar('/sigue'); return; }
+      sigueTimer = setTimeout(function () { sigueTimer = null; if (pausado && abiertas <= 0) { pausado = false; llamar('/sigue'); } }, 2500);
+    }
+    function cancelarSigue() { if (sigueTimer) { clearTimeout(sigueTimer); sigueTimer = null; } }
     function vigilar(st) {
       abiertas++;
       var vivos = st.getVideoTracks().length || 1, listo = false;
@@ -407,13 +417,15 @@
     }
     md.getUserMedia = function (c) {
       if (!c || !c.video) return real(c);
-      if (hayFichador() && !pausado) return pedirPausaYAbrir(c, null);
+      cancelarSigue();   // vuelven a pedir cámara: el fichador sigue en pausa, no hace falta soltarla y volver a pedirla
+      if (pausado) return conPaciencia(c, 0).then(vigilar, function (e) { if (abiertas <= 0) seguir(); throw e; });
+      if (hayFichador()) return pedirPausaYAbrir(c, null);
       return real(c).then(function (st) { return pausado ? vigilar(st) : st; }, function (e) {
         if (!ocupada(e)) throw e;
         return pedirPausaYAbrir(c, e);
       });
     };
-    window.addEventListener('pagehide', function () { if (pausado) { try { navigator.sendBeacon(FICH + '/sigue'); } catch (e) {} pausado = false; } });
+    window.addEventListener('pagehide', function () { cancelarSigue(); if (pausado) { try { navigator.sendBeacon(FICH + '/sigue'); } catch (e) {} pausado = false; } });
   } catch (e) {}
 })();
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
