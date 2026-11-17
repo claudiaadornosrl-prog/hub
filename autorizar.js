@@ -23,6 +23,9 @@
 //    // y la operación la "gasta" (un uso, 10 min), idealmente dentro de la función de la base que la hace:
 //    await ADORNO_AUTORIZAR.usar(a.id, { funcion, local, usado_en: 'venta 1234' });   // o perform hub_autorizacion_usar(...) en la RPC
 //  `demo: true` muestra la ventana sin tocar la base (para probarla). `sinCara: true` saltea la cámara.
+//  v7 (17-nov-2026, JP: «que quede en el formato de pastilla que diseñamos en el POS»): la ficha de pedir permiso es solo
+//    pastillas con el nombre, todas iguales (rellena = está en el local; punteada = sin avisos en el celu), «Mirar a la
+//    cámara», y abajo mail y clave. Sin los títulos ni los textos largos. Mismo diseño que autVentana del POS (v217/v219).
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 (function () {
   if (window.ADORNO_AUTORIZAR) return;
@@ -88,23 +91,28 @@
       '.aut-msg{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);max-width:calc(100% - 24px);padding:7px 16px;border-radius:999px;' +
         'background:rgba(28,22,18,.75);color:#F7F3EC;font-size:13px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
       '.aut-msg.ok{background:#16a34a}' +
-      '.aut-lista{background:#fff;border-radius:20px;padding:10px 12px;font-size:13px}' +
-      '.aut-lista>b{display:block;font-size:12px;color:#685B51;font-weight:600;margin:4px 2px 6px}' +
-      '.aut-p{display:flex;align-items:center;gap:10px;padding:7px 2px;border-top:1px solid #F1ECE3}' +
-      '.aut-p:first-of-type{border-top:0}.aut-p .aut-nom{flex:1;min-width:0}.aut-p small{display:block;font-size:11px;color:#8C7F73}' +
-      '.aut-chip{display:inline-block;margin-left:6px;padding:1px 9px;border-radius:999px;background:#F1ECE3;color:#685B51;font-size:11px;vertical-align:1px}' +
+      '.aut-lista{font-size:13px}' +
+      '.aut-lista>b{display:block;font-size:14px;font-weight:700;margin:2px 2px 4px}' +
+      '.aut-pils{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.aut-pils+.aut-pils{margin-top:8px}' +
+      '.aut-pil{font:inherit;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--aut-c);background:#fff;color:var(--aut-c);border-radius:999px;' +
+        'padding:11px 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:filter .15s,transform .1s}' +
+      '.aut-pil:hover{filter:brightness(.96)}.aut-pil:active{transform:scale(.97)}' +
+      '.aut-pil.esta{background:var(--aut-c);color:#fff}' +
+      '.aut-pil.sin{border-style:dashed;border-color:#B5A99B;color:#8C7F73}' +
+      '.aut-pil.cam{border-color:#B5A99B;color:#1C1612}' +
+      '.aut-vacio{font-size:13px;color:#685B51;margin:2px 2px 0}' +
       '.aut-btn{font:inherit;border:0;cursor:pointer;border-radius:999px;padding:9px 18px;font-size:13px;font-weight:600;white-space:nowrap;' +
         'background:#F1ECE3;color:#1C1612;transition:filter .15s,transform .1s}' +
       '.aut-btn:hover{filter:brightness(.96)}.aut-btn:active{transform:scale(.97)}.aut-btn[disabled]{opacity:.45;cursor:default}' +
       '.aut-btn.prim{background:var(--aut-c);color:#fff}.aut-btn.chico{padding:6px 14px;font-size:12px}' +
       '.aut-pie{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap}' +
-      '.aut-clave{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}' +
+      '.aut-clave{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}' +
       '.aut-clave input{flex:1 1 150px;min-width:0;font:inherit;font-size:14px;padding:10px 18px;border:1px solid #D6CCBA;border-radius:999px;background:#fff;color:#1C1612;outline:none}' +
       '.aut-clave input:focus{border-color:var(--aut-c)}' +
       '.aut-giro{display:inline-block;width:12px;height:12px;border:2px solid #D6CCBA;border-top-color:var(--aut-c);border-radius:50%;margin-right:6px;vertical-align:-2px;animation:aut-giro .8s linear infinite}' +
       '@keyframes aut-giro{to{transform:rotate(360deg)}}' +
       '.aut-link{color:var(--aut-c);font-weight:600;cursor:pointer;text-decoration:underline}' +
-      '.aut-aviso{color:#b91c1c;font-size:12px;margin:2px 2px 6px}' +
+      '.aut-aviso{color:#b91c1c;font-size:12.5px;margin:0 2px 8px}' +
       '.aut-toast{position:fixed;z-index:99975;left:50%;bottom:22px;transform:translateX(-50%);padding:10px 20px;border-radius:999px;background:#1C1612;color:#F7F3EC;' +
         'font:400 13px "URW Gothic",Jost,system-ui,sans-serif;box-shadow:0 12px 30px -10px rgba(0,0,0,.45)}';
     document.head.appendChild(s);
@@ -143,7 +151,10 @@
     otro: function () { if (A) { A.saltar = true; if (A.cortar) A.cortar(); } },
     pedir: function (b) { pedirA(Number(b.getAttribute('data-id'))); },
     otra: function () { if (!A) return; clearInterval(A.poll); cancelarPedido(A.id); A.id = null; lista(); },
-    clave: function () { conClave(); }
+    clave: function () { conClave(); },
+    cam: function () { camOtra(); },
+    sinpush: function (b) { var a = A; if (!a) return; var p = a.lista.filter(function (x) { return x.empleado_id === Number(b.getAttribute('data-id')); })[0];
+      if (p) lista(pila(p.nombre) + ' no tiene los avisos activados en el celu: que mire a la cámara o ponga su usuario y clave acá abajo.'); }
   };
 
   function pedir(op) {
@@ -171,17 +182,24 @@
       .then(function (r) { a.lista = (r && r.personas) || []; a.hayCaras = !!(r && r.hay_caras); })
       .catch(function () { a.lista = []; a.hayCaras = false; })
       .then(function () { if (A !== a || a.fin) return; return conCara(a); })
-      .then(function (listo) { if (A === a && !a.fin && !listo) lista(); });
+      .then(function (listo) { if (A === a && !a.fin && !listo) lista(a.camMsg); });
+  }
+  // «Mirar a la cámara»: otra pasada de la cara desde la ficha (v7)
+  function camOtra() {
+    var a = A; if (!a || a.fin || a.id || a.mirando || a.verComo) return;
+    a.mirando = true; a.saltar = false;
+    conCara(a).then(function (listo) { a.mirando = false; if (A === a && !a.fin && !listo) lista(a.camMsg); });
   }
 
   // 1) la cámara: true = terminó (autorizado o cancelado); false = seguir con el celu o la clave
   function conCara(a) {
-    if (a.op.sinCara || !a.hayCaras || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.resolve(false);
+    a.camMsg = ''; a.camHay = !a.op.sinCara && !!a.hayCaras && !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia;
+    if (!a.camHay) return Promise.resolve(false);
     // (15-nov-2026, JP: «en segundo plano, que no se vea») la cámara lee sin mostrarse; solo se ve «Verificando…»
-    ventana({ tit: 'Esto necesita autorización', cuerpo:
+    ventana({ tit: 'Pedir autorización', cuerpo:
       '<div style="position:fixed;left:-9999px;top:0;width:320px;height:240px;opacity:0;pointer-events:none"><video id="aut-video" autoplay muted playsinline width="320" height="240"></video></div>' +
       '<div class="aut-sub"><span class="aut-giro"></span><span id="aut-msg">Verificando…</span></div>' +
-      '<div class="aut-pie"><button class="aut-btn" data-a="cancelar">Cancelar</button><button class="aut-btn prim" data-a="otro">📱 Pedir al celu o con clave</button></div>' });
+      '<div class="aut-pie"><button class="aut-btn" data-a="cancelar">Cancelar</button><button class="aut-btn prim" data-a="otro">Pedir al celu o con clave</button></div>' });
     var corte = new Promise(function (r) { a.cortar = r; });
     var video = document.getElementById('aut-video');
     var msg = function (t, ok) { var m = document.getElementById('aut-msg'); if (m) { m.textContent = t; m.classList.toggle('ok', !!ok); } };
@@ -191,10 +209,10 @@
     var carga = Promise.all([a.demo ? espera(400) : caras(), abrirCam]); carga.catch(function () {});
     return Promise.race([carga.then(function () { return true; }), corte.then(function () { return 'corte'; })]).catch(function () { return false; }).then(function (camOk) {
       if (camOk === 'corte' || !sigue()) { camOff(); return A !== a || a.fin; }
-      if (!camOk) { camOff(); return A !== a || a.fin; }
+      if (!camOk) { camOff(); a.camMsg = 'No pude usar la cámara de esta compu.'; return A !== a || a.fin; }
       var t0 = Date.now();
       var vuelta = function () {
-        if (!sigue() || Date.now() - t0 > 6000) { camOff(); return A !== a || a.fin; }
+        if (!sigue() || Date.now() - t0 > 6000) { camOff(); if (A === a && !a.fin && !a.saltar) a.camMsg = 'La cámara no reconoció a nadie que pueda autorizar.'; return A !== a || a.fin; }
         if (a.demo) return espera(1500).then(function () { if (!sigue()) { camOff(); return A !== a || a.fin; } msg('Modo de prueba: no compara caras'); return espera(1500).then(function () { camOff(); return false; }); });
         return faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })).withFaceLandmarks(true).withFaceDescriptor()
           .then(function (d) {
@@ -203,7 +221,7 @@
               .then(function (r) {
                 if (A !== a || a.fin) return true;
                 if (r && r.ok) { msg('✔ Autorizado por ' + pila(r.autorizadora), true); return espera(700).then(function () { toast('Autorizado por ' + pila(r.autorizadora)); fin({ id: r.id, nombre: r.autorizadora, modo: 'cara' }); return true; }); }
-                if (r && r.motivo === 'sin_rango') { camOff(); return false; }   // la que está adelante no autoriza: directo a celu o clave
+                if (r && r.motivo === 'sin_rango') { camOff(); a.camMsg = (r.nombre ? pila(r.nombre) + ': esto' : 'Quien está frente a la cámara no puede autorizarlo: esto') + ' lo autoriza otra persona.'; return false; }   // la que está adelante no autoriza: directo a celu o clave
                 return espera(250).then(vuelta);
               }, function () { camOff(); return false; });
           }, function () { return espera(250).then(vuelta); });
@@ -214,26 +232,25 @@
   function cap(t) { t = String(t || ''); return t.charAt(0).toUpperCase() + t.slice(1); }
 
   // 2) y 3) a quién pedirle (aviso al celu) o usuario y clave
-  function persona(p) {
-    var rango = p.rol || '';
-    var donde = p.fuente === 'reloj' ? 'fichó ' + p.hora : p.fuente === 'turno' ? 'turno desde ' + p.hora : p.rol === 'dueño' ? 'fuera del local' : 'no está';
-    return '<div class="aut-p"><span class="aut-nom"><b>' + esc(pila(p.nombre)) + '</b><span class="aut-chip">' + esc(rango) + '</span>' +
-      '<small>' + esc(donde) + (p.push ? '' : ' · sin avisos en el celu') + '</small></span>' +
-      '<button class="aut-btn prim chico" data-a="pedir" data-id="' + Number(p.empleado_id) + '"' + (p.push ? '' : ' disabled title="No tiene las notificaciones activadas en el celu"') + '>📱 Pedir a ' + esc(pila(p.nombre).split(' ')[0]) + '</button></div>';
+  function persona(p, orden) {
+    var pn = pila(p.nombre).split(' ')[0];
+    var rep = orden.filter(function (x) { return pila(x.nombre).split(' ')[0] === pn; }).length > 1, nom = rep ? pila(p.nombre) : pn;
+    var donde = (p.rol ? cap(p.rol) + ' · ' : '') + (p.fuente === 'reloj' ? 'en el local, fichó ' + p.hora : p.fuente === 'turno' ? 'en el local, turno desde ' + p.hora : 'fuera del local: puede autorizar desde donde esté');
+    if (!p.push) return '<button type="button" class="aut-pil sin" data-a="sinpush" data-id="' + Number(p.empleado_id) + '" title="' + esc(donde + '. No tiene los avisos activados en el celu: con la cámara o con su usuario y clave') + '">' + esc(nom) + ' · sin avisos</button>';
+    return '<button type="button" class="aut-pil' + (p.presente ? ' esta' : '') + '" data-a="pedir" data-id="' + Number(p.empleado_id) + '" title="' + esc(donde) + '">Pedir a ' + esc(nom) + '</button>';
   }
   function lista(aviso) {
     var a = A; if (!a) return;
     if (a.verComo && !aviso) aviso = 'Modo «Ver como»: así le aparece el pedido de permiso a esta cuenta. Es solo para mirar: no se manda ningún aviso ni se autoriza nada.';
-    var pres = a.lista.filter(function (p) { return p.presente; }), fuera = a.lista.filter(function (p) { return !p.presente; });
-    ventana({ tit: 'Esto necesita autorización', cuerpo:
+    var orden = a.lista.filter(function (p) { return p.presente; }).concat(a.lista.filter(function (p) { return !p.presente; }));
+    ventana({ tit: 'Pedir autorización', cuerpo:
       '<div class="aut-lista" id="aut-lista">' + (aviso ? '<div class="aut-aviso">' + esc(aviso) + '</div>' : '') +
-        (pres.length ? '<b>Están en el local ahora</b>' + pres.map(persona).join('')
-                     : '<b>No hay nadie en el local que pueda autorizarlo</b><small style="display:block;color:#8C7F73;font-size:11px;margin:0 2px 4px">Según el reloj, nadie con ese permiso fichó entrada ni tiene turno a esta hora.</small>') +
-        (fuera.length ? '<b style="margin-top:10px">No están en el local (pueden autorizar desde el celu)</b>' + fuera.map(persona).join('') : '') +
+        (orden.length ? '<div class="aut-pils">' + orden.map(function (p) { return persona(p, orden); }).join('') + '</div>'
+                      : '<div class="aut-vacio">No hay a quién pedirle al celu: autorizá con la clave.</div>') +
+        (a.camHay && !a.verComo ? '<div class="aut-pils"><button type="button" class="aut-pil cam" data-a="cam">Mirar a la cámara</button></div>' : '') +
       '</div>' +
-      '<div class="aut-sub">¿No tiene el celu a mano? Que lo autorice acá con su usuario y clave:</div>' +
-      '<div class="aut-clave"><input id="aut-mail" type="text" inputmode="email" placeholder="Usuario (mail)" autocomplete="off" autocapitalize="off" spellcheck="false">' +
-        '<input id="aut-pass" type="password" placeholder="Clave" autocomplete="new-password"></div>' +
+      '<div class="aut-clave"><input id="aut-mail" type="text" inputmode="email" data-adorno-superior placeholder="Usuario (mail)" autocomplete="off" autocapitalize="off" spellcheck="false">' +
+        '<input id="aut-pass" type="password" data-adorno-superior placeholder="Clave" autocomplete="new-password"></div>' +
       '<div class="aut-pie"><button class="aut-btn" data-a="cancelar">Cancelar</button><button class="aut-btn prim" id="aut-btn-clave" data-a="clave">Autorizar con clave</button></div>' });
     var pass = document.getElementById('aut-pass');
     if (pass) pass.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); conClave(); } });

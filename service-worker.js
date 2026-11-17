@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v146-camara-paciente';
+const CACHE_VERSION = 'hub-v147-autorizar-pastillas';
 const ASSETS = [
   './',
   './index.html',
