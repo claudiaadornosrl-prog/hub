@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v153-monedas-mitad-y-mitad';
+const CACHE_VERSION = 'hub-v154-tope-descuentos';
 const ASSETS = [
   './',
   './index.html',

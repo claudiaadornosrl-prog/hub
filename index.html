@@ -30,6 +30,7 @@ Es la pantalla de inicio del sistema de Claudia Adorno SRL. Desde acá se entra 
 3b. Permisos (solo administración): con sesión, el ícono de persona abre Permisos. A los demás usuarios ese ícono no les aparece.
    - Perfiles: el interruptor de cada módulo dice si el perfil ve ese módulo. Tocando el nombre del módulo aparecen sus apartados, y tocando un apartado, sus funciones. En cada función se elige Habilitada, Pide permiso (la puede usar pero pide la autorización de una persona de más rango, nunca una cuenta genérica; cada apartado tiene además su interruptor para mostrarlo u ocultarlo entero sin tocar sus funciones; los perfiles Encargada, Cajera y Vendedora toman como base la Cuenta de local, y Administrativa la de Oficina: al abrirlos se ve solo lo que pide permiso o es distinto de la base (no se repite lo que la base ya tiene habilitado ni lo que está oculto igual en los dos), y el botón Ver todo muestra el resto, por ejemplo para prenderle al perfil algo que la base tiene oculto; arriba de todo, solo para JP y por ahora, hay un desplegable «Ver como»: al elegir una cuenta el Hub muestra los módulos que ve esa cuenta (con un botón para simular que está adentro o afuera de su local) al tocar un módulo se entra directo viendo lo que ve esa cuenta, y el botón «Qué puede hacer» lista las funciones de cada módulo con su estado (habilitada, pide permiso u oculta) y si puede autorizarla; es solo para mirar: no se entra como esa persona, nada queda a su nombre y con el botón «Entrar» se abre el módulo viendo lo que ve esa cuenta, en solo lectura: arriba queda el cartel «Viendo como… · Salir», la base rechaza cualquier cambio, no se mandan avisos ni mensajes y vence solo a la hora (cada módulo lo toma cuando publica su próxima versión); Cajera y Vendedora, cuando entran con su usuario propio, ven solo Colaboradores, y además POS y Stock si el celular está conectado al WiFi de su local (el sistema reconoce la red por las computadoras trabadas del local y recuerda todas las conexiones de internet que usaron en los últimos 7 días, así que con dos líneas reconoce las dos; con datos del celular o desde la casa no); los demás módulos les muestran un cartel y se usan desde la cuenta del local, aunque en el local siguen autorizando con la cara, el celular o la clave lo que su perfil tenga habilitado: primero se prueba con la cara en la cámara, si no con un aviso al celular de quien puede autorizar, y si no con su usuario y clave; cada autorización sirve para una sola operación) u Oculta; en cada apartado hay botones para cambiarlas todas juntas. Se guarda al tocar. Cada módulo empieza a respetar sus funciones a medida que se le suma (por ahora lo que cambia en el momento es qué módulos ve cada perfil).
    - 📷 Registra quién: al lado de cada función hay una pastilla "📷 Registra quién: Sí / No" (y en cada apartado "📷 Todas registran quién"). En Sí, cada vez que alguien usa esa función queda anotado quién la hizo: con la cuenta compartida del local se abre la cámara y la reconoce (mientras el reconocimiento por cara esté apagado, la persona toca su nombre en una lista); con usuario personal se anota directo. Vale para todos los perfiles. No se guardan fotos, solo quién, cuándo y con qué cuenta. Cada módulo empieza a anotarlo a medida que se le suma.
+   - Tope (por ahora solo en «Descuentos» del POS): al lado de la función hay una pastilla «hasta __ %». Es el porcentaje máximo que ese perfil puede hacer o autorizar (por ejemplo, Cajera hasta 20 % y Encargada hasta 50 %). Vacía = sin tope. Se guarda al salir de la casilla o al apretar Enter; Escape la deja como estaba. Va de 0 a 100 y acepta decimales con coma. JP y los perfiles con «todo habilitado» no tienen tope («sin tope»), y si la función está Oculta para ese perfil la casilla no aparece. Si un perfil tiene la misma función habilitada que su base pero con otro tope, se muestra igual aunque la base ya la tenga habilitada.
    - Personas: el perfil de cada usuario, sus locales (uno o varios: Alcorta, Unicenter, Oficina) y su cara.
    - Computadoras: cada computadora, tablet o celular de los locales y la oficina (las trabadas a un usuario y las que tienen nombre). Arriba, por local: por dónde abren WhatsApp las computadoras de ese local (Ventana del kiosco, WhatsApp de escritorio, WhatsApp Web o Como venga) y qué impresora del local se usa para imprimir desde el celular o la tablet (se elige entre las que ve el programa de impresión del local). Abajo, cada computadora puede tener su propio WhatsApp, distinto del del local («Como el local» usa el del local). Se aplica la próxima vez que esa computadora abra o recargue un módulo. Para sumar una computadora: en esa computadora, engranaje → Mi cuenta → Esta computadora → nombre y local → Guardar. Destrabar deja la computadora en la lista, sin trabar y con sus ajustes; Olvidar la saca de la lista.
    - Registro: la lista de quién hizo cada función marcada con 📷 (nombre, cómo se supo —por la cara, eligió su nombre o con su usuario—, módulo, función, local, cuenta, día y hora).
@@ -592,6 +593,15 @@ window.ADORNO_SSO = (function () {
   .perm-fn-ctl { flex: 0 0 auto; display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
   .perm-cam { border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 11px; font: inherit; font-size: 11.5px; cursor: pointer; white-space: nowrap; }
   .perm-cam.on { background: var(--boton); color: var(--boton-txt); border-color: transparent; }
+  /* (hub v154) tope de la función: pastilla «hasta __ %», sin recuadro */
+  .perm-tope { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 4px 3px 11px; font-size: 11.5px; color: var(--muted);
+    background: color-mix(in srgb, var(--text) 6%, transparent); white-space: nowrap; cursor: text; }
+  .perm-tope span:last-child { padding-right: 7px; }
+  .perm-tope input { width: 3.4em; border: 0; outline: 0; border-radius: 999px; padding: 4px 6px; font: inherit; font-size: 12px; text-align: center;
+    background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+  .perm-tope input:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--boton) 45%, transparent); }
+  .perm-tope.on { background: var(--aviso-suave); color: var(--aviso); }
+  .perm-tope.sin { padding: 6px 11px; cursor: default; }
   .perm-reg { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: .5px solid color-mix(in srgb, var(--border) 60%, transparent); }
   .perm-reg .q { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; }
   .perm-reg .q small { display: block; font-size: 11px; color: var(--muted); }
@@ -1357,7 +1367,11 @@ window.ADORNO_SSO = (function () {
   const _permFnsTodas = mid => ((_permFn && _permFn.funciones) || []).filter(f => f.modulo === mid);
   // (16-nov, JP) tampoco se repite lo que está APAGADO igual en la base y en este perfil: queda solo lo que difiere o pide permiso
   const _permApagIgual = (b, f, p) => !!b && !!p && b.modulos.includes(f.modulo) && _permEst(b, f.id) === 'o' && _permEst(p, f.id) === 'o' && !_permApOculto(b, f.modulo + '|' + f.apartado);
-  const _permFnsDe = mid => { const b = _permBase(_permP); return _permFnsTodas(mid).filter(f => !_permEnBase(b, f) && !_permApagIgual(b, f, _permP)); };
+  // (hub v154, 18-nov-2026, JP vía POS) una función con tope (hoy solo «Descuentos» del POS) se muestra igual si el tope
+  //   del perfil es distinto al de la base, aunque los dos la tengan habilitada
+  const _permTope = (p, fid) => { const v = ((((_permFn && _permFn.topes) || {})[p && p.id]) || {})[fid]; return v === undefined || v === null || v === '' ? null : Number(v); };
+  const _permMismoTope = (b, f, p) => !f.tope_unidad || _permTope(b, f.id) === _permTope(p, f.id);
+  const _permFnsDe = mid => { const b = _permBase(_permP); return _permFnsTodas(mid).filter(f => !(_permEnBase(b, f) && _permMismoTope(b, f, _permP)) && !_permApagIgual(b, f, _permP)); };
   function permVerTodo() { _permVerTodo = !_permVerTodo; renderPermisos(); }
   const _permEst = (p, fid) => (p.fijo || p.todo) ? 'h' : (((_permFn && _permFn.estados && _permFn.estados[p.id]) || {})[fid] || 'o');
   function permAbrirMod(mid) { _permAbiertos.has(mid) ? _permAbiertos.delete(mid) : _permAbiertos.add(mid); renderPermisos(); }
@@ -1408,11 +1422,50 @@ window.ADORNO_SSO = (function () {
               return `<div class="perm-fn"><p>${_tbEsc(f.nombre)}${det ? `<small>${_tbEsc(det)}</small>` : ''}</p><span class="perm-fn-ctl">` +
                 `<span class="perm-tri" role="radiogroup" aria-label="${_tbEsc(f.nombre)}">${_PERM_EST.map(([kk, t]) =>
                   `<button type="button" role="radio" class="${kk} ${e === kk ? 'on' : ''}" aria-checked="${e === kk}" ${(p.fijo || p.todo) ? 'disabled' : ''} data-p="${p.id}" data-f="${f.id}" data-e="${kk}" onclick="permFn(this)">${t}</button>`).join('')}</span>` +
+                _permTopeHTML(p, f, e) +
                 `<button type="button" class="perm-cam ${r ? 'on' : ''}" aria-pressed="${r}" data-f="${f.id}" onclick="permCam(this)" title="${_tbEsc(_PERM_CAM_T)}">📷 Registra quién: ${r ? 'Sí' : 'No'}</button></span></div>`;
             }).join('') + `</div>`);
       }).join('') + `</div>`;
   }
   const _permApOculto = (p, k) => !p.fijo && (((_permFn && _permFn.ocultos) || {})[p.id] || []).includes(k);
+  // (hub v154, 18-nov-2026, JP vía la charla del POS: «la cajera hasta 20 %, la encargada hasta 50 %») tope por perfil para
+  //   las funciones que lo admiten (hub_funciones.tope_unidad; hoy solo pos.descuento). Vacío = sin tope. Se guarda al
+  //   salir de la casilla (hub_funcion_tope_guardar). JP y los perfiles con «todo habilitado» no tienen tope. Si la
+  //   función está oculta para el perfil, no se muestra (no puede hacerla).
+  const _PERM_TOPE_T = 'Es el máximo que este perfil puede hacer o autorizar en esta función. Vacío = sin tope.';
+  const _permNum = v => String(v).replace('.', ',');
+  function _permTopeHTML(p, f, e) {
+    const u = f.tope_unidad; if (!u) return '';
+    if (p.fijo || p.todo) return `<span class="perm-tope sin" title="${_tbEsc(p.nombre)} no tiene tope.">sin tope</span>`;
+    if (e === 'o') return '';
+    const t = _permTope(p, f.id), v = t === null ? '' : _permNum(t);
+    return `<label class="perm-tope ${t === null ? '' : 'on'}" title="${_tbEsc(_PERM_TOPE_T)}"><span>hasta</span>` +
+      `<input type="text" inputmode="decimal" maxlength="6" value="${v}" placeholder="—" data-p="${p.id}" data-f="${f.id}" data-antes="${v}" ` +
+      `aria-label="Tope de ${_tbEsc(f.nombre)} para ${_tbEsc(p.nombre)}, en ${_tbEsc(u)}. Vacío = sin tope" ` +
+      `onchange="permTope(this)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); this.blur(); } else if (event.key === 'Escape') { this.value = this.dataset.antes; this.blur(); }">` +
+      `<span>${_tbEsc(u)}</span></label>`;
+  }
+  async function permTope(inp) {
+    const p = _perm.perfiles.find(x => x.id === inp.dataset.p); if (!p || p.fijo || p.todo || !_permFn) return;
+    const fid = inp.dataset.f, txt = inp.value.trim().replace(/%/g, '').replace(',', '.').trim();
+    const antes = inp.dataset.antes === '' ? null : Number(inp.dataset.antes.replace(',', '.'));
+    let v = null;
+    if (txt !== '') {
+      v = Number(txt);
+      if (!isFinite(v) || v < 0 || v > 100) { inp.value = inp.dataset.antes; _permEstado('El tope va de 0 a 100 %. Dejalo vacío para que no tenga tope.', 'mal'); return; }
+      v = Math.round(v * 100) / 100;
+    }
+    const mostrar = x => x === null ? '' : _permNum(x);
+    inp.value = mostrar(v);
+    if (v === antes) return;
+    const tp = (_permFn.topes = _permFn.topes || {}), mio = (tp[p.id] = tp[p.id] || {});
+    const poner = x => { if (x === null) delete mio[fid]; else mio[fid] = x; inp.dataset.antes = mostrar(x); inp.closest('.perm-tope')?.classList.toggle('on', x !== null); };
+    poner(v);
+    const { error } = await sb.rpc('hub_funcion_tope_guardar', { p_perfil: p.id, p_funcion: fid, p_tope: v });
+    if (error) { poner(antes); inp.value = mostrar(antes); _permEstado('No se guardó: ' + error.message, 'mal'); return; }
+    const fn = (_permFn.funciones.find(f => f.id === fid) || {}).nombre || fid;
+    _permEstado(`Guardado: ${p.nombre} · ${fn} → ${v === null ? 'sin tope' : 'hasta ' + mostrar(v) + ' %'}.`, 'ok');
+  }
   async function permApartado(btn) {
     const p = _perm.perfiles.find(x => x.id === btn.dataset.p); if (!p || p.fijo || !_permFn) return;
     const k = btn.dataset.m + '|' + btn.dataset.a, oc = (_permFn.ocultos = _permFn.ocultos || {}), lista = (oc[p.id] = oc[p.id] || []);
@@ -1480,7 +1533,7 @@ window.ADORNO_SSO = (function () {
     if (_permTab === 'perfiles') {
       const p = _perm.perfiles.find(x => x.id === _permPerfil) || _perm.perfiles[0]; _permPerfil = p.id; _permP = p;
       const pb = p.base ? _perm.perfiles.find(x => x.id === p.base) : null, bAct = _permBase(p);
-      const nBase = pb ? ((_permFn && _permFn.funciones) || []).filter(f => { const v = _permVerTodo; _permVerTodo = false; const r = _permEnBase(pb, f); _permVerTodo = v; return r; }) : [];
+      const nBase = pb ? ((_permFn && _permFn.funciones) || []).filter(f => { const v = _permVerTodo; _permVerTodo = false; const r = _permEnBase(pb, f) && _permMismoTope(pb, f, p); _permVerTodo = v; return r; }) : [];
       const nApag = pb ? ((_permFn && _permFn.funciones) || []).filter(f => _permApagIgual(pb, f, p)).length : 0;
       const nDif = nBase.filter(f => p.modulos.includes(f.modulo) ? _permEst(p, f.id) !== 'h' : true).length;
       c.innerHTML = `<div class="perm-chips">${_perm.perfiles.map(x => `<button type="button" class="perm-chip ${x.id === p.id ? 'on' : ''}" onclick="permElegirPerfil('${x.id}')">${_tbEsc(x.nombre)}<small>${_permCuantos(x.id)}</small></button>`).join('')}</div>` +
