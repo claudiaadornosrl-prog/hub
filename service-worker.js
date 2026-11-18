@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v159-clodi-dicta-teclado';
+const CACHE_VERSION = 'hub-v160-charset-primero';
 const ASSETS = [
   './',
   './index.html',
