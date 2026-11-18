@@ -2330,7 +2330,11 @@ function acomodarHub() {
   centro.style.width = CW + 'px';
   const CH = centro.offsetHeight;
   const mods = [...esc.querySelectorAll('.mod:not(.oculto)')];
-  const izq = mods.filter(m => _hubMod(m.dataset.m).g === 'neg'), der = mods.filter(m => _hubMod(m.dataset.m).g !== 'neg');
+  // (hub v153, 18-nov-2026, JP: «que la distribución sea homogénea: si hay 6 monedas, 3 de cada lado») se mantiene el orden
+  //   (primero las del negocio, después las de administración) y se parte a la mitad; si es impar, la de más va a la izquierda
+  const orden = [...mods.filter(m => _hubMod(m.dataset.m).g === 'neg'), ...mods.filter(m => _hubMod(m.dataset.m).g !== 'neg')];
+  const mitad = Math.ceil(orden.length / 2);
+  const izq = orden.slice(0, mitad), der = orden.slice(mitad);
   const SP = tel ? (+esc.dataset.sp || 82) : 96, bulge = tel ? 12 : 34, gap = fichas ? 30 : 24;
   const span = (Math.max(izq.length, der.length, 1) - 1) * SP;
   const cy = Math.max(10 + R + 10 + span / 2, 10 + CH / 2);
@@ -2373,7 +2377,7 @@ function _hubAjustarAlto() {
       c.style.zoom = ''; delete esc.dataset.sp; acomodarHub();
       let natural = raiz.scrollHeight;
       if (natural > alto + 2) {
-        const filas = Math.max(...['neg', 'otro'].map(g => [...esc.querySelectorAll('.mod:not(.oculto)')].filter(m => (_hubMod(m.dataset.m).g === 'neg') === (g === 'neg')).length), 2);
+        const filas = Math.max(Math.ceil(esc.querySelectorAll('.mod:not(.oculto)').length / 2), 2);   // v153: mitad y mitad
         esc.dataset.sp = Math.max(70, Math.floor(82 - (natural - alto) / (filas - 1)));
         acomodarHub(); natural = raiz.scrollHeight;
       }

@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v152-celu-entra-en-pantalla';
+const CACHE_VERSION = 'hub-v153-monedas-mitad-y-mitad';
 const ASSETS = [
   './',
   './index.html',
