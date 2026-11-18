@@ -3055,6 +3055,18 @@ cargarTablero();
   #vc-barra button { border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 999px; padding: 7px 13px; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
   #vc-barra button.on, #vc-barra button.fuerte { background: var(--boton); color: var(--boton-txt); border-color: transparent; }
   #vc-barra .vc-dato { font-size: 12px; color: var(--muted); }
+  #vc-barra .vc-c { display: none; }
+  /* (hub v150, 18-nov-2026, JP: «desde el celu me bloquea la parte de arriba… ponémelo abajo y más chiquito, que entre
+     las monedas») en el celular va abajo al centro, en el hueco entre las dos columnas de monedas, y en versión corta */
+  @media (max-width: 760px) {
+    #vc-barra { top: auto; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-width: min(46vw, 210px); padding: 4px; gap: 4px;
+      font-size: 12px; box-shadow: 0 8px 22px -12px rgba(28,22,18,.5); }
+    #vc-barra.activa { border-radius: 18px; }
+    #vc-barra label, #vc-barra .vc-dato, #vc-barra .vc-l { display: none; }
+    #vc-barra .vc-c { display: inline; }
+    #vc-barra select { font-size: 12px; padding: 5px 8px; width: 100%; max-width: 100%; }
+    #vc-barra button { font-size: 11px; padding: 5px 9px; }
+  }
   .vc-ap { margin: 14px 0 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; gap: 8px; align-items: center; }
   .vc-fn { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
   .vc-p { border-radius: 999px; padding: 4px 11px; font-size: 11px; white-space: nowrap; }
@@ -3064,7 +3076,7 @@ cargarTablero();
 </style>
 <div id="vc-barra" role="region" aria-label="Ver como otra cuenta">
   <label for="vc-sel">Ver como</label>
-  <select id="vc-sel" onchange="vcElegir(this.value)"><option value="">mi cuenta (JP)</option></select>
+  <select id="vc-sel" onchange="vcElegir(this.value)" aria-label="Ver como"><option value="">mi cuenta (JP)</option></select>
   <span id="vc-extra" style="display:contents;"></span>
 </div>
 <div class="config-overlay" id="vc-overlay" onclick="if(event.target===this)vcCerrar()">
@@ -3126,9 +3138,9 @@ cargarTablero();
     const h = VC.hub || {}, perfil = h.vista || h.perfil || '—';
     const tieneLocal = Array.isArray(VC.locales) && VC.locales.length;
     x.innerHTML = `<span class="vc-dato">perfil <b>${esc(perfil)}</b>${tieneLocal ? ' · ' + esc(VC.locales.join(', ')) : ''} · ve ${(h.modulos || []).length} módulos</span>` +
-      `<button type="button" class="${VC_LOCAL ? 'on' : ''}" onclick="vcLocal()" title="Simula que está conectada al WiFi de su local">${VC_LOCAL ? 'Adentro del local' : 'Afuera del local'}</button>` +
-      `<button type="button" onclick="vcDetalle()">Qué puede hacer</button>` +
-      `<button type="button" class="fuerte" onclick="vcElegir('')">Volver a mi cuenta</button>`;
+      `<button type="button" class="${VC_LOCAL ? 'on' : ''}" onclick="vcLocal()" title="Simula que está conectada al WiFi de su local">${VC_LOCAL ? '<span class="vc-l">Adentro del local</span><span class="vc-c">📍 Adentro</span>' : '<span class="vc-l">Afuera del local</span><span class="vc-c">📍 Afuera</span>'}</button>` +
+      `<button type="button" onclick="vcDetalle()"><span class="vc-l">Qué puede hacer</span><span class="vc-c">Permisos</span></button>` +
+      `<button type="button" class="fuerte" onclick="vcElegir('')" aria-label="Volver a mi cuenta"><span class="vc-l">Volver a mi cuenta</span><span class="vc-c">✕</span></button>`;
   }
   async function cargar(email) {
     const { data, error } = await sb.rpc('hub_ver_como', { p_email: email, p_en_local: VC_LOCAL });
