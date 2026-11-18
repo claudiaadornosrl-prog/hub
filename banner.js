@@ -167,6 +167,10 @@
 //    el original queda en «Ver detalle técnico» para soporte. Lo que ya está en castellano se deja como está.
 //  · Sin tocar los módulos: si el módulo tiene una función global toast(msg, tipo), los toasts de ERROR pasan por acá
 //    (los demás siguen igual). alert() muestra el texto ya traducido.
+//  · (18-nov-2026, JP: «Hacé todas» — registro de carteles rojos) cada cartel rojo (y cada alert con un error técnico)
+//    queda anotado en la base (hub_error_visto → hub_errores_vistos): módulo, quién, el texto que vio y el original.
+//    JP los ve agrupados en el Hub (círculo «Servidor» → «Carteles rojos»). Solo con sesión, nunca en «Ver como», como
+//    mucho 30 por página y el mismo una vez cada 2 minutos. Si falla, no pasa nada.
 // ═══════════════════════════════════════════════════════
 (function () {
   if (window.ADORNO_AVISO) return;
@@ -254,6 +258,25 @@
     return { texto: 'Algo falló y el sistema no supo explicarlo. Probá de nuevo; si sigue pasando, avisale a JP.', tecnico: orig };
   }
 
+  var REG_URL = 'https://jfwtiagteuwmyvblgwms.supabase.co/rest/v1/rpc/hub_error_visto';
+  var REG_KEY = 'sb_publishable_udSPma98Sw9eskeeLCgdCw_S2vIX0Fk';   // la clave pública (la misma que está en cada módulo)
+  var regN = 0, regVistos = {};
+  function registrar(t, como) {
+    try {
+      if (window.ADORNO_VERCOMO || regN >= 30 || !t || !t.texto) return;
+      var clave = t.texto + '|' + (t.tecnico || '');
+      if (regVistos[clave] && Date.now() - regVistos[clave] < 120000) return;
+      var ses = JSON.parse(localStorage.getItem('adorno-auth') || 'null');
+      if (!ses || !ses.access_token || (ses.expires_at && ses.expires_at * 1000 < Date.now())) return;
+      regVistos[clave] = Date.now(); regN++;
+      var partes = location.pathname.split('/').filter(Boolean);
+      fetch(REG_URL, { method: 'POST', keepalive: true,
+        headers: { 'apikey': REG_KEY, 'Authorization': 'Bearer ' + ses.access_token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_modulo: partes[0] || 'inicio', p_texto: String(t.texto).slice(0, 500), p_original: String(t.tecnico || '').slice(0, 1000),
+          p_ruta: (location.pathname + location.hash).slice(0, 200), p_como: como || 'cartel' }) }).catch(function () {});
+    } catch (e) {}
+  }
+
   var caja = null, vivos = [];
   function armarCaja() {
     if (caja && caja.isConnected) return caja;
@@ -266,6 +289,7 @@
   }
   function error(msg) {
     var t = traducir(msg);
+    registrar(t, 'cartel');
     var ya = vivos.filter(function (v) { return v.texto === t.texto && v.el.isConnected; })[0];
     if (ya) { ya.n++; ya.cuenta.textContent = '×' + ya.n; ya.cuenta.style.display = ''; return ya.el; }
     var el = document.createElement('div');
@@ -332,7 +356,7 @@
       }
       var a = window.alert;
       if (typeof a === 'function' && !a.__adornoAviso) {
-        var na = function (m) { var t; try { t = traducir(m); } catch (e) {} return a.call(window, t && t.tecnico ? t.texto : m); };
+        var na = function (m) { var t; try { t = traducir(m); if (t && (t.tecnico || esError(m))) registrar(t, 'alerta'); } catch (e) {} return a.call(window, t && t.tecnico ? t.texto : m); };
         na.__adornoAviso = true;
         window.alert = na;
       }

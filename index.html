@@ -36,6 +36,8 @@ Es la pantalla de inicio del sistema de Claudia Adorno SRL. Desde acá se entra 
    - Registro: la lista de quién hizo cada función marcada con 📷 (nombre, cómo se supo —por la cara, eligió su nombre o con su usuario—, módulo, función, local, cuenta, día y hora).
 4. Instalar como app: botón "Instalar" o, en iPhone, Compartir → Agregar a pantalla de inicio.
 5. Tablero (solo en computadora, con sesión de administración): resumen de Ventas, Tesorería, Compras, Colaboradores y salud del servidor; cada ficha tiene "abrir →".
+   - Salud del servidor (el círculo «Servidor», solo JP): el chequeo corre todos los días a las 9:00. Si marca problemas, al tocarlo aparecen los botones «Pedirle a Claude que lo arregle» (Claude lo revisa y arregla solo desde la compu de JP), «Revisar de nuevo» (vuelve a correr el chequeo en un par de minutos, sin Claude, por ejemplo después de prender una compu) y «Ya está resuelto». Después de cada arreglo el chequeo se vuelve a correr solo, así que el círculo muestra cómo quedó de verdad («revisado» y la hora). Si Claude no puede arreglarlo porque hace falta algo que solo puede hacer JP (por ejemplo un comando como administrador), aparece «Te toca a vos» con el paso a seguir, el comando y un botón Copiar; cuando JP lo hizo, toca «Ya lo hice, revisá de nuevo». Las tareas de la compu de JP que se cortan porque la compu se durmió se vuelven a correr solas una vez cuando la compu está prendida un rato, y las tareas nuevas del servidor que falta sumar al chequeo ya no cuentan como problema.
+   - Carteles rojos: en el mismo recuadro del servidor, «Carteles rojos que vio el personal (7 días)» dice cuántos carteles de error aparecieron en todos los módulos y cuál fue el más repetido; tocándolo se abre la lista agrupada por lo que decía cada cartel (cuántas veces, en qué módulo, quiénes, cuándo fue el último y el detalle técnico), con 7 o 30 días. Se anotan solos desde el 18-nov-2026 (solo con sesión, nunca en «Ver como»).
 
 ## Qué hay en cada módulo
 - Clientes: pedidos de clientes (pendiente → listo para avisar → avisado → completado), datos de clientes, mensajes de WhatsApp, encuestas de satisfacción.
@@ -1003,6 +1005,31 @@ window.ADORNO_SSO = (function () {
   .sal-arreglos { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow: auto; margin-bottom: 10px; }
   .sal-arr { padding-left: 9px; border-left: 2px solid var(--ok); font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; }
   .sal-arr.mal { border-left-color: var(--mal); }
+  .sal-arr.rev { border-left-color: var(--aviso); }
+  .sal-cart { margin: 0 0 10px; font-size: 11.5px; line-height: 1.4; }
+  .sal-cart a { color: var(--text); text-decoration: none; }
+  .sal-cart a b { display: inline; margin: 0; font-size: inherit; color: var(--mal); }
+  .sal-cart small { display: block; margin-top: 2px; font-size: 10.5px; color: var(--muted); overflow-wrap: anywhere; }
+  .cart-ov { background: var(--surface); color: var(--text); border-radius: 26px; max-width: 760px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .cart-cab { display: flex; align-items: center; gap: 6px; padding: 12px 14px 12px 18px; border-bottom: .5px solid var(--border); font-weight: 600; }
+  .cart-cab button { border: 0; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12px; font-weight: 400; cursor: pointer; background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--muted); }
+  .cart-cab button.on { background: var(--boton); color: var(--boton-txt); }
+  .cart-cuerpo { overflow: auto; padding: 12px 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .cart-vacio { margin: 0; font-size: 12px; color: var(--muted); }
+  .cart-g { padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--mal) 7%, var(--surface)); font-size: 13px; }
+  .cart-t { font-weight: 500; overflow-wrap: anywhere; }
+  .cart-n { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; background: var(--mal); color: #fff; font-size: 11px; font-weight: 600; }
+  .cart-d { margin-top: 3px; font-size: 11.5px; color: var(--muted); }
+  .cart-g details { margin-top: 4px; font-size: 11px; color: var(--muted); } .cart-g summary { cursor: pointer; }
+  .cart-g details div { margin-top: 3px; overflow-wrap: anywhere; user-select: text; font-family: ui-monospace, Consolas, monospace; }
+  /* (hub v155) «Te toca a vos»: lo que Claude no puede hacer solo, con el comando y Copiar */
+  .sal-toca { margin: 2px 0 10px; padding: 10px 12px; border-radius: 16px; font-size: 11.5px; line-height: 1.4; background: color-mix(in srgb, var(--aviso) 14%, var(--surface)); }
+  .sal-toca b { margin: 0 0 3px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--aviso); }
+  .sal-toca p { margin: 0 0 8px; overflow-wrap: anywhere; }
+  .sal-toca small { display: block; font-size: 10.5px; color: var(--muted); }
+  .sal-cmd { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; padding: 4px 4px 4px 11px; border-radius: 999px; background: var(--surface); }
+  .sal-cmd code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 11px ui-monospace, Consolas, monospace; }
+  .sal-cmd button { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; background: var(--boton); color: var(--boton-txt); }
   .sal-arr b { display: block; margin: 0; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
   /* Sin fichas (celular, locales, ventana angosta): el saludo en el medio, y el health check debajo (JP) */
   .cel-centro { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -2334,7 +2361,7 @@ const _quieto = () => { try { return matchMedia('(prefers-reduced-motion: reduce
 // Las fichas del medio van solo en una compu ancha; en una ventana más angosta queda como en el celular.
 const _tbChica = window.matchMedia('(max-width: 1100px)');
 try { _tbChica.addEventListener('change', () => cargarTablero()); } catch (_) { _tbChica.addListener(() => cargarTablero()); }
-let _tbData = null, _salud = null, _tbAnimar = true, _saludPedido = null, _salTimer = null, _salArreglos = [];
+let _tbData = null, _salud = null, _tbAnimar = true, _saludPedido = null, _salTimer = null, _salArreglos = [], _salCarteles = null;
 const FICHAS_CON_DATOS = HUB_MODULOS.filter(m => !m.pronto).map(m => m.id);   // (hub v85) los "en construcción" no tienen ficha
 const BASE_TABLERO = ['ventas', 'tesoreria', 'compras', 'rrhh'];   // (hub v60) éstas vienen en hub_tablero; las demás, de hub_resumen
 const _res = {};   // resúmenes de los otros módulos, por id (se piden solo para las fichas a la vista)
@@ -2783,7 +2810,7 @@ function medallonHTML() {
   return `<div class="medallon salud ${_salBien(u) ? 'ok' : 'mal'}${arreglando ? ' arreglando' : ''}" role="button" tabindex="0" title="Servidor · health check ${cuando}: ${estado}. El anillo son los últimos ${n} reportes (arriba, el más grueso, es el último). Tocá para ver el resumen.">` +
     `<svg class="sal-anillo" viewBox="0 0 120 120" style="transform:rotate(${giro}deg);" aria-hidden="true">${arcos}</svg>` +
     `<svg class="sal-ecg" viewBox="0 0 64 20" aria-hidden="true"><path class="ecg-base" d="${_ECG}"/><path class="ecg-pulso" d="${_ECG}" pathLength="1"/></svg>` +
-    `<span class="sal-t">Servidor</span><span class="sal-e">${estado}</span><span class="sal-h">${u.resuelto_at && !u.ok ? 'resuelto ' : ''}${cuando}</span></div>`;
+    `<span class="sal-t">Servidor</span><span class="sal-e">${estado}</span><span class="sal-h">${u.resuelto_at && !u.ok ? 'resuelto ' : u.origen ? 'revisado ' : ''}${cuando}</span></div>`;
 }
 // (hub v64, 2-nov-2026, JP) un reporte con problemas que ya se resolvió cuenta como bien; desde el detalle se marca
 // resuelto a mano. (v65, opción B de JP) "Pedirle a Claude que lo arregle" deja un pedido en vps_health_pedidos; lo toma
@@ -2794,34 +2821,61 @@ const _salBien = r => r.ok || !!r.resuelto_at;
 const _salPedidoAbierto = () => !!(_saludPedido && ['pendiente', 'trabajando'].includes(_saludPedido.estado));
 const _cuandoSal = t => { const d = new Date(t), esHoy = d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }) === _hoyAR();
   return (esHoy ? 'hoy ' : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) + ' ') + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }); };
+// (hub v155, 18-nov-2026, JP: «Hacé todas» las mejoras de los avisos) el 15-nov se pidió 3 veces el mismo arreglo porque
+//   «te toca a vos» quedaba escondido en el texto, y el 18-nov el medallón siguió en «12 problemas» después del arreglo.
+//   Ahora: después de cada arreglo se vuelve a correr el chequeo solo (reporte «pedido #N»); «Revisar de nuevo» lo vuelve
+//   a correr sin Claude; y si Claude necesita algo de JP, sale «Te toca a vos» con el comando y un botón Copiar.
+const _salTeToca = () => {
+  const u = _salud && _salud[0]; if (!u || _salBien(u)) return null;
+  const p = (_salArreglos || []).find(x => (x.tipo || 'arreglar') === 'arreglar' && !['pendiente', 'trabajando'].includes(x.estado));
+  return p && p.estado === 'sin_arreglo' && (p.para_jp || p.comando_jp) && Date.now() - new Date(p.terminado_at || p.pedido_at) < 48 * 3600e3 ? p : null;
+};
 function _salAccionHTML(u) {
   if (u.ok) return '';
   if (u.resuelto_at) return `<div class="sal-nota ok">Resuelto ${_cuandoSal(u.resuelto_at)} · ${_tbEsc(u.resuelto_por || '')}${u.resolucion ? '<br>' + _tbEsc(u.resolucion) : ''}</div>`;
-  const p = _saludPedido, botones = `<div class="sal-acc">${_SAL_PEDIR_A_CLAUDE ? '<button class="si" data-sal="pedir">Pedirle a Claude que lo arregle</button>' : ''}<button class="no" data-sal="resuelto">Ya está resuelto</button></div>`;
-  if (!p) return botones;
-  if (p.estado === 'pendiente') return `<div class="sal-nota">Le pediste a Claude que lo arregle (${_cuandoSal(p.pedido_at)}). Lo toma tu compu en unos minutos: tiene que estar prendida y con tu usuario abierto.</div>`;
-  if (p.estado === 'trabajando') return `<div class="sal-nota">Claude lo está revisando en ${_tbEsc(p.equipo || 'tu compu')} desde ${_cuandoSal(p.tomado_at)}. Cuando termine te llega un aviso.</div>`;
-  return `<div class="sal-nota mal">Claude no lo pudo arreglar (${_cuandoSal(p.terminado_at || p.pedido_at)}): ${_tbEsc(p.relato || p.diagnostico || 'sin detalle')}</div>` + botones;
+  const p = _saludPedido, tt = _salTeToca();
+  const bPedir = (t, c) => _SAL_PEDIR_A_CLAUDE ? `<button class="${c}" data-sal="pedir">${t}</button>` : '';
+  const bRev = (t, c) => `<button class="${c}" data-sal="revisar" title="Vuelve a correr el chequeo ahora, sin Claude, y muestra cómo quedó. Tarda un par de minutos y lo hace tu compu.">${t}</button>`;
+  const bRes = '<button class="no" data-sal="resuelto">Ya está resuelto</button>';
+  const botones = `<div class="sal-acc">${bPedir('Pedirle a Claude que lo arregle', 'si')}${bRev('Revisar de nuevo', 'no')}${bRes}</div>`;
+  const rev = p && p.tipo === 'revisar';
+  if (p && p.estado === 'pendiente') return `<div class="sal-nota">${rev ? 'Le pediste que vuelva a revisar' : 'Le pediste a Claude que lo arregle'} (${_cuandoSal(p.pedido_at)}). Lo toma tu compu en unos minutos: tiene que estar prendida y con tu usuario abierto.</div>`;
+  if (p && p.estado === 'trabajando') return `<div class="sal-nota">${rev ? 'Revisando de nuevo' : 'Claude lo está revisando'} en ${_tbEsc(p.equipo || 'tu compu')} desde ${_cuandoSal(p.tomado_at)}.${rev ? '' : ' Cuando termine te llega un aviso.'}</div>`;
+  if (tt) return `<div class="sal-toca"><b>Te toca a vos</b><p>${_tbEsc(tt.para_jp || 'Hay que pegar este comando.')}</p>` +
+    (tt.comando_jp ? `<div class="sal-cmd"><code>${_tbEsc(tt.comando_jp)}</code><button type="button" data-sal="copiar" data-cmd="${_tbEsc(tt.comando_jp)}">Copiar</button></div>` : '') +
+    `<small>Claude lo miró ${_cuandoSal(tt.terminado_at || tt.pedido_at)} y esto no lo puede hacer solo. Cuando lo hagas, tocá «Ya lo hice».</small></div>` +
+    `<div class="sal-acc">${bRev('Ya lo hice, revisá de nuevo', 'si')}${bPedir('Pedirle a Claude otra vez', 'no')}${bRes}</div>`;
+  if (p && p.estado === 'arreglado') return `<div class="sal-nota">Claude arregló lo del reporte anterior (${_cuandoSal(p.terminado_at || p.pedido_at)}), pero al volver a revisar quedó esto.</div>` + botones;
+  if (p && p.estado === 'revisado') return `<div class="sal-nota">Revisado de nuevo ${_cuandoSal(p.terminado_at || p.pedido_at)}: sigue esto.</div>` + botones;
+  if (p) return `<div class="sal-nota mal">${rev ? 'No se pudo volver a revisar' : 'Claude no lo pudo arreglar'} (${_cuandoSal(p.terminado_at || p.pedido_at)}): ${_tbEsc(p.relato || p.diagnostico || 'sin detalle')}</div>` + botones;
+  return botones;
 }
 // (JP: "que haya un seguimiento a pesar de que esté automatizado") los últimos arreglos de Claude, contados en criollo
 function _salSeguimientoHTML() {
   const hechos = (_salArreglos || []).filter(p => p.relato && !['pendiente', 'trabajando'].includes(p.estado));
   if (!hechos.length) return '';
   return `<div class="h-sub">Lo que arregló Claude</div><div class="sal-arreglos">` + hechos.map(p =>
-    `<div class="sal-arr ${p.estado === 'arreglado' ? 'ok' : 'mal'}"><b>${_cuandoSal(p.terminado_at || p.pedido_at)}</b>${_tbEsc(p.relato)}</div>`).join('') + '</div>';
+    `<div class="sal-arr ${p.estado === 'arreglado' ? 'ok' : p.estado === 'revisado' ? (/todo en orden/.test(p.relato) ? 'ok' : 'rev') : 'mal'}"><b>${_cuandoSal(p.terminado_at || p.pedido_at)}${p.tipo === 'revisar' ? ' · revisado de nuevo' : ''}</b>${_tbEsc(p.relato)}</div>`).join('') + '</div>';
 }
 function saludDetalleHTML() {
   const u = _salud[0], malos = _salud.filter(r => !_salBien(r)).length;
   const lineas = String(u.resumen || u.detalle || '').split('\n').map(l => l.replace(/^[•\-\s]+/, '').trim()).filter(Boolean).slice(0, 6);
-  return `<div class="sal-detalle"><b>Health check · ${new Date(u.at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</b>` +
-    `<ul>${lineas.map(l => `<li class="${u.ok ? '' : u.resuelto_at ? 'res' : 'mal'}">${_tbEsc(l.length > 160 ? l.slice(0, 157) + '…' : l)}</li>`).join('')}</ul>` + _salAccionHTML(u) + _salSeguimientoHTML() +
+  return `<div class="sal-detalle"><b>Health check · ${new Date(u.at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}${u.origen ? ' · revisado de nuevo' : ''}</b>` +
+    `<ul>${lineas.map(l => `<li class="${u.ok ? '' : u.resuelto_at ? 'res' : 'mal'}">${_tbEsc(l.length > 160 ? l.slice(0, 157) + '…' : l)}</li>`).join('')}</ul>` + _salAccionHTML(u) + _salSeguimientoHTML() + _salCartelesHTML() +
     `<span>Últimos ${_salud.length}: ${_salud.length - malos} sin problemas, ${malos} con problemas · <a onclick="verSaludVps(${u.id})">ver completo →</a></span></div>`;
 }
 async function _salAccion(que, btn) {
   const u = _salud && _salud[0]; if (!u) return;
+  if (que === 'copiar') {
+    try { await navigator.clipboard.writeText(btn.dataset.cmd || ''); btn.textContent = 'Copiado ✓'; setTimeout(() => { btn.textContent = 'Copiar'; }, 2500); }
+    catch (_) { btn.textContent = 'Seleccionalo y copialo a mano'; }
+    return;
+  }
   if (que === 'resuelto' && !confirm('¿Lo marco como resuelto sin que Claude lo revise?')) return;
   btn.disabled = true;
-  const { error } = que === 'pedir' ? await sb.rpc('vps_health_pedir_arreglo', { p_reporte: u.id }) : await sb.rpc('vps_health_marcar_resuelto', { p_reporte: u.id });
+  const { error } = que === 'pedir' ? await sb.rpc('vps_health_pedir_arreglo', { p_reporte: u.id })
+    : que === 'revisar' ? await sb.rpc('vps_health_pedir_revision', { p_reporte: u.id })
+    : await sb.rpc('vps_health_marcar_resuelto', { p_reporte: u.id });
   if (error) { btn.disabled = false; alert('No se pudo: ' + error.message); return; }
   await cargarSalud();
 }
@@ -2932,19 +2986,51 @@ async function cargarSalud() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (!session || !_VPS_SOLO.includes((session.user.email || '').toLowerCase())) { if (_salud) { _salud = null; renderCentro(); } return; }
-    const { data, error } = await sb.from('vps_health_reportes').select('id,at,ok,resumen,problemas,detalle,resuelto_at,resuelto_por,resolucion').order('at', { ascending: false }).limit(8);
+    const { data, error } = await sb.from('vps_health_reportes').select('id,at,ok,resumen,problemas,detalle,resuelto_at,resuelto_por,resolucion,origen').order('at', { ascending: false }).limit(8);
     if (error) return;
     _salud = data || []; window._vpsReps = _salud;
     _saludPedido = null; _salArreglos = [];
     if (_SAL_PEDIR_A_CLAUDE && _salud[0]) {
-      const { data: ps } = await sb.from('vps_health_pedidos').select('id,reporte_id,estado,pedido_at,tomado_at,terminado_at,equipo,diagnostico,relato').order('id', { ascending: false }).limit(5);
+      const { data: ps } = await sb.from('vps_health_pedidos').select('id,reporte_id,estado,pedido_at,tomado_at,terminado_at,equipo,diagnostico,relato,tipo,para_jp,comando_jp').order('id', { ascending: false }).limit(8);
       _salArreglos = ps || [];
-      if (!_salBien(_salud[0])) _saludPedido = _salArreglos.find(p => p.reporte_id === _salud[0].id) || null;
+      // (v155) el reporte nuevo que se armó después de un pedido («pedido #N») sigue ligado a ese pedido
+      const u0 = _salud[0];
+      if (!_salBien(u0)) _saludPedido = _salArreglos.find(p => p.reporte_id === u0.id || u0.origen === 'pedido #' + p.id) || null;
     }
+    try { const { data: ce } = await sb.rpc('hub_errores_resumen', { p_dias: 7 }); _salCarteles = ce || null; } catch (_) { _salCarteles = null; }
     _actualizarMedallon();
     const ab = document.querySelector('#escena .sal-detalle'); if (ab) ab.outerHTML = saludDetalleHTML();
     clearTimeout(_salTimer); if (_salPedidoAbierto()) _salTimer = setTimeout(cargarSalud, 30000);   // mientras Claude trabaja, se mira cada 30 s
   } catch (e) { console.warn('[vps]', e); }
+}
+// (hub v155, 18-nov-2026, JP: «Hacé todas» — mejora 5) los carteles rojos que vio el personal en los módulos: los anota
+//   /hub/banner.js (hub_error_visto) y acá se ven agrupados por texto (hub_errores_resumen, solo administración).
+const _modDeRepo = r => { if (r === 'hub') return 'Hub'; const m = HUB_MODULOS.find(x => (x.url || '').includes('/' + r + '/')); return m ? m.nombre : r; };
+const _quienCartel = q => { q = String(q || ''); if (!q.includes(',')) return q; const [ap, no] = q.split(',').map(x => x.trim()); return _tbNombre(no ? no + ' ' + ap : ap); };
+function _salCartelesHTML() {
+  const c = _salCarteles; if (!c) return '';
+  const g = (c.grupos || [])[0];
+  return `<div class="sal-cart"><a onclick="verCarteles(7)">Carteles rojos que vio el personal (7 días): <b>${c.total || 0}</b>${c.total ? ` · ${c.personas} ${c.personas === 1 ? 'persona' : 'personas'}` : ''} →</a>` +
+    (g ? `<small>El más repetido: «${_tbEsc(g.texto.length > 90 ? g.texto.slice(0, 87) + '…' : g.texto)}» en ${_tbEsc(_modDeRepo(g.modulo))} (×${g.n})</small>` : '') + '</div>';
+}
+async function verCarteles(dias) {
+  const ov = document.getElementById('carteles-ov') || document.createElement('div');
+  ov.id = 'carteles-ov';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:10040;display:flex;align-items:center;justify-content:center;padding:16px;';
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  const marco = cuerpo => `<div class="cart-ov"><div class="cart-cab">Carteles rojos que vio el personal<span style="flex:1"></span>` +
+    [7, 30].map(d => `<button type="button" class="${d === dias ? 'on' : ''}" onclick="verCarteles(${d})">${d} días</button>`).join('') +
+    `<button type="button" aria-label="Cerrar" onclick="document.getElementById('carteles-ov').remove()">✕</button></div><div class="cart-cuerpo">${cuerpo}</div></div>`;
+  ov.innerHTML = marco('<p class="cart-vacio">Cargando…</p>');
+  if (!ov.isConnected) document.body.appendChild(ov);
+  const { data, error } = await sb.rpc('hub_errores_resumen', { p_dias: dias });
+  if (error || !data) { ov.innerHTML = marco(`<p class="cart-vacio">No pude cargarlos: ${_tbEsc(error ? error.message : 'sin respuesta')}</p>`); return; }
+  const gs = data.grupos || [];
+  ov.innerHTML = marco(!gs.length ? `<p class="cart-vacio">Nadie vio carteles rojos en los últimos ${dias} días.</p>` :
+    `<p class="cart-vacio">${data.total} ${data.total === 1 ? 'cartel' : 'carteles'} · ${data.personas} ${data.personas === 1 ? 'persona' : 'personas'}. Agrupados por lo que decían, primero los más repetidos. Se anotan desde el 18-nov.</p>` +
+    gs.map(g => `<div class="cart-g"><div class="cart-t"><span class="cart-n">×${g.n}</span>${_tbEsc(g.texto)}</div>` +
+      `<div class="cart-d">${_tbEsc(_modDeRepo(g.modulo))} · ${(g.quienes || []).map(q => _tbEsc(_quienCartel(q))).join(', ')}${g.personas > (g.quienes || []).length ? ' y otros' : ''} · último ${_cuandoSal(g.ultimo)}</div>` +
+      (g.original ? `<details><summary>Detalle técnico</summary><div>${_tbEsc(g.original)}</div></details>` : '') + '</div>').join(''));
 }
 function verSaludVps(id) {
   const r = (window._vpsReps || []).find(x => x.id === id); if (!r) return;
@@ -3143,7 +3229,7 @@ _autoResubPush();
 sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN') setTimeout(_autoResubPush, 1500); if (ev === 'SIGNED_OUT') _hubPastillaAvisos(false); });
 </script>
 <!-- (hub v132) carteles de error comunes (ADORNO_AVISO): el Hub carga banner.js solo por eso -->
-<script src="/hub/banner.js?v=13"></script>   <!-- (17-nov) v12: /pausa con 6 s de espera · v11: pide la pausa al fichador antes de abrir la cámara y reintenta con paciencia -->
+<script src="/hub/banner.js?v=14"></script>   <!-- (17-nov) v12: /pausa con 6 s de espera · v11: pide la pausa al fichador antes de abrir la cámara y reintenta con paciencia -->
 <!-- (hub v125, 16-nov-2026, JP: «un desplegable arriba para ir saltando de cuenta en cuenta y verificar qué ve y qué permiso
      tiene») VER COMO · solo JP · solo lectura. No inicia sesión como la otra persona: le pregunta a la base (hub_ver_como) qué
      le daría a esa cuenta y muestra el Hub con esas monedas; al tocar una moneda lista las funciones de ese módulo con su
