@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v157-ver-como-mas-aire';
+const CACHE_VERSION = 'hub-v158-clodi-voz-iphone';
 const ASSETS = [
   './',
   './index.html',
