@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v156-ver-como-en-el-centro';
+const CACHE_VERSION = 'hub-v157-ver-como-mas-aire';
 const ASSETS = [
   './',
   './index.html',

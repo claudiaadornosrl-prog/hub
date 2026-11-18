@@ -3274,9 +3274,10 @@ sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN') setTimeout(_autoResubP
   #vc-barra.en-centro { flex-wrap: nowrap; gap: 1px; }
   #vc-barra.en-centro button { padding: 6px 6px; font-size: 10.5px; }
   /* el centro del celular mide 170 px: la pastilla puede pasarse un poco a los costados (queda centrada, entre las monedas) */
-  .vc-slot { display: flex; justify-content: center; margin-top: 10px; width: max-content; max-width: calc(100vw - 32px); }
+  /* (hub v157, 18-nov-2026, JP: «separalo un poquito del círculo del servidor») 10 → 22 px */
+  .vc-slot { display: flex; justify-content: center; margin-top: 22px; width: max-content; max-width: calc(100vw - 32px); }
   .vc-slot:empty { display: none; }
-  .vc-slot-ancho { margin: 12px auto 0; }
+  .vc-slot-ancho { margin: 20px auto 0; }
   .vc-ap { margin: 14px 0 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; gap: 8px; align-items: center; }
   .vc-fn { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
   .vc-p { border-radius: 999px; padding: 4px 11px; font-size: 11px; white-space: nowrap; }
