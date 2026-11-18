@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v150-ver-como-celu-abajo';
+const CACHE_VERSION = 'hub-v151-avisos-al-volver';
 const ASSETS = [
   './',
   './index.html',

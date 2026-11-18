@@ -2990,9 +2990,27 @@ sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { try { localStorage.
 renderCentro();
 cargarTablero();
 
-(async function _autoResubPush() {
+// (hub v151, 18-nov-2026, JP: «se me cierra la sesión en el celu y después no me llegan las notificaciones») cuando el celular
+//   pierde los datos del Hub se van juntas la sesión y la suscripción de avisos. Ahora esto corre al abrir el Hub Y cada vez
+//   que se vuelve a entrar (cara o clave): si el permiso sigue dado, re-suscribe solo; si el celular lo perdió, muestra
+//   la pastilla «🔔 Volver a activar los avisos» (un toque, porque el navegador pide que lo toque la persona).
+let _hubResubCorriendo = false;
+function _hubPastillaAvisos(mostrar) {
+  let b = document.getElementById('hub-reavisos');
+  if (!mostrar) { if (b) b.remove(); return; }
+  if (b) return;
+  b = document.createElement('button');
+  b.id = 'hub-reavisos'; b.type = 'button'; b.textContent = '🔔 Volver a activar los avisos en este celular';
+  b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom, 0px));z-index:59;border:0;border-radius:999px;padding:11px 18px;background:var(--boton);color:var(--boton-txt);font:inherit;font-size:13px;box-shadow:0 10px 26px -12px rgba(28,22,18,.55);max-width:calc(100vw - 32px);';
+  b.onclick = async () => {
+    try { const r = await Notification.requestPermission(); if (r === 'granted') { b.remove(); _autoResubPush(); } else b.textContent = 'Los avisos quedaron bloqueados: activalos en Ajustes del celular'; } catch (_) {}
+  };
+  document.body.appendChild(b);
+}
+async function _autoResubPush() {
+  if (_hubResubCorriendo) return; _hubResubCorriendo = true;
   try {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!('Notification' in window)) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     const { data: { session: _s } } = await sb.auth.getSession();
     if (!_s) return;
@@ -3015,6 +3033,8 @@ cargarTablero();
     const { data: filas } = await q;
     const apps = [...new Set((filas || []).map(r => r.app))];
     if (!apps.length) return;
+    if (Notification.permission !== 'granted') { _hubPastillaAvisos(Notification.permission === 'default' && matchMedia('(pointer: coarse)').matches); return; }   // la pastilla, solo en celulares y tablets
+    _hubPastillaAvisos(false);
     const reg = await navigator.serviceWorker.ready;
     let sub = await _getSubFresca(reg);
     if (!sub) {
@@ -3035,8 +3055,10 @@ cargarTablero();
       await sb.from('rrhh_push_subscriptions').upsert(payload, { onConflict: 'endpoint,app' });
     }
     document.getElementById('notif-btn')?.classList.add('activo');
-  } catch (_) {}
-})();
+  } catch (_) {} finally { _hubResubCorriendo = false; }
+}
+_autoResubPush();
+sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN') setTimeout(_autoResubPush, 1500); if (ev === 'SIGNED_OUT') _hubPastillaAvisos(false); });
 </script>
 <!-- (hub v132) carteles de error comunes (ADORNO_AVISO): el Hub carga banner.js solo por eso -->
 <script src="/hub/banner.js?v=13"></script>   <!-- (17-nov) v12: /pausa con 6 s de espera · v11: pide la pausa al fichador antes de abrir la cámara y reintenta con paciencia -->
