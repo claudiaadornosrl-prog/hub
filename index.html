@@ -1075,6 +1075,7 @@ window.ADORNO_SSO = (function () {
   .escena.chico .cel-centro .s1 { font-size: 27px; }
   @media (max-width: 540px) {
     .container { padding: 30px 16px 24px; border-radius: 0; }
+    html, body { overflow-x: hidden; }   /* (hub v152) en el celular nunca se desplaza a los costados */
     .wordmark svg { width: 36px; height: 36px; }
     .wm-claude { font-size: 42px; }
     .wm-adorno { font-size: 32px; }
@@ -2330,7 +2331,7 @@ function acomodarHub() {
   const CH = centro.offsetHeight;
   const mods = [...esc.querySelectorAll('.mod:not(.oculto)')];
   const izq = mods.filter(m => _hubMod(m.dataset.m).g === 'neg'), der = mods.filter(m => _hubMod(m.dataset.m).g !== 'neg');
-  const SP = tel ? 82 : 96, bulge = tel ? 12 : 34, gap = fichas ? 30 : 24;
+  const SP = tel ? (+esc.dataset.sp || 82) : 96, bulge = tel ? 12 : 34, gap = fichas ? 30 : 24;
   const span = (Math.max(izq.length, der.length, 1) - 1) * SP;
   const cy = Math.max(10 + R + 10 + span / 2, 10 + CH / 2);
   centro.style.left = (cx - CW / 2) + 'px'; centro.style.top = (cy - CH / 2) + 'px';
@@ -2360,9 +2361,33 @@ function _hubAjustarAlto() {
   if (_hubAjustando) return;
   const c = document.querySelector('main.container'); if (!c) return;
   const compu = matchMedia('(pointer: fine)').matches && window.innerWidth >= 900;
+  const esc = document.getElementById('escena');
   _hubAjustando = true;
   try {
     const zAntes = parseFloat(c.style.zoom) || 1;
+    // (hub v152, 18-nov-2026, JP: «en el celular desborda… que siempre fitee la pantalla, sin desplazar ni arriba, ni abajo,
+    //   ni a los costados») en el celular primero se juntan las monedas (menos separación vertical, sin que se pisen los
+    //   nombres) y, si igual no entra, se achica todo (hasta 0,72 para que se siga leyendo). A los costados nunca desborda.
+    if (window.innerWidth < 620 && esc) {
+      const alto = (window.visualViewport && window.visualViewport.height) || window.innerHeight, raiz = document.documentElement;
+      c.style.zoom = ''; delete esc.dataset.sp; acomodarHub();
+      let natural = raiz.scrollHeight;
+      if (natural > alto + 2) {
+        const filas = Math.max(...['neg', 'otro'].map(g => [...esc.querySelectorAll('.mod:not(.oculto)')].filter(m => (_hubMod(m.dataset.m).g === 'neg') === (g === 'neg')).length), 2);
+        esc.dataset.sp = Math.max(70, Math.floor(82 - (natural - alto) / (filas - 1)));
+        acomodarHub(); natural = raiz.scrollHeight;
+      }
+      let z = 1;
+      for (let i = 0; i < 3 && natural > alto + 2 && z > 0.72; i++) {
+        z = Math.max(0.72, z * alto / natural * 0.995);
+        c.style.zoom = z; acomodarHub(); natural = raiz.scrollHeight;
+      }
+      const ancho = raiz.scrollWidth;
+      if (ancho > window.innerWidth + 1) { z = Math.max(0.72, z * window.innerWidth / ancho); c.style.zoom = z; acomodarHub(); }
+      if (z === 1) c.style.zoom = '';
+      return;
+    }
+    if (esc && esc.dataset.sp) { delete esc.dataset.sp; acomodarHub(); }
     if (!compu) { if (zAntes !== 1) { c.style.zoom = ''; acomodarHub(); } return; }
     const alto = window.innerHeight, raiz = document.documentElement;
     c.style.zoom = 1; acomodarHub();                       // medida natural

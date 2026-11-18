@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v151-avisos-al-volver';
+const CACHE_VERSION = 'hub-v152-celu-entra-en-pantalla';
 const ASSETS = [
   './',
   './index.html',
