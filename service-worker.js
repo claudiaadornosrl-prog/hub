@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v158-clodi-voz-iphone';
+const CACHE_VERSION = 'hub-v159-clodi-dicta-teclado';
 const ASSETS = [
   './',
   './index.html',
