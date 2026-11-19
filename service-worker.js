@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v161-camara-permiso';
+const CACHE_VERSION = 'hub-v162-clodi-ir';
 const ASSETS = [
   './',
   './index.html',
