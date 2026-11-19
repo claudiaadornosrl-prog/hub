@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v160-charset-primero';
+const CACHE_VERSION = 'hub-v161-camara-permiso';
 const ASSETS = [
   './',
   './index.html',

@@ -330,7 +330,9 @@
     armarCaja().appendChild(todos);
   }
   function cerrarTodos() { vivos.forEach(function (v) { v.el.remove(); }); vivos = []; if (todos) { todos.remove(); todos = null; } }
-  window.ADORNO_AVISO = { error: error, traducir: traducir, cerrarTodos: cerrarTodos };
+  // (19-nov) anotar: deja registrado algo en «Carteles rojos» sin mostrar cartel (lo usa la cámara para el diagnóstico)
+  window.ADORNO_AVISO = { error: error, traducir: traducir, cerrarTodos: cerrarTodos,
+    anotar: function (texto, tecnico, como) { registrar({ texto: texto, tecnico: tecnico || '' }, como || 'aviso'); } };
 
   // ¿este toast es de error? por el 2º argumento (true, 'err', 'error', 'mal', 'bad'…) o, si el módulo no lo distingue, por el texto
   function esError(msg, tipo) {
@@ -377,6 +379,14 @@
 //   · cuando la página suelta la cámara (o se cierra), se le avisa que siga (/sigue). Si nadie avisa, el fichador
 //     retoma solo a los 3 minutos.
 //  Solo se habla con el fichador cuando la cámara está ocupada: en celulares y compus sin fichador no cambia nada.
+//  (19-nov, v15, JP en la terminal de Unicenter: «me vuelve a tirar cámara ocupada») Para que una página de internet
+//  le hable a un programa de la misma compu, Chrome pide el permiso «Aplicaciones en el dispositivo» (loopback-network).
+//  En esa terminal estaba en «Preguntar» y nadie lo había tocado: el /pausa nunca le llegó al fichador (su registro no
+//  tenía ni una pausa) y la cámara seguía tomada. Ahora, antes de llamar al fichador se mira ese permiso:
+//   · «Preguntar»: una pastilla avisa que Chrome va a preguntar y que hay que tocar «Permitir»; se espera hasta 30 s;
+//   · bloqueado, o nadie contestó: un cartel dice exactamente qué tocar (queda en «Carteles rojos» del Hub: se ve qué
+//     compu lo necesita);
+//   · si después de la pausa la cámara sigue ocupada, queda anotado (como «camara») para el diagnóstico.
 // ═══════════════════════════════════════════════════════
 (function () {
   try {
@@ -431,12 +441,75 @@
         return esperar(ESPERAS[i]).then(function () { return conPaciencia(c, i + 1); });
       });
     }
+    // (19-nov, v15) el permiso de Chrome para hablar con el fichador: 'granted' | 'prompt' | 'denied' (null: este navegador no lo tiene)
+    function consulta(n) { try { return navigator.permissions.query({ name: n }); } catch (e) { return Promise.reject(e); } }
+    function permisoLocal() {
+      if (!navigator.permissions || !navigator.permissions.query) return Promise.resolve(null);
+      return consulta('loopback-network').catch(function () { return consulta('local-network-access'); }).catch(function () { return null; });
+    }
+    var notaEl = null;
+    function nota(t) {   // pastilla oscura arriba al medio, mientras Chrome pregunta
+      try {
+        if (!t) { if (notaEl) { notaEl.remove(); notaEl = null; } return; }
+        if (!notaEl) {
+          notaEl = document.createElement('div'); notaEl.setAttribute('role', 'status');
+          notaEl.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:2147483646;width:max-content;max-width:min(560px,calc(100vw - 24px));background:#1C1612;color:#F7F3EC;border-radius:999px;padding:10px 20px;font:500 14px/1.35 Jost,system-ui,-apple-system,sans-serif;text-align:center;box-shadow:0 14px 34px -16px rgba(28,22,18,.6);';
+          (document.body || document.documentElement).appendChild(notaEl);
+        }
+        notaEl.textContent = t;
+      } catch (e) {}
+    }
+    var TXT_BLOQ = 'Chrome no deja que el sistema le pida la cámara al fichador de esta compu. Para arreglarlo: tocá el candado al lado de la dirección (en la ventana del POS: los tres puntitos → Información de la app), buscá «Aplicaciones en el dispositivo» y elegí «Permitir». Después probá de nuevo.';
+    var TXT_SINRESP = 'Para usar la cámara con el fichador prendido, Chrome tiene que dar un permiso. Cuando aparezca el cartelito de Chrome que pregunta por las aplicaciones de este dispositivo, tocá «Permitir» y probá de nuevo.';
+    function avisar(t) { try { if (window.ADORNO_AVISO) window.ADORNO_AVISO.error(t); } catch (e) {} }
+    function anotar(t, tec) { try { if (window.ADORNO_AVISO && window.ADORNO_AVISO.anotar) window.ADORNO_AVISO.anotar(t, tec, 'camara'); } catch (e) {} }
+    function nombreErr(e) { return String((e && e.name) || '') + ': ' + String((e && e.message) || ''); }
+    // como llamar(), pero distingue: 'ok' (contestó) | 'vencido' (no contestó a tiempo) | 'fallo' (la conexión falló)
+    function llamarR(ruta, tope) {
+      try {
+        var c = new AbortController(), vencido = false; setTimeout(function () { vencido = true; c.abort(); }, tope);
+        return fetch(FICH + ruta, { method: 'GET', mode: 'no-cors', signal: c.signal, cache: 'no-store' })
+          .then(function () { return 'ok'; }, function () { return vencido ? 'vencido' : 'fallo'; });
+      } catch (e) { return Promise.resolve('fallo'); }
+    }
+    // 'ok' (el fichador contestó o está soltando la cámara) | 'no' (no hay fichador) | 'bloqueado' | 'sin_respuesta'
+    // Si el fichador contestó, se confía en eso (hay versiones de Chrome que dicen «Preguntar» pero no frenan nada).
+    function pedirPausa() {
+      return permisoLocal().then(function (st) {
+        var est = st && st.state;
+        if (est === 'denied') return 'bloqueado';
+        var preg = est === 'prompt', t0 = Date.now(), aviso = null;
+        // la pastilla sale solo si el pedido queda esperando (señal de que Chrome está preguntando)
+        if (preg) aviso = setTimeout(function () { nota('Chrome te va a preguntar si este sitio puede usar las aplicaciones de esta compu: tocá «Permitir» (es para pedirle la cámara al fichador).'); }, 1200);
+        return llamarR('/pausa', preg ? 30000 : 6000).then(function (r) {
+          if (aviso) { clearTimeout(aviso); nota(''); }
+          if (r === 'ok') return 'ok';
+          var ahora = st && st.state;   // el estado del permiso se actualiza solo
+          if (ahora === 'denied') return 'bloqueado';
+          // seguía en «Preguntar»: si tardó, Chrome preguntó y nadie tocó «Permitir»; si falló al instante, no hay fichador
+          if (ahora === 'prompt') return (r === 'vencido' || Date.now() - t0 > 1500) ? 'sin_respuesta' : 'no';
+          // (17-nov, v12) con permiso, vencer = el fichador existe y está soltando la cámara; fallar al instante = no hay fichador
+          return r === 'vencido' ? 'ok' : 'no';
+        });
+      }, function () { return llamar('/pausa', 6000).then(function (ok) { return ok ? 'ok' : 'no'; }); });
+    }
     function pedirPausaYAbrir(c, eOriginal) {
-      return llamar('/pausa', 6000).then(function (ok) {
-        if (!ok) { if (eOriginal) throw eOriginal; return real(c); }   // no hay fichador en esta compu
+      var t0 = Date.now();
+      return pedirPausa().then(function (r) {
+        if (r === 'bloqueado' || r === 'sin_respuesta') {
+          avisar(r === 'bloqueado' ? TXT_BLOQ : TXT_SINRESP);
+          if (eOriginal) throw eOriginal;
+          return real(c);   // por si justo la cámara estaba libre
+        }
+        if (r !== 'ok') { if (eOriginal) throw eOriginal; return real(c); }   // no hay fichador en esta compu
         anotarFichador(); pausado = true;
+        var tp = Date.now() - t0;
         return esperar(300).then(function () { return conPaciencia(c, 0); })
-          .then(vigilar, function (e2) { if (abiertas <= 0) seguir(); throw e2; });
+          .then(vigilar, function (e2) {
+            if (abiertas <= 0) seguir();
+            if (ocupada(e2)) anotar('La cámara siguió ocupada después de pedirle la pausa al fichador', nombreErr(e2) + ' · el fichador contestó en ' + tp + ' ms');
+            throw e2;
+          });
       });
     }
     md.getUserMedia = function (c) {
