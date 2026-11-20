@@ -5,3 +5,7 @@ Thumbs.db
 .idea/
 node_modules/
 supabase/
+
+# SQL y migraciones: solo en disco local, nunca en el repo publico (Guardian, 20-nov-2026)
+sql/
+*.sql
