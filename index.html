@@ -36,6 +36,7 @@ Es la pantalla de inicio del sistema de Claudia Adorno SRL. Desde acá se entra 
    - Computadoras: cada computadora, tablet o celular de los locales y la oficina (las trabadas a un usuario y las que tienen nombre). Arriba, por local: por dónde abren WhatsApp las computadoras de ese local (Ventana del kiosco, WhatsApp de escritorio, WhatsApp Web o Como venga) y qué impresora del local se usa para imprimir desde el celular o la tablet (se elige entre las que ve el programa de impresión del local). Abajo, cada computadora puede tener su propio WhatsApp, distinto del del local («Como el local» usa el del local). Se aplica la próxima vez que esa computadora abra o recargue un módulo. Para sumar una computadora: en esa computadora, engranaje → Mi cuenta → Esta computadora → nombre y local → Guardar. Destrabar deja la computadora en la lista, sin trabar y con sus ajustes; Olvidar la saca de la lista.
    - Registro: la lista de quién hizo cada función marcada con 📷 (nombre, cómo se supo —por la cara, eligió su nombre o con su usuario—, módulo, función, local, cuenta, día y hora).
 3c. Clodi por voz: mantener apretado el micrófono mientras se habla y soltarlo al terminar (se manda solo). Un toque corto no alcanza: avisa «mantené apretado». En el celular el teclado no se abre solo al abrir Clodi. Si no escucha nada, Clodi lo dice y queda anotado para revisarlo. En el iPhone y el iPad (desde el 18-nov-2026) el micrófono de Clodi abre el teclado: se dicta con el 🎤 del teclado (abajo, al lado de la barra espaciadora) y se manda con «retorno» o la flecha. Así no pide permiso del micrófono cada vez (en el iPhone la app del Hub no puede transcribir la voz sola ni guardar ese permiso). Si no aparece el 🎤 del teclado: Ajustes › General › Teclado › Activar Dictado.
+3d. Clodi te lleva a otro módulo: si lo que le pedís se hace en otro módulo, contesta dónde es y muestra el botón «Ir a <módulo> →», que abre ese módulo en la pestaña que corresponde. Si le decís «llevame a Colaboradores» o «abrime Tesorería», termina de hablar y cambia de módulo sola. Solo lleva a los módulos que tu usuario tiene habilitados. Si en la pantalla hay algo sin guardar (por ejemplo un ticket armado en el POS), no cambia sola: avisa y el botón pregunta antes de salir.
 4. Instalar como app: botón "Instalar" o, en iPhone, Compartir → Agregar a pantalla de inicio.
 5. Tablero (solo en computadora, con sesión de administración): resumen de Ventas, Tesorería, Compras, Colaboradores y salud del servidor; cada ficha tiene "abrir →".
    - Salud del servidor (el círculo «Servidor», solo JP): el chequeo corre todos los días a las 9:00. Si marca problemas, al tocarlo aparecen los botones «Pedirle a Claude que lo arregle» (Claude lo revisa y arregla solo desde la compu de JP), «Revisar de nuevo» (vuelve a correr el chequeo en un par de minutos, sin Claude, por ejemplo después de prender una compu) y «Ya está resuelto». Después de cada arreglo el chequeo se vuelve a correr solo, así que el círculo muestra cómo quedó de verdad («revisado» y la hora). Si Claude no puede arreglarlo porque hace falta algo que solo puede hacer JP (por ejemplo un comando como administrador), aparece «Te toca a vos» con el paso a seguir, el comando y un botón Copiar; cuando JP lo hizo, toca «Ya lo hice, revisá de nuevo». Las tareas de la compu de JP que se cortan porque la compu se durmió se vuelven a correr solas una vez cuando la compu está prendida un rato, y las tareas nuevas del servidor que falta sumar al chequeo ya no cuentan como problema.
@@ -128,17 +129,27 @@ window.ADORNO_ASISTENTE = (function () {
         if (location.pathname.replace(/index\.html$/, '') === m.ruta) return '';   // ya está en ese módulo
         return m.ruta + (m.pestana ? '#clodi-ir=' + encodeURIComponent(String(m.pestana).slice(0, 60)) : '');
       }
+      // (19-nov-2026, 2ª vuelta) el módulo puede avisar que tiene algo sin guardar: window.ADORNO_ASISTENTE_SIN_GUARDAR = () => 'hay un ticket armado'
+      function sinGuardar() { try { const f = window.ADORNO_ASISTENTE_SIN_GUARDAR; const r = typeof f === 'function' ? f() : ''; return r ? (typeof r === 'string' ? r : 'hay algo sin guardar') : ''; } catch (_) { return ''; } }
       function irModulo(m) {   // solo cuando pidió que la lleven: espera a que termine de hablar y va
-        const u = irUrl(m); if (!u) return; let n = 0;
+        const u = irUrl(m); if (!u || sinGuardar()) return; let n = 0;
         const t = setInterval(() => { n++; let habla = false; try { habla = 'speechSynthesis' in window && (speechSynthesis.speaking || speechSynthesis.pending); } catch (_) {} if ((n > 3 && !habla) || n > 60) { clearInterval(t); location.href = u; } }, 400);
       }
       function llegar() {   // al entrar desde el botón de Clodi: abre la pestaña que venía pedida (espera a que el módulo arme sus pestañas)
         const m = /[#&]clodi-ir=([^&]+)/.exec(location.hash || ''); if (!m) return;
         let q = ''; try { q = decodeURIComponent(m[1]).toLowerCase(); } catch (_) { return; }
         try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
-        let n = 0; const t = setInterval(() => {
+        // (2ª vuelta) hay módulos que cargan permisos o datos después de dibujar las pestañas y el primer toque se pierde:
+        // se toca, se comprueba que quedó abierta y, si no, se vuelve a tocar (hasta 20 s)
+        const abierta = (el) => /(^|\s)(active|activa|on|act|sel|selected|current)(\s|$)/.test(el.className || '') || el.getAttribute('aria-selected') === 'true' || el.getAttribute('aria-current') === 'page';
+        let n = 0, toques = 0; const t = setInterval(() => {
+          if (++n > 40) { clearInterval(t); return; }
           const ps = pestanas(); const p = ps.find((x) => x.lb.toLowerCase() === q) || ps.find((x) => x.lb.toLowerCase().includes(q) || q.includes(x.lb.toLowerCase()));
-          if (p) { clearInterval(t); irA(p.lb); } else if (++n > 40) clearInterval(t);
+          if (!p) return;
+          if (abierta(p.el)) { clearInterval(t); return; }
+          const seVe = ps.some((x) => abierta(x.el));   // ¿este módulo marca la pestaña abierta de una forma que se puede leer?
+          if (seVe || toques === 0 || n === 6 || n === 14) { toques++; irA(p.lb); }
+          if (!seVe && toques >= 3) clearInterval(t);
         }, 500);
       }
       function irA(nombre) {
@@ -406,6 +417,7 @@ window.ADORNO_ASISTENTE = (function () {
     else if (tipo === 'err') { d.className = 'asist-err'; d.textContent = texto; }
     else if (tipo === 'wait') { d.className = 'asist-fila'; d.innerHTML = `<span class="asist-av">${CLODI('cara')}</span><div class="asist-a asist-wait"><i>Clodi está buscando en el manual…</i></div>`; d.querySelector('.clodi').classList.add('piensa'); }
     else { d.className = 'asist-fila'; d.innerHTML = `<span class="asist-av">${CLODI('cara')}</span><div class="asist-a"></div>`; d.lastChild.innerHTML = esc(texto.respuesta) + (texto.pestana ? `<br><i>→ pestaña <b>${esc(texto.pestana)}</b></i>` : '') + (irUrl(texto.ir_modulo) ? `<div class="asist-bts"><a class="asist-bt si asist-ir" href="${esc(irUrl(texto.ir_modulo))}">Ir a ${esc(texto.ir_modulo.nombre || 'ese módulo')} →</a></div>` : '') + ('speechSynthesis' in window ? ` <button class="asist-ib" title="Escuchar la respuesta" data-a="leer" data-t="${esc(texto.respuesta)}">${ICO.voz}</button>` : ''); }
+    { const ir = d.querySelector && d.querySelector('a.asist-ir'); if (ir) ir.addEventListener('click', (ev) => { const sg = sinGuardar(); if (sg && !window.confirm('Ojo: ' + sg + '. Si salís ahora, se pierde. ¿Salgo igual?')) ev.preventDefault(); }); }
     l.appendChild(d); l.scrollTop = l.scrollHeight; return d;
   }
   async function prepararAccion(acc, porVoz) {   // completa el formulario del módulo; se envía SOLO con el botón Enviar
@@ -442,6 +454,7 @@ window.ADORNO_ASISTENTE = (function () {
       const j = await r.json().catch(() => ({}));
       w.remove();
       if (!r.ok || !j.ok) throw new Error(j.error || ('Error ' + r.status));
+      if (j.ir_modulo && j.ir_modulo.llevar && !j.accion && irUrl(j.ir_modulo)) { const sg = sinGuardar(); if (sg) { j.ir_modulo.llevar = false; j.respuesta = 'No te llevo todavía porque ' + sg + '. Cuando termines, tocá el botón para ir a ' + (j.ir_modulo.nombre || 'ese módulo') + '.'; } }
       hist.push({ q, a: j.respuesta }); log('a', j);
       if (j.pestana && !j.accion) irA(j.pestana);
           if (j.ir_modulo && j.ir_modulo.llevar && !j.accion) irModulo(j.ir_modulo);
