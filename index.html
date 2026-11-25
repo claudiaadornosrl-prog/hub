@@ -1417,7 +1417,7 @@ window.ADORNO_SSO = (function () {
     { id: 'pos',        nombre: 'POS',           desc: 'Facturas · notas de crédito · sin factura', icono: 'ti-receipt',        color: 'pos',       g: 'neg', url: 'https://claudiaadornosrl-prog.github.io/pos-adorno/' },
     // (hub v85, 11-nov-2026, JP) tres módulos nuevos, anunciados: los ve solo administración (hub_modulos) y dicen
     //   "en construcción" hasta que exista su página. Cuando se publique cada uno: sacarle `pronto: true`.
-    { id: 'importaciones', nombre: 'Importaciones', desc: 'COMEX · seguimiento · costeo de importados', icono: 'ti-ship',     color: 'importaciones', g: 'neg', url: 'https://claudiaadornosrl-prog.github.io/importaciones-adorno/', pronto: true },
+    { id: 'importaciones', nombre: 'Importaciones', desc: 'COMEX · seguimiento · costeo de importados', icono: 'ti-ship',     color: 'importaciones', g: 'neg', url: 'https://claudiaadornosrl-prog.github.io/importaciones-adorno/', sin_ficha: true },   // (hub v166, 25-nov) publicado; sin ficha del tablero hasta que hub_resumen tenga 'importaciones'
     { id: 'resultados',    nombre: 'Resultados',    desc: 'Márgenes vs gastos · resultado del ejercicio', icono: 'ti-chart-pie', color: 'resultados', g: 'adm', url: 'https://claudiaadornosrl-prog.github.io/resultados-adorno/', pronto: true },
     { id: 'capex',         nombre: 'CAPEX',         desc: 'Proyectos de inversión · tiempo y dinero', icono: 'ti-building-factory-2', color: 'capex', g: 'adm', url: 'https://claudiaadornosrl-prog.github.io/capex-adorno/', pronto: true },
   ];
@@ -2539,7 +2539,7 @@ const _quieto = () => { try { return matchMedia('(prefers-reduced-motion: reduce
 const _tbChica = window.matchMedia('(max-width: 1100px)');
 try { _tbChica.addEventListener('change', () => cargarTablero()); } catch (_) { _tbChica.addListener(() => cargarTablero()); }
 let _tbData = null, _salud = null, _tbAnimar = true, _saludPedido = null, _salTimer = null, _salArreglos = [], _salCarteles = null;
-const FICHAS_CON_DATOS = HUB_MODULOS.filter(m => !m.pronto).map(m => m.id);   // (hub v85) los "en construcción" no tienen ficha
+const FICHAS_CON_DATOS = HUB_MODULOS.filter(m => !m.pronto && !m.sin_ficha).map(m => m.id);   // (hub v85) los "en construcción" no tienen ficha · (v166) ni los publicados sin resumen (sin_ficha)
 const BASE_TABLERO = ['ventas', 'tesoreria', 'compras', 'rrhh'];   // (hub v60) éstas vienen en hub_tablero; las demás, de hub_resumen
 const _res = {};   // resúmenes de los otros módulos, por id (se piden solo para las fichas a la vista)
 const FICHAS_BASE = ['ventas', 'tesoreria', 'compras', 'rrhh'];
@@ -3423,7 +3423,7 @@ _autoResubPush();
 sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN') setTimeout(_autoResubPush, 1500); if (ev === 'SIGNED_OUT') _hubPastillaAvisos(false); });
 </script>
 <!-- (hub v132) carteles de error comunes (ADORNO_AVISO): el Hub carga banner.js solo por eso -->
-<script src="/hub/banner.js?v=15"></script>   <!-- (19-nov) v15: avisa si Chrome no deja hablar con el fichador (permiso «Aplicaciones en el dispositivo») · (17-nov) v12: /pausa con 6 s de espera · v11: pide la pausa al fichador antes de abrir la cámara y reintenta con paciencia -->
+<script src="/hub/banner.js?v=16"></script>   <!-- (25-nov) v16: moneda de Importaciones (barco) · (19-nov) v15: avisa si Chrome no deja hablar con el fichador (permiso «Aplicaciones en el dispositivo») · (17-nov) v12: /pausa con 6 s de espera · v11: pide la pausa al fichador antes de abrir la cámara y reintenta con paciencia -->
 <!-- (hub v125, 16-nov-2026, JP: «un desplegable arriba para ir saltando de cuenta en cuenta y verificar qué ve y qué permiso
      tiene») VER COMO · solo JP · solo lectura. No inicia sesión como la otra persona: le pregunta a la base (hub_ver_como) qué
      le daría a esa cuenta y muestra el Hub con esas monedas; al tocar una moneda lista las funciones de ese módulo con su

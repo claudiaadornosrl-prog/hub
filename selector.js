@@ -27,7 +27,8 @@
     { id: 'productos', nombre: 'Productos', desc: 'Ficha por artículo', icono: 'ti-tags', color: '#59698A', ruta: '/productos-adorno/' },
     { id: 'marketing', nombre: 'Marketing', desc: 'Redes · pauta · web', icono: 'ti-speakerphone', color: '#A3656F', ruta: '/marketing-adorno/' },
     { id: 'obra', nombre: 'Obra', desc: 'Local Martínez', icono: 'ti-hammer', color: '#8A7B70', ruta: '/obra-adorno/' },
-    { id: 'pos', nombre: 'POS', desc: 'Facturas · notas de crédito', icono: 'ti-receipt', color: '#3D7C88', ruta: '/pos-adorno/' }
+    { id: 'pos', nombre: 'POS', desc: 'Facturas · notas de crédito', icono: 'ti-receipt', color: '#3D7C88', ruta: '/pos-adorno/' },
+    { id: 'importaciones', nombre: 'Importaciones', desc: 'COMEX · costeo', icono: 'ti-ship', color: '#34557A', ruta: '/importaciones-adorno/' }   // (25-nov-2026, hub v166)
   ];
   // (13-nov, JP: "el de impuestos no me deja tocar sobre impuestos y saltar a otro módulo") compu = tiene mouse, sin importar el
   //   ancho: las ventanas de módulo angostas (menos de 900 px) se tomaban como celular y no abrían la lista.
