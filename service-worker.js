@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v166-importaciones';
+const CACHE_VERSION = 'hub-v167-cache-propia';
 const ASSETS = [
   './',
   './index.html',
@@ -22,7 +22,9 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
+      // (hub v167, 25-nov-2026) todos los módulos comparten el dominio (y las cachés): borrar SOLO las viejas del Hub, nunca las
+      //   de los otros módulos (antes cada publicación del Hub vaciaba la del POS y lo dejaba sin copia para andar sin internet)
+      Promise.all(keys.filter((k) => k.startsWith('hub-') && k !== CACHE_VERSION).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
