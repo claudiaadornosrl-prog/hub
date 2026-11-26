@@ -6,6 +6,8 @@
 //  · Se fija si hay publicada una versión más nueva que la que está abierta: compara la fecha de la página abierta
 //    (document.lastModified) con la de la publicada (Last-Modified). Si la hay, el título dice " · v197 vieja" y
 //    aparece abajo el cartel "Hay una versión nueva · Actualizar" (en el celular el título no se ve).
+//  · (26-nov-2026) con el módulo instalado como app, el título arranca con el nombre de la app para que la ventana muestre
+//    la versión (ver ponerTitulo).
 //  La cargan sola los módulos que usan /hub/seguridad.js; los demás con <script src="/hub/version.js" defer></script>.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 // (11-nov-2026) los módulos que cargan solo este archivo también suman la traba de equipos (/hub/equipo.js) y el
@@ -38,9 +40,28 @@
 
   // ── el título: los módulos lo cambian solos (contadores, pestañas), así que se vuelve a poner el número cada vez ──
   var QUITAR = / · (v\d+( vieja)?|versión vieja)$/;
+  // (26-nov-2026, JP vía el POS: «que haga lo mismo para todos los módulos») en la ventana de la app instalada, Chrome
+  //   muestra el título de la página SOLO si empieza con el nombre de la app (el «name» del manifest); si no, deja el nombre
+  //   solo y la versión no se ve. Con la app instalada el título pasa a ser «<name> · v198» (« · PRUEBA» si el módulo lo
+  //   marcaba). En una pestaña común no cambia nada. Lo probó el POS en su v306.
+  var APP = null;   // el «name» del manifest, solo cuando corre como app instalada
+  function enVentana() {
+    try { return matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: window-controls-overlay)').matches; }
+    catch (e) { return false; }
+  }
+  function leerNombreApp() {
+    var l = document.querySelector('link[rel="manifest"]');
+    if (!l || !l.href || !window.matchMedia || !enVentana()) return;
+    fetch(l.href, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (m) {
+      var n = m && String(m.name || m.short_name || '').trim();
+      if (!n) return;
+      APP = n; vigilarTitulo(); ponerTitulo();
+    }).catch(function () {});
+  }
   function ponerTitulo() {
-    if (!sufijo) return;
+    if (!sufijo && !APP) return;
     var t = document.title.replace(QUITAR, '');
+    if (APP && t.indexOf(APP) !== 0) t = APP + (/PRUEBA/.test(t) ? ' · PRUEBA' : '');
     if (document.title !== t + sufijo) document.title = t + sufijo;
     var el = document.querySelector('title');
     if (obs && el && el !== tituloVigilado) { tituloVigilado = el; obs.observe(el, { childList: true, characterData: true, subtree: true }); }
@@ -105,7 +126,7 @@
     });
   }
 
-  function arrancar() { setTimeout(revisar, 2500); }   // después de que el módulo termine de arrancar
+  function arrancar() { leerNombreApp(); setTimeout(revisar, 2500); }   // la revisión, después de que el módulo termine de arrancar
   if (document.readyState === 'complete') arrancar(); else window.addEventListener('load', arrancar);
   document.addEventListener('visibilitychange', function () {   // al volver a una pestaña que quedó abierta
     if (!document.hidden && Date.now() - ultima > 300000) revisar();
