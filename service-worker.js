@@ -4,7 +4,7 @@
 //  la última versión cuando hay red, pero funciona offline).
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'hub-v168-titulo-app';
+const CACHE_VERSION = 'hub-v169-avisos-buenos';
 const ASSETS = [
   './',
   './index.html',

@@ -187,37 +187,42 @@
     [/email not confirmed/i, 'Ese usuario todavía no está confirmado. Avisale a JP.'],
     [/device in use|notreadableerror|could not start video source/i, 'La cámara está ocupada por otro programa (por ejemplo el fichador). Pausalo desde su ícono al lado del reloj y probá de nuevo.'],
     [/notallowederror|permission dismissed|permission denied by (user|system)|notfounderror.*(device|camera)|could not start video/i, 'El navegador no dio permiso (cámara, micrófono, ubicación o avisos). Revisá el candado al lado de la dirección.'],
-    [/row-level security|violates row level|permission denied|insufficient.privilege|42501|not allowed|forbidden|unauthorized/i, 'Tu usuario no tiene permiso para hacer esto.'],
+    // (27-nov-2026) los códigos numéricos van con \b: si no, un número de factura como 0001-00042501 se tomaba por un error
+    [/row-level security|violates row level|permission denied|insufficient.privilege|\b42501\b|not allowed|forbidden|unauthorized/i, 'Tu usuario no tiene permiso para hacer esto.'],
     // WhatsApp (Meta), por código — avisos de Clientes
-    [/131047|re-engagement/i, 'Pasaron más de 24 horas desde que escribió la clienta: por WhatsApp ahora solo se le puede mandar una plantilla.'],
-    [/131026|message undeliverable/i, 'Ese número no tiene WhatsApp o no se le pudo entregar el mensaje.'],
-    [/131030|not in allowed list/i, 'Ese número no está habilitado para recibir mensajes desde esta línea.'],
-    [/13200[01]|template.*(does not exist|not found|param)/i, 'La plantilla de WhatsApp tiene un problema. Avisale a JP.'],
-    [/133010|not registered/i, 'El número de WhatsApp del local no está registrado en Meta. Avisale a JP.'],
+    [/\b131047\b|re-engagement/i, 'Pasaron más de 24 horas desde que escribió la clienta: por WhatsApp ahora solo se le puede mandar una plantilla.'],
+    [/\b131026\b|message undeliverable/i, 'Ese número no tiene WhatsApp o no se le pudo entregar el mensaje.'],
+    [/\b131030\b|not in allowed list/i, 'Ese número no está habilitado para recibir mensajes desde esta línea.'],
+    [/\b13200[01]\b|template.*(does not exist|not found|param)/i, 'La plantilla de WhatsApp tiene un problema. Avisale a JP.'],
+    [/\b133010\b|not registered/i, 'El número de WhatsApp del local no está registrado en Meta. Avisale a JP.'],
     [/\(#100\)|invalid parameter/i, 'Hay un dato del mensaje que WhatsApp no acepta (por ejemplo, el número).'],
     [/failed to send a request to the edge function/i, 'No hay conexión con el sistema. Revisá internet y probá de nuevo.'],
     [/non-2xx|edge function returned/i, 'El servicio no respondió bien. Probá de nuevo en un momento.'],
     [/^\s*(error\s*[:：-]?\s*)?(sin permiso|no ten[eé]s permiso)\.?\s*$/i, 'Tu usuario no tiene permiso para hacer esto.'],
     [/JSON object requested|multiple \(or no\) rows|cannot coerce the result|PGRST116|0 rows/i, 'No se encontró ese dato. Puede que ya no exista o que esté repetido.'],
     [/aborterror|aborted|the operation was aborted|signal is aborted/i, 'Se cortó antes de terminar. Probá de nuevo.'],
-    [/duplicate key|already exists|23505|unique constraint/i, 'Eso ya estaba cargado: está repetido.'],
-    [/foreign key|23503|is still referenced/i, 'No se puede: hay otros datos del sistema que dependen de esto.'],
-    [/not-null|null value in column|23502/i, 'Falta completar un dato obligatorio.'],
-    [/check constraint|23514/i, 'Hay un dato con un valor que el sistema no acepta.'],
-    [/invalid input syntax|22P02|invalid input value|date\/time field value out of range|22007|22008/i, 'Hay un dato mal escrito (por ejemplo un número o una fecha).'],
-    [/value too long|22001/i, 'Un texto es demasiado largo.'],
-    [/numeric field overflow|22003|out of range/i, 'Un número es demasiado grande.'],
-    [/statement timeout|canceling statement|57014|timed? ?out|timeout|deadlock|lock timeout|55P03|40P01/i, 'El sistema tardó demasiado en responder. Esperá un momento y probá de nuevo.'],
-    [/could not find the (function|table|relation)|PGRST20[0-5]|schema cache|does not exist|42883|42P01|42703/i, 'Esta parte del sistema todavía no está disponible. Avisale a JP.'],
-    [/payload too large|entity too large|413|file size|exceeded the maximum/i, 'El archivo es demasiado pesado.'],
-    [/too many requests|rate limit|429/i, 'Se hicieron demasiados intentos seguidos. Esperá un minuto y probá de nuevo.'],
+    [/duplicate key|already exists|\b23505\b|unique constraint/i, 'Eso ya estaba cargado: está repetido.'],
+    [/foreign key|\b23503\b|is still referenced/i, 'No se puede: hay otros datos del sistema que dependen de esto.'],
+    [/not-null|null value in column|\b23502\b/i, 'Falta completar un dato obligatorio.'],
+    [/check constraint|\b23514\b/i, 'Hay un dato con un valor que el sistema no acepta.'],
+    [/invalid input syntax|\b22P02\b|invalid input value|date\/time field value out of range|\b2200[78]\b/i, 'Hay un dato mal escrito (por ejemplo un número o una fecha).'],
+    [/value too long|\b22001\b/i, 'Un texto es demasiado largo.'],
+    [/numeric field overflow|\b22003\b|out of range/i, 'Un número es demasiado grande.'],
+    [/statement timeout|canceling statement|\b57014\b|timed? ?out|timeout|deadlock|lock timeout|\b55P03\b|\b40P01\b/i, 'El sistema tardó demasiado en responder. Esperá un momento y probá de nuevo.'],
+    [/could not find the (function|table|relation)|PGRST20[0-5]|schema cache|does not exist|\b42883\b|\b42P01\b|\b42703\b/i, 'Esta parte del sistema todavía no está disponible. Avisale a JP.'],
+    [/payload too large|entity too large|\b413\b|file size|exceeded the maximum/i, 'El archivo es demasiado pesado.'],
+    [/too many requests|rate limit|\b429\b/i, 'Se hicieron demasiados intentos seguidos. Esperá un minuto y probá de nuevo.'],
     [/mime type|not supported|unsupported/i, 'Ese tipo de archivo no se acepta.'],
     [/quota.*exceeded|storage.*full/i, 'Este equipo se quedó sin espacio para guardar datos del sistema.'],
     [/internal server error|bad gateway|service unavailable|gateway timeout|\b50[0234]\b/i, 'El sistema no está respondiendo bien. Probá de nuevo en un momento.'],
     [/\b404\b|not found/i, 'No se encontró lo que se buscaba. Puede que ya no exista.'],
     [/unexpected token|unexpected end of|is not valid json|syntaxerror|typeerror|referenceerror|rangeerror|cannot read prop|is not a function|is not defined|undefined|\[object object\]|null is not|of null|of undefined/i, 'Algo falló adentro del sistema. Probá de nuevo; si sigue pasando, avisale a JP.']
   ];
-  var _PAL = /\b(el|la|los|las|del|que|no|se|un|una|para|con|sin|por|falta|ya|tu|te|es|son|hay|esta|este|pudo|pude|puede|tiene|permiso|mes|cerrado|guardar|cargar|importe|local|cuenta|usuario|clave)\b/gi;
+  // (27-nov-2026, aviso de Compras) más palabras comunes: «Recibos de sueldo cerrados» o «4 equivalencias guardadas» no tenían
+  //   ninguna y salían como «Algo falló…»
+  var _PAL = /\b(el|la|los|las|del|de|en|al|y|que|no|se|un|una|para|con|sin|por|falta|ya|tu|te|es|son|hay|esta|este|pudo|pude|puede|tiene|permiso|mes|cerrad[oa]s?|guardad[oa]s?|cargad[oa]s?|listo|lista|guardar|cargar|importe|local|cuenta|usuario|clave)\b/gi;
+  // (27-nov-2026, aviso de Compras) un aviso BUENO («✓ 4 equivalencias guardadas.», «Listo: …») no es un error: pasa tal cual
+  var BUENO = /^\s*(✓|✔|✅|☑|👍|🎉|listo\b|hecho\b|guardad[oa]s?\b|perfecto\b)/i;
   var _ING = /\b(the|is|are|of|to|returned|failed|invalid|not|cannot|requested|request|response|status|code|function|message|parameter|token|expired|denied|missing|found|rows?|value|key|column|table|unexpected|undefined|null)\b/i;
   var CASTELLANO = { test: function (t) {
     t = String(t || '');
@@ -230,6 +235,7 @@
   function traducir(msg) {
     var orig = String(msg == null ? '' : (msg.message || msg)).trim();
     if (!orig) return { texto: 'Algo falló. Probá de nuevo.', tecnico: '' };
+    if (BUENO.test(orig)) return { texto: orig, tecnico: '' };
     for (var i = 0; i < REGLAS.length; i++) {
       if (REGLAS[i][0].test(orig)) {
         // si el módulo ya decía en castellano qué estaba haciendo («No se pudo guardar: …»), eso se conserva
@@ -250,9 +256,16 @@
     var corte = orig.search(/[:：]/);
     if (corte > 0 && corte <= 70) {
       var cab = orig.slice(0, corte).replace(/^[\s✗❌⚠️!¡]+/, '').trim(), cola = orig.slice(corte + 1).trim();
-      var colaTecnica = cola && (/[{}\[\]<>]|\w+_\w+|[A-Z]{2,}\d{2,}|\(#\d+\)/.test(cola) || _ING.test(cola));
-      if (cab && CASTELLANO.test(cab) && !/^error$/i.test(cab) && colaTecnica)
+      var TEC = /[{}\[\]<>]|\w+_\w+|[A-Z]{2,}\d{2,}|\(#\d+\)/;
+      var colaTecnica = cola && (TEC.test(cola) || _ING.test(cola));
+      if (cab && CASTELLANO.test(cab) && !/^error$/i.test(cab) && colaTecnica) {
+        // (27-nov-2026) «Error al cerrar día: El día 24 ya está cerrado (controlado_por=local:alcorta)»: la explicación está en
+        //   castellano y solo el paréntesis es técnico → se muestra sin el paréntesis (el original queda en el detalle técnico)
+        var limpia = cola.replace(/\s*(\([^()]*\)|\[[^\[\]]*\]|\{[^{}]*\})/g, '').trim();
+        if (limpia && limpia !== cola && CASTELLANO.test(limpia) && !TEC.test(limpia) && !_ING.test(limpia))
+          return { texto: cab.replace(/[.\s]+$/, '') + ': ' + limpia.replace(/[.\s]+$/, '') + '.', tecnico: orig };
         return { texto: cab.replace(/[.\s]+$/, '') + '. Algo falló y el sistema no supo explicarlo. Probá de nuevo; si sigue pasando, avisale a JP.', tecnico: orig };
+      }
     }
     if (CASTELLANO.test(orig)) return { texto: orig.replace(/^(error|err)\s*[:：-]\s*/i, ''), tecnico: '' };
     return { texto: 'Algo falló y el sistema no supo explicarlo. Probá de nuevo; si sigue pasando, avisale a JP.', tecnico: orig };
@@ -341,6 +354,7 @@
     if (typeof tipo === 'string' && tipo) return /err|mal|bad|rojo|danger|fail|fallo|warn|falta|aviso/i.test(tipo);
     if (tipo) return false;
     var m = String(msg || '');
+    if (BUENO.test(m)) return false;
     if (/^[\s]*(✗|❌|⛔|⚠|🔒|(error|no se pudo|no pude|no pudimos|fall[oó]|ups|faltan?|pon[eé]|eleg[ií]|complet[aá]|ingres[aá]|carg[aá]|escrib[ií]|seleccion[aá]|ten[eé]s que|no ten[eé]s|no se puede|no pod[eé]s|sin permiso)(?![a-záéíóúñ]))/i.test(m)) return true;
     for (var i = 0; i < REGLAS.length - 2; i++) if (REGLAS[i][0].test(m) && !CASTELLANO.test(m.split(/[:：]/)[0] === m ? m : '')) return true;
     return false;
